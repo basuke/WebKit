@@ -33,6 +33,8 @@
 #import "GamepadHapticEffectType.h"
 #import "Logging.h"
 #import <cmath>
+#import <wtf/BlockPtr.h>
+#import <wtf/RunLoop.h>
 #import <wtf/TZoneMallocInlines.h>
 
 #import "CoreHapticsSoftLink.h"
@@ -52,15 +54,18 @@ static double magnitudeToIntensity(double magnitude)
     return intensity;
 }
 
-std::unique_ptr<GameControllerHapticEffect> GameControllerHapticEffect::create(GameControllerHapticEngines& engines, GamepadHapticEffectType type, const GamepadEffectParameters& parameters)
+RefPtr<GameControllerHapticEffect> GameControllerHapticEffect::create(GameControllerHapticEngines& engines, GamepadHapticEffectType type, const GamepadEffectParameters& parameters)
 {
+    Seconds delay { std::max<double>(parameters.startDelay / 1000., 0) };
+    Seconds duration { std::clamp<double>(parameters.duration / 1000., 0, GamepadEffectParameters::maximumDuration.seconds()) };
+
     auto createPlayer = [&](CHHapticEngine *engine, double magnitude) -> RetainPtr<id> {
         NSDictionary* hapticDict = @{
             CHHapticPatternKeyPattern: @[
                 @{ CHHapticPatternKeyEvent: @{
                     CHHapticPatternKeyEventType: CHHapticEventTypeHapticContinuous,
-                    CHHapticPatternKeyTime: [NSNumber numberWithDouble:std::max<double>(parameters.startDelay / 1000., 0)],
-                    CHHapticPatternKeyEventDuration: [NSNumber numberWithDouble:std::clamp<double>(parameters.duration / 1000., 0, GamepadEffectParameters::maximumDuration.seconds())],
+                    CHHapticPatternKeyTime: [NSNumber numberWithDouble:delay.seconds()],
+                    CHHapticPatternKeyEventDuration: [NSNumber numberWithDouble:duration.seconds()],
                     CHHapticPatternKeyEventParameters: @[ @{
                         CHHapticPatternKeyParameterID: CHHapticEventParameterIDHapticIntensity,
                         CHHapticPatternKeyParameterValue: [NSNumber numberWithDouble:magnitudeToIntensity(magnitude)],
@@ -79,30 +84,43 @@ std::unique_ptr<GameControllerHapticEffect> GameControllerHapticEffect::create(G
         return retainPtr([engine createPlayerWithPattern:pattern.get() error:&error]);
     };
 
-    RetainPtr<id> leftPlayer;
-    RetainPtr<id> rightPlayer;
+    RetainPtr<CHHapticEngine> leftEngine;
+    RetainPtr<CHHapticEngine> rightEngine;
+    double leftMagnitude { };
+    double rightMagnitude { };
+
     switch (type) {
     case GamepadHapticEffectType::DualRumble: {
-        leftPlayer = createPlayer(engines.leftHandleEngine(), parameters.strongMagnitude);
-        rightPlayer = createPlayer(engines.rightHandleEngine(), parameters.weakMagnitude);
+        leftEngine = engines.leftHandleEngine();
+        rightEngine = engines.rightHandleEngine();
+        leftMagnitude = parameters.strongMagnitude;
+        rightMagnitude = parameters.weakMagnitude;
         break;
         }
     case GamepadHapticEffectType::TriggerRumble: {
-        leftPlayer = createPlayer(engines.leftTriggerEngine(), parameters.leftTrigger);
-        rightPlayer = createPlayer(engines.rightTriggerEngine(), parameters.rightTrigger);
+        leftEngine = engines.leftTriggerEngine();
+        rightEngine = engines.rightTriggerEngine();
+        leftMagnitude = parameters.leftTrigger;
+        rightMagnitude = parameters.rightTrigger;
         break;
         }
     }
+
+    RetainPtr<id> leftPlayer = createPlayer(leftEngine.get(), leftMagnitude);
+    RetainPtr<id> rightPlayer = createPlayer(rightEngine.get(), rightMagnitude);
 
     if (!leftPlayer || !rightPlayer) {
         RELEASE_LOG_ERROR(Gamepad, "GameControllerHapticEffect: Failed to create the haptic effect players");
         return nullptr;
     }
-    return std::unique_ptr<GameControllerHapticEffect>(new GameControllerHapticEffect(WTFMove(leftPlayer), WTFMove(rightPlayer)));
+
+    return adoptRef(new GameControllerHapticEffect(WTFMove(leftEngine), WTFMove(rightEngine), WTFMove(leftPlayer), WTFMove(rightPlayer)));
 }
 
-GameControllerHapticEffect::GameControllerHapticEffect(RetainPtr<id>&& leftPlayer, RetainPtr<id>&& rightPlayer)
-    : m_leftPlayer(WTFMove(leftPlayer))
+GameControllerHapticEffect::GameControllerHapticEffect(RetainPtr<CHHapticEngine>&& leftEngine, RetainPtr<CHHapticEngine>&& rightEngine, RetainPtr<id>&& leftPlayer, RetainPtr<id>&& rightPlayer)
+    : m_leftEngine(WTFMove(leftEngine))
+    , m_rightEngine(WTFMove(rightEngine))
+    , m_leftPlayer(WTFMove(leftPlayer))
     , m_rightPlayer(WTFMove(rightPlayer))
 {
 }
@@ -127,8 +145,26 @@ void GameControllerHapticEffect::start(CompletionHandler<void(bool)>&& completio
         RELEASE_LOG_ERROR(Gamepad, "GameControllerHapticEffect::start: Failed to start the weak player");
         m_rightPlayer = nullptr;
     }
-    if (!m_leftPlayer && !m_rightPlayer)
+    if (!m_leftPlayer && !m_rightPlayer) {
         m_completionHandler(false);
+        return;
+    }
+
+    if (m_leftPlayer) {
+        [m_leftEngine.get() notifyWhenPlayersFinished:makeBlockPtr([weakThis = WeakPtr { *this }](NSError *) mutable -> CHHapticEngineFinishedAction {
+            if (RefPtr protectedThis = weakThis.get())
+                protectedThis->leftEffectFinishedPlaying();
+            return CHHapticEngineFinishedActionStopEngine;
+        }).get()];
+    }
+
+    if (m_rightPlayer) {
+        [m_rightEngine.get() notifyWhenPlayersFinished:makeBlockPtr([weakThis = WeakPtr { *this }](NSError *) mutable -> CHHapticEngineFinishedAction {
+            if (RefPtr protectedThis = weakThis.get())
+                protectedThis->rightEffectFinishedPlaying();
+            return CHHapticEngineFinishedActionStopEngine;
+        }).get()];
+    }
 }
 
 void GameControllerHapticEffect::stop()
