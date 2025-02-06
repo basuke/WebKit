@@ -84,3 +84,6 @@ view-gestures/smart-magnify/double-tap-zoom-scroll-above-top.html [ Timeout Pass
 
 # webkit.org/b/280189 [EWS] imported/w3c/web-platform-tests/webcodecs/videoFrame-construction.any.html is a constant failure on Ventura Intel EWS
 [ Release x86_64 ] imported/w3c/web-platform-tests/webcodecs/videoFrame-construction.any.html [ Skip ]
+
+# webkit.org/b/287120 Move logic of network usage monitoring to NetworkProcess
+http/tests/iframe-monitor/compressed-resource.html [ Skip ]
