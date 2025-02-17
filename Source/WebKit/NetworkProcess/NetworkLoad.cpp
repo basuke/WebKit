@@ -276,8 +276,7 @@ void NetworkLoad::notifyDidReceiveResponse(ResourceResponse&& response, Negotiat
 
 void NetworkLoad::didReceiveData(const WebCore::SharedBuffer& buffer)
 {
-    // FIXME: This should be the encoded data length, not the decoded data length.
-    m_client.get().didReceiveBuffer(buffer, buffer.size());
+    m_client.get().didReceiveBuffer(buffer);
 }
 
 void NetworkLoad::didCompleteWithError(const ResourceError& error, const WebCore::NetworkLoadMetrics& networkLoadMetrics)
