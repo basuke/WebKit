@@ -34,8 +34,6 @@
 
 #if ENABLE(CONTENT_EXTENSIONS)
 
-#define RESOURCEMONITOR_RELEASE_LOG(fmt, ...) RELEASE_LOG(ResourceMonitoring, "ResourceMonitorChecker::" fmt, ##__VA_ARGS__)
-
 namespace WebCore {
 
 ResourceMonitorChecker& ResourceMonitorChecker::singleton()
@@ -51,7 +49,7 @@ ResourceMonitorChecker::ResourceMonitorChecker()
         if (m_ruleList)
             return;
 
-        RESOURCEMONITOR_RELEASE_LOG("Did not receive rule list in time, using default eligibility");
+        RELEASE_LOG_ERROR(ResourceMonitoring, "ResourceMonitorChecker::Did not receive rule list in time, using default eligibility");
 
         m_ruleListIsPreparing = false;
         finishPendingQueries([](const auto&) {
@@ -90,7 +88,7 @@ ResourceMonitorChecker::Eligibility ResourceMonitorChecker::checkEligibility(con
     ASSERT(m_ruleList);
 
     auto matched = m_ruleList->processContentRuleListsForResourceMonitoring(info.resourceURL, info.mainDocumentURL, info.frameURL, info.type);
-    RESOURCEMONITOR_RELEASE_LOG("The url is %" PUBLIC_LOG_STRING ": %" SENSITIVE_LOG_STRING " (%" PUBLIC_LOG_STRING ")", (matched ? "eligible" : "not eligible"), info.resourceURL.string().utf8().data(), ContentExtensions::resourceTypeToString(info.type).characters());
+    RELEASE_LOG(ResourceMonitoring, "ResourceMonitorChecker::The url is %" PUBLIC_LOG_STRING ": %" SENSITIVE_LOG_STRING " (%" PUBLIC_LOG_STRING ")", (matched ? "eligible" : "not eligible"), info.resourceURL.string().utf8().data(), ContentExtensions::resourceTypeToString(info.type).characters());
 
     return matched ? Eligibility::Eligible : Eligibility::NotEligible;
 }
@@ -103,7 +101,7 @@ void ResourceMonitorChecker::setContentRuleList(ContentExtensions::ContentExtens
         m_ruleList = makeUnique<ContentExtensions::ContentExtensionsBackend>(WTFMove(backend));
         m_ruleListIsPreparing = false;
 
-        RESOURCEMONITOR_RELEASE_LOG("Content rule list is set");
+        RELEASE_LOG(ResourceMonitoring, "ResourceMonitorChecker::Content rule list is set,");
 
         if (!m_pendingQueries.isEmpty()) {
             finishPendingQueries([this](const auto& info) {
@@ -115,7 +113,7 @@ void ResourceMonitorChecker::setContentRuleList(ContentExtensions::ContentExtens
 
 void ResourceMonitorChecker::finishPendingQueries(Function<Eligibility(const ContentExtensions::ResourceLoadInfo&)> checker)
 {
-    RESOURCEMONITOR_RELEASE_LOG("Finish pending queries: count %lu", m_pendingQueries.size());
+    RELEASE_LOG(ResourceMonitoring, "ResourceMonitorChecker::Finish pending queries: count=%lu", m_pendingQueries.size());
 
     for (auto& pair : m_pendingQueries) {
         auto& [info, completionHandler] = pair;
@@ -154,7 +152,7 @@ void ResourceMonitorChecker::setNetworkUsageThreshold(size_t threshold, double r
     if (m_networkUsageThreshold == threshold && m_networkUsageThresholdRandomness == randomness)
         return;
 
-    RESOURCEMONITOR_RELEASE_LOG("Update network usage threshold: threshold=%zu, randomness=%.3f", threshold, randomness);
+    RELEASE_LOG(ResourceMonitoring, "ResourceMonitorChecker::Update network usage threshold: threshold=%zu, randomness=%.3f", threshold, randomness);
 
     m_networkUsageThreshold = threshold;
     m_networkUsageThresholdRandomness = randomness;
@@ -165,7 +163,5 @@ void ResourceMonitorChecker::setNetworkUsageThreshold(size_t threshold, double r
 }
 
 } // namespace WebCore
-
-#undef RESOURCEMONITOR_RELEASE_LOG
 
 #endif

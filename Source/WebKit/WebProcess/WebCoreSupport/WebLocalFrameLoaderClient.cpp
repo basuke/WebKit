@@ -2037,6 +2037,10 @@ void WebLocalFrameLoaderClient::didExceedNetworkUsageThreshold()
     if (url.isEmpty())
         return;
 
+    auto host = url.host().toStringWithoutCopying();
+
+    WebLocalFrameLoaderClient_RELEASE_LOG(ResourceMonitoring, "didExceedNetworkUsageThreshold host=%" PUBLIC_LOG_STRING, host.utf8().data());
+
     auto action = [weakFrame = WeakPtr { m_frame->coreLocalFrame() }](bool wasGranted) {
         RefPtr frame = weakFrame.get();
         if (!frame)
@@ -2050,7 +2054,7 @@ void WebLocalFrameLoaderClient::didExceedNetworkUsageThreshold()
     if (document->shouldSkipResourceMonitorThrottling())
         action(true);
     else
-        WebProcess::singleton().ensureNetworkProcessConnection().protectedConnection()->sendWithAsyncReply(Messages::NetworkConnectionToWebProcess::ShouldOffloadIFrameForHost(url.host().toStringWithoutCopying()), WTFMove(action), 0);
+        WebProcess::singleton().ensureNetworkProcessConnection().protectedConnection()->sendWithAsyncReply(Messages::NetworkConnectionToWebProcess::ShouldOffloadIFrameForHost(host), WTFMove(action), 0);
 }
 
 #endif

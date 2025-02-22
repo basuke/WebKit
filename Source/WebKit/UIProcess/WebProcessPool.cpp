@@ -2717,7 +2717,7 @@ void WebProcessPool::loadOrUpdateResourceMonitorRuleList()
     if (m_resourceMonitorRuleListLoading || m_resourceMonitorRuleListFailed)
         return;
 
-    WEBPROCESSPOOL_RELEASE_LOG(Process, "loadOrUpdateResourceMonitorRuleList: rule list is requested");
+    WEBPROCESSPOOL_RELEASE_LOG(ResourceMonitoring, "loadOrUpdateResourceMonitorRuleList: rule list is requested");
 
     m_resourceMonitorRuleListLoading = true;
 
