@@ -54,7 +54,7 @@ static bool isMixedContent(const Document& document, const URL& url)
     // sandboxed iframes have an opaque origin so we should perform the mixed content check considering the origin
     // the iframe would have had if it were not sandboxed.
     if (document.securityOrigin().protocol() == "https"_s || (document.securityOrigin().isOpaque() && document.url().protocolIs("https"_s)))
-        return !SecurityOrigin::isSecure(url);
+        return !SecurityOrigin::isSecure(url) && !shouldTreatAsPotentiallyTrustworthy(url);
 
     return false;
 }
