@@ -133,6 +133,8 @@ void ResourceMonitor::continueAfterDidReceiveEligibility(Eligibility eligibility
     if (!page)
         return;
 
+    eligibility = ResourceMonitorEligibility::Eligible;
+
     RESOURCEMONITOR_RELEASE_LOG("resourceURL %" SENSITIVE_LOG_STRING " mainDocumentURL %" SENSITIVE_LOG_STRING " frameURL %" SENSITIVE_LOG_STRING " (%" PUBLIC_LOG_STRING ") is set as %" PUBLIC_LOG_STRING ".",
         url.string().utf8().data(),
         page->mainFrameURL().string().utf8().data(),
