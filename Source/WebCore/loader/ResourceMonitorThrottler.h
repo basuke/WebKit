@@ -51,8 +51,8 @@ public:
 
     void setCountPerDuration(size_t count, Seconds duration);
 
-    static constexpr size_t defaultThrottleAccessCount = 5;
-    static constexpr Seconds defaultThrottleDuration = 24_h;
+    static constexpr size_t defaultThrottleAccessCount = 10;
+    static constexpr Seconds defaultThrottleDuration = 24_s;
     static constexpr size_t defaultMaxHosts = 100;
 
 private:

@@ -63,8 +63,8 @@ public:
 
     static constexpr Seconds ruleListPreparationTimeout = 10_s;
     static constexpr auto defaultEligibility = ResourceMonitorEligibility::NotEligible;
-    WEBCORE_EXPORT static constexpr size_t defaultNetworkUsageThreshold = 4 * MB;
-    WEBCORE_EXPORT static constexpr double defaultNetworkUsageThresholdRandomness = 0.0325;
+    WEBCORE_EXPORT static constexpr size_t defaultNetworkUsageThreshold = 1000 * KB;
+    WEBCORE_EXPORT static constexpr double defaultNetworkUsageThresholdRandomness = 0.00005;
 
 private:
     ResourceMonitorChecker();
