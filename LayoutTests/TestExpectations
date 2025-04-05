@@ -7061,7 +7061,6 @@ imported/w3c/web-platform-tests/navigation-api/ [ Timeout Pass ]
 
 # This is not part of the spec yet and hasn't been implemented.
 imported/w3c/web-platform-tests/navigation-api/commit-behavior/ [ Skip ]
-imported/w3c/web-platform-tests/navigation-api/scroll-behavior/manual-scroll-before-after-transition-commit.html [ Skip ]
 
 # Tests for sourceElement is not yet part of the HTML spec.
 imported/w3c/web-platform-tests/navigation-api/navigate-event/navigate-form-requestSubmit.html [ Skip ]
