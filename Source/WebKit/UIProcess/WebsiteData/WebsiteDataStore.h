@@ -70,6 +70,10 @@
 #include <WebCore/SoupNetworkProxySettings.h>
 #endif
 
+#if ENABLE(CONTENT_EXTENSIONS)
+#include <WebCore/ResourceMonitorThrottlerHolder.h>
+#endif
+
 namespace API {
 class Data;
 class DownloadClient;
@@ -511,6 +515,8 @@ public:
 #endif
 
 #if ENABLE(CONTENT_EXTENSIONS)
+    WebCore::ResourceMonitorThrottlerHolder& resourceMonitorThrottler();
+    Ref<WebCore::ResourceMonitorThrottlerHolder> protectedResourceMonitorThrottler();
     void resetResourceMonitorThrottlerForTesting(CompletionHandler<void()>&&);
 #endif
 
@@ -665,6 +671,10 @@ private:
 #endif
     bool m_storageSiteValidationEnabled { false };
     HashSet<URL> m_persistedSiteURLs;
+
+#if ENABLE(CONTENT_EXTENSIONS)
+    RefPtr<WebCore::ResourceMonitorThrottlerHolder> m_resourceMonitorThrottler;
+#endif
 
     RemoveDataTaskCounter m_removeDataTaskCounter;
     uint64_t m_cookiesVersion { 0 };

@@ -175,9 +175,6 @@ NetworkSession::NetworkSession(NetworkProcess& networkProcess, const NetworkSess
 #if ENABLE(DECLARATIVE_WEB_PUSH)
     , m_isDeclarativeWebPushEnabled(parameters.isDeclarativeWebPushEnabled)
 #endif
-#if ENABLE(CONTENT_EXTENSIONS)
-    , m_resourceMonitorThrottlerDirectory(parameters.resourceMonitorThrottlerDirectory)
-#endif
 #if HAVE(WEBCONTENTRESTRICTIONS_PATH_SPI)
     , m_webContentRestrictionsConfigurationFile(parameters.webContentRestrictionsConfigurationFile)
 #endif
@@ -938,28 +935,5 @@ Ref<NetworkBroadcastChannelRegistry> NetworkSession::protectedBroadcastChannelRe
 {
     return m_broadcastChannelRegistry;
 }
-
-#if ENABLE(CONTENT_EXTENSIONS)
-WebCore::ResourceMonitorThrottlerHolder& NetworkSession::resourceMonitorThrottler()
-{
-    if (!m_resourceMonitorThrottler) {
-        RELEASE_LOG(ResourceMonitoring, "NetworkSession::resourceMonitorThrottler sessionID=%" PRIu64 ", ResourceMonitorThrottler is created.", m_sessionID.toUInt64());
-        m_resourceMonitorThrottler = WebCore::ResourceMonitorThrottlerHolder::create(m_resourceMonitorThrottlerDirectory);
-    }
-
-    return *m_resourceMonitorThrottler;
-}
-
-Ref<WebCore::ResourceMonitorThrottlerHolder> NetworkSession::protectedResourceMonitorThrottler()
-{
-    return resourceMonitorThrottler();
-}
-
-void NetworkSession::clearResourceMonitorThrottlerData(CompletionHandler<void()>&& completionHandler)
-{
-    protectedResourceMonitorThrottler()->clearAllData(WTFMove(completionHandler));
-}
-
-#endif
 
 } // namespace WebKit

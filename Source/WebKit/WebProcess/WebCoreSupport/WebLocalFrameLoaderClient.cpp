@@ -2077,7 +2077,7 @@ void WebLocalFrameLoaderClient::didExceedNetworkUsageThreshold()
     if (document->shouldSkipResourceMonitorThrottling())
         action(true);
     else
-        WebProcess::singleton().ensureNetworkProcessConnection().protectedConnection()->sendWithAsyncReply(Messages::NetworkConnectionToWebProcess::ShouldOffloadIFrameForHost(url.host().toStringWithoutCopying()), WTFMove(action), 0);
+        webPage->sendWithAsyncReply(Messages::WebPageProxy::ShouldOffloadIFrameForHost(url.host().toStringWithoutCopying()), WTFMove(action));
 }
 
 #endif

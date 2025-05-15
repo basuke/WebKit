@@ -574,10 +574,6 @@ private:
 
     void setShouldRelaxThirdPartyCookieBlockingForPage(WebPageProxyIdentifier);
 
-#if ENABLE(CONTENT_EXTENSIONS)
-    void resetResourceMonitorThrottlerForTesting(PAL::SessionID, CompletionHandler<void()>&&);
-#endif
-
     struct TaskIdentifierType;
     using TaskIdentifier = ObjectIdentifier<TaskIdentifierType>;
     void performDeleteWebsiteDataTask(TaskIdentifier);

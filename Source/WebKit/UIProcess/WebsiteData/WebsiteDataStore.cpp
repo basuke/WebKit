@@ -2905,9 +2905,24 @@ bool WebsiteDataStore::builtInNotificationsEnabled() const
 #endif
 
 #if ENABLE(CONTENT_EXTENSIONS)
+WebCore::ResourceMonitorThrottlerHolder& WebsiteDataStore::resourceMonitorThrottler()
+{
+    if (!m_resourceMonitorThrottler) {
+        RELEASE_LOG(ResourceMonitoring, "WebsiteDataStore::resourceMonitorThrottler sessionID=%" PRIu64 ", ResourceMonitorThrottler is created.", m_sessionID.toUInt64());
+        m_resourceMonitorThrottler = WebCore::ResourceMonitorThrottlerHolder::create();
+    }
+
+    return *m_resourceMonitorThrottler;
+}
+
+Ref<WebCore::ResourceMonitorThrottlerHolder> WebsiteDataStore::protectedResourceMonitorThrottler()
+{
+    return resourceMonitorThrottler();
+}
+
 void WebsiteDataStore::resetResourceMonitorThrottlerForTesting(CompletionHandler<void()>&& completionHandler)
 {
-    protectedNetworkProcess()->resetResourceMonitorThrottlerForTesting(m_sessionID, WTFMove(completionHandler));
+    protectedResourceMonitorThrottler()->clearAllData(WTFMove(completionHandler));
 }
 #endif
 

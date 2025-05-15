@@ -1768,11 +1768,6 @@ void NetworkProcess::deleteWebsiteDataImpl(PAL::SessionID sessionID, OptionSet<W
         session->clearAlternativeServices(modifiedSince);
 #endif
 
-#if ENABLE(CONTENT_EXTENSIONS)
-    if (websiteDataTypes.contains(WebsiteDataType::DiskCache) && session)
-        session->clearResourceMonitorThrottlerData([clearTasksHandler] { });
-#endif
-
     if (NetworkStorageManager::canHandleTypes(websiteDataTypes) && session)
         session->protectedStorageManager()->deleteDataModifiedSince(websiteDataTypes, modifiedSince, [clearTasksHandler] { });
 }
@@ -3236,15 +3231,5 @@ ShouldRelaxThirdPartyCookieBlocking NetworkProcess::shouldRelaxThirdPartyCookieB
 {
     return pageID && m_pagesWithRelaxedThirdPartyCookieBlocking.contains(*pageID) ? ShouldRelaxThirdPartyCookieBlocking::Yes : ShouldRelaxThirdPartyCookieBlocking::No;
 }
-
-#if ENABLE(CONTENT_EXTENSIONS)
-void NetworkProcess::resetResourceMonitorThrottlerForTesting(PAL::SessionID sessionID, CompletionHandler<void()>&& completionHandler)
-{
-    if (CheckedPtr session = networkSession(sessionID))
-        session->clearResourceMonitorThrottlerData(WTFMove(completionHandler));
-    else
-        completionHandler();
-}
-#endif
 
 } // namespace WebKit

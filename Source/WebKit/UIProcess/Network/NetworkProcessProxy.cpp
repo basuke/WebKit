@@ -2028,13 +2028,6 @@ void NetworkProcessProxy::restoreLocalStorage(PAL::SessionID sessionID, HashMap<
     sendWithAsyncReply(Messages::NetworkProcess::RestoreLocalStorage(sessionID, WTFMove(localStorage)), WTFMove(completionHandler));
 }
 
-#if ENABLE(CONTENT_EXTENSIONS)
-void NetworkProcessProxy::resetResourceMonitorThrottlerForTesting(PAL::SessionID sessionID, CompletionHandler<void()>&& completionHandler)
-{
-    sendWithAsyncReply(Messages::NetworkProcess::ResetResourceMonitorThrottlerForTesting(sessionID), WTFMove(completionHandler));
-}
-#endif
-
 } // namespace WebKit
 
 #undef MESSAGE_CHECK_COMPLETION
