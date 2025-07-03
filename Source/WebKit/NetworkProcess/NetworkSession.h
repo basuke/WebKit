@@ -293,12 +293,10 @@ public:
     bool isDeclarativeWebPushEnabled() const { return m_isDeclarativeWebPushEnabled; }
 #endif
 
-#if ENABLE(CONTENT_EXTENSIONS)
     WebCore::ResourceMonitorThrottlerHolder& resourceMonitorThrottler();
     Ref<WebCore::ResourceMonitorThrottlerHolder> protectedResourceMonitorThrottler();
 
     void clearResourceMonitorThrottlerData(CompletionHandler<void()>&&);
-#endif
 
 #if HAVE(WEBCONTENTRESTRICTIONS_PATH_SPI)
     String webContentRestrictionsConfigurationFile() const { return m_webContentRestrictionsConfigurationFile; }
@@ -416,10 +414,8 @@ protected:
 #if ENABLE(DECLARATIVE_WEB_PUSH)
     bool m_isDeclarativeWebPushEnabled { false };
 #endif
-#if ENABLE(CONTENT_EXTENSIONS)
     RefPtr<WebCore::ResourceMonitorThrottlerHolder> m_resourceMonitorThrottler;
     String m_resourceMonitorThrottlerDirectory;
-#endif
 #if HAVE(WEBCONTENTRESTRICTIONS_PATH_SPI)
     String m_webContentRestrictionsConfigurationFile;
 #endif

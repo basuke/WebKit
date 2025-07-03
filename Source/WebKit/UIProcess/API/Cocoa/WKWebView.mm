@@ -4901,11 +4901,9 @@ static void convertAndAddHighlight(Vector<Ref<WebCore::SharedMemory>>& buffers, 
 
 + (BOOL)_willUpgradeToHTTPS:(NSURL *)url
 {
-#if ENABLE(CONTENT_EXTENSIONS)
     return WebCore::ContentExtensions::ContentExtensionsBackend::shouldBeMadeSecure(url);
 #else
     return NO;
-#endif
 }
 
 - (void)_showWarningViewWithTitle:(NSString *)title warning:(NSString *)warning details:(NSAttributedString *)details completionHandler:(void(^)(BOOL))completionHandler
