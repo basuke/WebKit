@@ -1,3 +1,4 @@
 
-PASS clicking on an <a> element that navigates same-document targeting a same-origin-domain (but cross-origin) window Test timed out
+
+PASS clicking on an <a> element that navigates same-document targeting a same-origin-domain (but cross-origin) window
 
