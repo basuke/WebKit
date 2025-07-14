@@ -47,6 +47,7 @@ _log = logging.getLogger(__name__)
 
 class MacPort(DarwinPort):
     port_name = "mac"
+    supports_localhost_aliases = True
 
     LAST_MACOSX = Version(10, 15)
 
