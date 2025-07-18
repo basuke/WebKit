@@ -1,5 +1,3 @@
 
-Harness Error (TIMEOUT), message = null
-
-TIMEOUT Dispose should fire when an entry is removed from session history due to too many entries Test timed out
+PASS Dispose should fire when an entry is removed from session history due to too many entries Test timed out
 
