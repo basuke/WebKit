@@ -83,6 +83,7 @@ my $startTime = time();
 my $archs32bit = 0;
 my $useCCache = -1;
 my $exportCompileCommands = 0;
+my $filterOutput = $ENV{'WEBKIT_FILTER_OUTPUT'} ? 1 : 0;
 
 my @features = getFeatureOptionList();
 
@@ -153,6 +154,7 @@ Usage: $programName [options] [options to pass to build system]
   --[no-]use-ccache                 Enable (or disable) CCache, if available
 
   --export-compile-commands         Generate compile_commands.json (Xcode builds only)
+  --[no-]filter-output              Filter build output through filter-build-webkit (can be set via WEBKIT_FILTER_OUTPUT)
 
 EOF
 
@@ -173,7 +175,8 @@ my %options = (
     'no-experimental-features' => \$noExperimentalFeatures,
     'lto-mode=s' => \$ltoMode,
     'use-ccache!' => \$useCCache,
-    'export-compile-commands' => \$exportCompileCommands
+    'export-compile-commands' => \$exportCompileCommands,
+    'filter-output!' => \$filterOutput
 );
 
 # Build usage text and options list from features
@@ -188,6 +191,24 @@ GetOptions(%options);
 if ($showHelp) {
    print STDERR $usage;
    exit 1;
+}
+
+# Check if we should pipe the entire script output through filter-build-webkit
+# Do this early, before any output is generated
+if ($filterOutput) {
+    my $filterPath = File::Spec->catfile($FindBin::Bin, "filter-build-webkit");
+    if (-x $filterPath) {
+        # Prepare arguments for re-execution, removing --filter-output and adding --no-filter-output
+        my @newArgs = ();
+        for my $arg (@ARGV) {
+            next if $arg eq '--filter-output';
+            push @newArgs, $arg;
+        }
+        push @newArgs, '--no-filter-output';
+
+        # Re-execute this script and pipe through filter
+        exec "$^X $0 " . join(' ', map { /\s/ ? "'$_'" : $_ } @newArgs) . " | '$filterPath'";
+    }
 }
 
 $ENV{'VERBOSE'} = 1 if $verbose;
