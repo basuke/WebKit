@@ -187,7 +187,13 @@ static bool wpeBufferDMABufTryEnsureGBMDevice(WPEBufferDMABuf* buffer)
     if (!display)
         return false;
 
-    const char* filename = wpe_display_get_drm_render_node(display);
+    auto* drmDevice = wpe_display_get_drm_device(display);
+    if (!drmDevice)
+        return false;
+
+    const char* filename = wpe_drm_device_get_render_node(drmDevice);
+    if (!filename)
+        filename = wpe_drm_device_get_primary_node(drmDevice);
     if (!filename)
         return false;
 
@@ -239,7 +245,7 @@ static GBytes* wpeBufferDMABufImportToPixels(WPEBuffer* buffer, GError** error)
     }
 
     struct BufferData {
-        WTF_MAKE_STRUCT_FAST_ALLOCATED;
+        WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(BufferData);
         struct gbm_bo* buffer;
         void* data;
     };

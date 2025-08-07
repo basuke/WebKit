@@ -78,7 +78,7 @@ struct SocketComparator {
 };
 
 class NetworkRTCProvider : private FunctionDispatcher, private IPC::MessageReceiver, public ThreadSafeRefCounted<NetworkRTCProvider, WTF::DestructionThread::MainRunLoop>, public CanMakeThreadSafeCheckedPtr<NetworkRTCProvider> {
-    WTF_MAKE_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED(NetworkRTCProvider);
     WTF_OVERRIDE_DELETE_FOR_CHECKED_PTR(NetworkRTCProvider);
 public:
     static Ref<NetworkRTCProvider> create(NetworkConnectionToWebProcess& connection)
@@ -125,6 +125,9 @@ public:
     const char* applicationBundleIdentifier() const { return m_applicationBundleIdentifier.data(); }
 #endif
 
+    std::optional<SharedPreferencesForWebProcess> sharedPreferencesForWebProcess(IPC::Connection&);
+    void updateSharedPreferencesForWebProcess(const SharedPreferencesForWebProcess&);
+
 private:
     explicit NetworkRTCProvider(NetworkConnectionToWebProcess&);
     void startListeningForIPC();
@@ -167,6 +170,8 @@ private:
     bool m_isStarted { true };
 
     NetworkRTCMonitor m_rtcMonitor;
+    mutable Lock m_sharedPreferencesLock;
+    SharedPreferencesForWebProcess m_sharedPreferences WTF_GUARDED_BY_LOCK(m_sharedPreferencesLock);
 
 #if PLATFORM(COCOA)
     HashMap<WebPageProxyIdentifier, String> m_attributedBundleIdentifiers;

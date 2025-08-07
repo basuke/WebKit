@@ -55,11 +55,11 @@ list(APPEND WebKit_UNIFIED_SOURCE_LIST_FILES
 list(APPEND WebKit_MESSAGES_IN_FILES
     UIProcess/ViewGestureController
 
-    UIProcess/dmabuf/AcceleratedBackingStoreDMABuf
+    UIProcess/glib/AcceleratedBackingStore
 
     WebProcess/WebPage/ViewGestureGeometryCollector
 
-    WebProcess/WebPage/dmabuf/AcceleratedSurfaceDMABuf
+    WebProcess/WebPage/CoordinatedGraphics/AcceleratedSurface
 
     WebProcess/glib/SystemSettingsManager
 )
@@ -70,7 +70,7 @@ endif ()
 
 list(APPEND WebKit_SERIALIZATION_IN_FILES
     Shared/glib/AvailableInputDevices.serialization.in
-    Shared/glib/DMABufRendererBufferFormat.serialization.in
+    Shared/glib/RendererBufferFormat.serialization.in
     Shared/glib/InputMethodState.serialization.in
     Shared/glib/RendererBufferTransportMode.serialization.in
     Shared/glib/SelectionData.serialization.in
@@ -309,7 +309,6 @@ list(APPEND WebKit_PRIVATE_INCLUDE_DIRECTORIES
     "${WEBKIT_DIR}/WebProcess/WebCoreSupport/soup"
     "${WEBKIT_DIR}/WebProcess/WebPage/CoordinatedGraphics"
     "${WEBKIT_DIR}/WebProcess/WebPage/gtk"
-    "${WEBKIT_DIR}/WebProcess/WebPage/dmabuf"
 )
 
 list(APPEND WebKit_SYSTEM_INCLUDE_DIRECTORIES

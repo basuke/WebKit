@@ -3231,7 +3231,7 @@ ExceptionOr<void> WebGLRenderingContextBase::texImageSource(TexImageFunctionID f
             // The UNSIGNED_INT_10F_11F_11F_REV type pack/unpack isn't implemented.
             type = GraphicsContextGL::FLOAT;
         }
-        if (!context->extractPixelBuffer(source.pixelBuffer(), GraphicsContextGL::DataFormat::RGBA8, adjustedSourceImageRect, depth, unpackImageHeight, format, type, m_unpackFlipY, m_unpackPremultiplyAlpha, data)) {
+        if (!context->extractPixelBuffer(source.byteArrayPixelBuffer(), GraphicsContextGL::DataFormat::RGBA8, adjustedSourceImageRect, depth, unpackImageHeight, format, type, m_unpackFlipY, m_unpackPremultiplyAlpha, data)) {
             synthesizeGLError(GraphicsContextGL::INVALID_VALUE, "texImage2D"_s, "bad image data"_s);
             return { };
         }
@@ -3942,18 +3942,18 @@ bool WebGLRenderingContextBase::validateTexImageSourceFormatAndType(TexImageFunc
     else
         addExtensionSupportedFormatsAndTypesWebGL2();
 
-    if (internalformat && !m_supportedTexImageSourceInternalFormats.contains(internalformat)) {
+    if (m_supportedTexImageSourceInternalFormats.isValidValue(internalformat) && !m_supportedTexImageSourceInternalFormats.contains(internalformat)) {
         if (functionType == TexImageFunctionType::TexImage)
             synthesizeGLError(GraphicsContextGL::INVALID_VALUE, functionName, "invalid internalformat"_s);
         else
             synthesizeGLError(GraphicsContextGL::INVALID_ENUM, functionName, "invalid internalformat"_s);
         return false;
     }
-    if (!m_supportedTexImageSourceFormats.contains(format)) {
+    if (!m_supportedTexImageSourceFormats.isValidValue(format) || !m_supportedTexImageSourceFormats.contains(format)) {
         synthesizeGLError(GraphicsContextGL::INVALID_ENUM, functionName, "invalid format"_s);
         return false;
     }
-    if (!m_supportedTexImageSourceTypes.contains(type)) {
+    if (!m_supportedTexImageSourceTypes.isValidValue(type) || !m_supportedTexImageSourceTypes.contains(type)) {
         synthesizeGLError(GraphicsContextGL::INVALID_ENUM, functionName, "invalid type"_s);
         return false;
     }

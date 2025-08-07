@@ -30,6 +30,7 @@
 #include "AccessibilityNodeObject.h"
 
 #include "AXLogger.h"
+#include "AXLoggerBase.h"
 #include "AXObjectCache.h"
 #include "AccessibilityImageMapLink.h"
 #include "AccessibilityLabel.h"
@@ -105,8 +106,8 @@ using namespace HTMLNames;
 static String accessibleNameForNode(Node&, Node* labelledbyNode = nullptr);
 static void appendNameToStringBuilder(StringBuilder&, String&&, bool prependSpace = true);
 
-AccessibilityNodeObject::AccessibilityNodeObject(AXID axID, Node* node)
-    : AccessibilityObject(axID)
+AccessibilityNodeObject::AccessibilityNodeObject(AXID axID, Node* node, AXObjectCache& cache)
+    : AccessibilityObject(axID, cache)
     , m_node(node)
 {
 }
@@ -125,9 +126,9 @@ void AccessibilityNodeObject::init()
     AccessibilityObject::init();
 }
 
-Ref<AccessibilityNodeObject> AccessibilityNodeObject::create(AXID axID, Node& node)
+Ref<AccessibilityNodeObject> AccessibilityNodeObject::create(AXID axID, Node& node, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilityNodeObject(axID, &node));
+    return adoptRef(*new AccessibilityNodeObject(axID, &node, cache));
 }
 
 void AccessibilityNodeObject::detachRemoteParts(AccessibilityDetachmentType detachmentType)
@@ -197,7 +198,7 @@ AccessibilityObject* AccessibilityNodeObject::nextSibling() const
 AccessibilityObject* AccessibilityNodeObject::ownerParentObject() const
 {
     auto owners = this->owners();
-    ASSERT(owners.size() <= 1);
+    AX_DEBUG_ASSERT(owners.size() <= 1);
     return owners.size() ? dynamicDowncast<AccessibilityObject>(owners.first().get()) : nullptr;
 }
 
@@ -207,7 +208,7 @@ AccessibilityObject* AccessibilityNodeObject::parentObject() const
     if (!node)
         return nullptr;
 
-    if (RefPtr ownerParent = ownerParentObject())
+    if (RefPtr ownerParent = ownerParentObject()) [[unlikely]]
         return ownerParent.get();
 
     CheckedPtr cache = axObjectCache();
@@ -1542,7 +1543,7 @@ VisiblePositionRange AccessibilityNodeObject::visiblePositionRangeForLine(unsign
 
     // iterate over the lines
     // FIXME: This is wrong when lineNumber is lineCount+1, because nextLinePosition takes you to the last offset of the last line.
-    VisiblePosition position = renderView->positionForPoint(IntPoint(), HitTestSource::User, nullptr);
+    auto position = renderView->visiblePositionForPoint(IntPoint(), HitTestSource::User);
     while (--lineCount) {
         auto previousLinePosition = position;
         position = nextLinePosition(position, 0);
@@ -1634,7 +1635,7 @@ AccessibilityObject* AccessibilityNodeObject::captionForFigure() const
     return nullptr;
 }
 
-bool AccessibilityNodeObject::usesAltTagForTextComputation() const
+bool AccessibilityNodeObject::usesAltForTextComputation() const
 {
     bool usesAltTag = isImage() || isInputImage() || isNativeImage() || isCanvas() || elementName() == ElementName::HTML_img;
 #if ENABLE(MODEL_ELEMENT)
@@ -1657,7 +1658,7 @@ String AccessibilityNodeObject::textAsLabelFor(const AccessibilityObject& labele
     if (!labelAttribute.isEmpty())
         return labelAttribute;
 
-    labelAttribute = getAttribute(altAttr);
+    labelAttribute = altTextFromAttributeOrStyle();
     if (!labelAttribute.isEmpty())
         return labelAttribute;
 
@@ -1808,7 +1809,7 @@ void AccessibilityNodeObject::alternativeText(Vector<AccessibilityText>& textOrd
         }
     }
 
-    if (usesAltTagForTextComputation()) {
+    if (usesAltForTextComputation()) {
         if (auto* renderImage = dynamicDowncast<RenderImage>(renderer())) {
             String renderAltText = renderImage->altText();
 
@@ -1820,9 +1821,8 @@ void AccessibilityNodeObject::alternativeText(Vector<AccessibilityText>& textOrd
         }
         // Images should use alt as long as the attribute is present, even if empty.
         // Otherwise, it should fallback to other methods, like the title attribute.
-        const AtomString& alt = getAttribute(altAttr);
-        if (!alt.isEmpty())
-            textOrder.append(AccessibilityText(alt, AccessibilityTextSource::Alternative));
+        if (String alt = altTextFromAttributeOrStyle(); !alt.isNull())
+            textOrder.append(AccessibilityText(WTFMove(alt), AccessibilityTextSource::Alternative));
     }
 
     RefPtr node = this->node();
@@ -1896,6 +1896,12 @@ void AccessibilityNodeObject::alternativeText(Vector<AccessibilityText>& textOrd
     if (node->isMathMLElement())
         textOrder.append(AccessibilityText(getAttribute(MathMLNames::alttextAttr), AccessibilityTextSource::Alternative));
 #endif
+
+    if (CheckedPtr style = this->style()) {
+        String altText = style->altFromContent();
+        if (!altText.isEmpty())
+            textOrder.append(AccessibilityText(WTFMove(altText), AccessibilityTextSource::Alternative));
+    }
 }
 
 void AccessibilityNodeObject::visibleText(Vector<AccessibilityText>& textOrder) const
@@ -2038,11 +2044,10 @@ String AccessibilityNodeObject::description() const
     if (!ariaDescription.isEmpty())
         return ariaDescription;
 
-    if (usesAltTagForTextComputation()) {
+    if (usesAltForTextComputation()) {
         // Images should use alt as long as the attribute is present, even if empty.
         // Otherwise, it should fallback to other methods, like the title attribute.
-        const AtomString& alt = getAttribute(altAttr);
-        if (!alt.isNull())
+        if (String alt = altTextFromAttributeOrStyle(); !alt.isNull())
             return alt;
     }
 

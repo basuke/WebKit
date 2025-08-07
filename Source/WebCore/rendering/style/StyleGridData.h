@@ -39,7 +39,7 @@ class RenderStyle;
 
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(StyleGridData);
 class StyleGridData : public RefCounted<StyleGridData> {
-    WTF_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(StyleGridData);
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(StyleGridData, StyleGridData);
 public:
     static Ref<StyleGridData> create() { return adoptRef(*new StyleGridData); }
     Ref<StyleGridData> copy() const;
@@ -56,31 +56,6 @@ public:
     const Style::GridTemplateAreas& gridTemplateAreas() { return m_gridTemplateAreas; }
     const Style::GridTemplateList& gridTemplateColumns() const { return m_gridTemplateColumns; }
     const Style::GridTemplateList& gridTemplateRows() const { return m_gridTemplateRows; }
-
-    const Vector<Style::GridTrackSize>& gridColumnTrackSizes() const { return m_gridTemplateColumns.sizes; }
-    const Vector<Style::GridTrackSize>& gridRowTrackSizes() const { return m_gridTemplateRows.sizes; }
-    const Style::GridNamedLinesMap& namedGridColumnLines() const { return m_gridTemplateColumns.namedLines; };
-    const Style::GridNamedLinesMap& namedGridRowLines() const { return m_gridTemplateRows.namedLines; };
-    const Style::GridOrderedNamedLinesMap& orderedNamedGridColumnLines() const { return m_gridTemplateColumns.orderedNamedLines; }
-    const Style::GridOrderedNamedLinesMap& orderedNamedGridRowLines() const { return m_gridTemplateRows.orderedNamedLines; }
-
-    const Vector<Style::GridTrackSize>& gridAutoRepeatColumns() const { return m_gridTemplateColumns.autoRepeatSizes; }
-    const Vector<Style::GridTrackSize>& gridAutoRepeatRows() const { return m_gridTemplateRows.autoRepeatSizes; }
-    const Style::GridNamedLinesMap& autoRepeatNamedGridColumnLines() const { return m_gridTemplateColumns.autoRepeatNamedLines; }
-    const Style::GridNamedLinesMap& autoRepeatNamedGridRowLines() const { return m_gridTemplateRows.autoRepeatNamedLines; }
-    const Style::GridOrderedNamedLinesMap& autoRepeatOrderedNamedGridColumnLines() const { return m_gridTemplateColumns.autoRepeatOrderedNamedLines; }
-    const Style::GridOrderedNamedLinesMap& autoRepeatOrderedNamedGridRowLines() const { return m_gridTemplateRows.autoRepeatOrderedNamedLines; }
-
-    unsigned autoRepeatColumnsInsertionPoint() const { return m_gridTemplateColumns.autoRepeatInsertionPoint; }
-    unsigned autoRepeatRowsInsertionPoint() const { return m_gridTemplateRows.autoRepeatInsertionPoint; }
-    AutoRepeatType autoRepeatColumnsType() const { return m_gridTemplateColumns.autoRepeatType; }
-    AutoRepeatType autoRepeatRowsType() const { return m_gridTemplateRows.autoRepeatType; }
-
-    bool subgridColumns() const { return m_gridTemplateColumns.subgrid; }
-    bool subgridRows() const { return m_gridTemplateRows.subgrid; };
-
-    bool masonryColumns() const { return m_gridTemplateColumns.masonry; }
-    bool masonryRows() const { return m_gridTemplateRows.masonry; }
 
 private:
     friend class RenderStyle;

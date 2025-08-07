@@ -37,6 +37,9 @@ class PlatformDisplay;
 
 namespace WebKit {
 
+class OpenXRLayer;
+class OpenXRSwapchain;
+
 class OpenXRCoordinator final : public PlatformXRCoordinator {
     WTF_MAKE_TZONE_ALLOCATED(OpenXRCoordinator);
     struct RenderState;
@@ -47,21 +50,25 @@ public:
     void getPrimaryDeviceInfo(WebPageProxy&, DeviceInfoCallback&&) override;
     void requestPermissionOnSessionFeatures(WebPageProxy&, const WebCore::SecurityOriginData&, PlatformXR::SessionMode, const PlatformXR::Device::FeatureList&, const PlatformXR::Device::FeatureList&, const PlatformXR::Device::FeatureList&, const PlatformXR::Device::FeatureList&, const PlatformXR::Device::FeatureList&, FeatureListCallback&&) override;
 
+    void createLayerProjection(uint32_t, uint32_t, bool) override;
+
     void startSession(WebPageProxy&, WeakPtr<PlatformXRCoordinatorSessionEventClient>&&, const WebCore::SecurityOriginData&, PlatformXR::SessionMode, const PlatformXR::Device::FeatureList&) override;
     void endSessionIfExists(WebPageProxy&) override;
 
     void scheduleAnimationFrame(WebPageProxy&, std::optional<PlatformXR::RequestData>&&, PlatformXR::Device::RequestFrameCallback&& onFrameUpdateCallback) override;
-    void submitFrame(WebPageProxy&) override;
+    void submitFrame(WebPageProxy&, Vector<XRDeviceLayer>&&) override;
 
 private:
     void createInstance();
     void createSessionIfNeeded();
+    std::unique_ptr<OpenXRSwapchain> createSwapchain(uint32_t width, uint32_t height, bool alpha);
+    void cleanupSessionAndAssociatedResources();
     void initializeDevice();
     void initializeSystem();
     void initializeBlendModes();
     void tryInitializeGraphicsBinding();
     void collectViewConfigurations();
-    WebCore::IntSize recommendedResolution() const;
+    bool collectSwapchainFormatsIfNeeded();
 
     struct Idle {
     };
@@ -77,21 +84,29 @@ private:
     void endSessionIfExists(std::optional<WebCore::PageIdentifier>);
     enum class PollResult : bool;
     PollResult pollEvents(Box<RenderState>);
+    PlatformXR::FrameData populateFrameData(Box<RenderState>);
+    void createReferenceSpacesIfNeeded(Box<RenderState>);
     void renderLoop(Box<RenderState>);
-    void submitFrameInternal(Box<RenderState>);
+    void submitFrameInternal(Box<RenderState>, Vector<XRDeviceLayer>&&);
 
     XRDeviceIdentifier m_deviceIdentifier { XRDeviceIdentifier::generate() };
     XrInstance m_instance { XR_NULL_HANDLE };
     XrSystemId m_systemId { XR_NULL_SYSTEM_ID };
     XrSession m_session { XR_NULL_HANDLE };
-    Vector<XrViewConfigurationType> m_viewConfigurations;
+    Vector<XrViewConfigurationView> m_viewConfigurationViews;
     XrViewConfigurationType m_currentViewConfiguration;
+    Vector<XrView> m_views;
     XrSessionState m_sessionState { XR_SESSION_STATE_UNKNOWN };
     XrEnvironmentBlendMode m_vrBlendMode;
     XrEnvironmentBlendMode m_arBlendMode;
+    XrSpace m_localSpace { XR_NULL_HANDLE };
+    XrSpace m_floorSpace { XR_NULL_HANDLE };
 
-    std::unique_ptr<OpenXRExtensions> m_extensions;
+    std::unique_ptr<OpenXRExtensions>
+        m_extensions;
     bool m_isSessionRunning { false };
+    HashMap<PlatformXR::LayerHandle, std::unique_ptr<OpenXRLayer>> m_layers;
+    Vector<int64_t> m_supportedSwapchainFormats;
 
     std::unique_ptr<WebCore::PlatformDisplay> m_platformDisplay;
     std::unique_ptr<WebCore::GLContext> m_glContext;

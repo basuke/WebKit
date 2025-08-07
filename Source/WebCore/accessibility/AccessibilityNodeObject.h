@@ -41,7 +41,7 @@ class Node;
 
 class AccessibilityNodeObject : public AccessibilityObject {
 public:
-    static Ref<AccessibilityNodeObject> create(AXID, Node&);
+    static Ref<AccessibilityNodeObject> create(AXID, Node&, AXObjectCache&);
     virtual ~AccessibilityNodeObject();
 
     void init() override;
@@ -117,9 +117,9 @@ public:
     CommandType commandType() const final;
     AccessibilityObject* internalLinkElement() const final;
     AccessibilityChildrenVector radioButtonGroup() const final;
-   
+
     virtual void changeValueByPercent(float percentChange);
- 
+
     AccessibilityObject* firstChild() const override;
     AccessibilityObject* lastChild() const override;
     AccessibilityObject* previousSibling() const override;
@@ -139,10 +139,16 @@ public:
 #endif
 
 protected:
-    explicit AccessibilityNodeObject(AXID, Node*);
+    explicit AccessibilityNodeObject(AXID, Node*, AXObjectCache&);
     void detachRemoteParts(AccessibilityDetachmentType) override;
 
     AccessibilityRole m_ariaRole { AccessibilityRole::Unknown };
+
+    // FIXME: These `is_` member variables should be replaced with an enum or be computed on demand.
+    // Only used by AccessibilityTableCell, but placed here to use space that would otherwise be taken by padding.
+    bool m_isARIAGridCell { false };
+    // Only used by AccessibilitySVGObject, but placed here to use space that would otherwise be taken by padding.
+    bool m_isSVGRoot { false };
 #ifndef NDEBUG
     bool m_initialized { false };
 #endif
@@ -164,7 +170,7 @@ protected:
     bool isDescendantOfBarrenParent() const final;
     void updateOwnedChildren();
     AccessibilityObject* ownerParentObject() const;
-    
+
     enum class StepAction : bool { Decrement, Increment };
     void alterRangeValue(StepAction);
     void changeValueByStep(StepAction);
@@ -205,7 +211,7 @@ private:
     void visibleText(Vector<AccessibilityText>&) const;
     String alternativeTextForWebArea() const;
     void ariaLabeledByText(Vector<AccessibilityText>&) const;
-    bool usesAltTagForTextComputation() const;
+    bool usesAltForTextComputation() const;
     bool roleIgnoresTitle() const;
     bool postKeyboardKeysForValueChange(StepAction);
     void setNodeValue(StepAction, float);

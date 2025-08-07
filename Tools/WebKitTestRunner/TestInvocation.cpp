@@ -43,9 +43,11 @@
 #include <WebKit/WKWebsiteDataStoreRef.h>
 #include <climits>
 #include <cstdio>
+#include <wtf/Logging.h>
 #include <wtf/StdLibExtras.h>
 #include <wtf/text/CString.h>
 #include <wtf/text/MakeString.h>
+#include <wtf/text/TextStream.h>
 
 #if PLATFORM(MAC) && !PLATFORM(IOS_FAMILY)
 #include <Carbon/Carbon.h>
@@ -84,8 +86,8 @@ Ref<TestInvocation> TestInvocation::create(WKURLRef url, const TestOptions& opti
 TestInvocation::TestInvocation(WKURLRef url, const TestOptions& options)
     : m_options(options)
     , m_url(url)
-    , m_waitToDumpWatchdogTimer(RunLoop::main(), this, &TestInvocation::waitToDumpWatchdogTimerFired)
-    , m_waitForPostDumpWatchdogTimer(RunLoop::main(), this, &TestInvocation::waitForPostDumpWatchdogTimerFired)
+    , m_waitToDumpWatchdogTimer(RunLoop::mainSingleton(), "TestInvocation::WaitToDumpWatchdogTimer"_s, this, &TestInvocation::waitToDumpWatchdogTimerFired)
+    , m_waitForPostDumpWatchdogTimer(RunLoop::mainSingleton(), "TestInvocation::WaitForPostDumpWatchdogTimer"_s, this, &TestInvocation::waitForPostDumpWatchdogTimerFired)
     , m_textOutput(OverflowPolicy::RecordOverflow)
 {
     m_urlString = toWTFString(adoptWK(WKURLCopyString(m_url.get())).get());
@@ -272,6 +274,13 @@ void TestInvocation::forceRepaintDoneCallback(WKErrorRef error, void* context)
 
     testInvocation->m_gotRepaint = true;
     TestController::singleton().notifyDone();
+}
+
+void TestInvocation::tooltipDidChange(WKStringRef toolTip)
+{
+    auto messageBody = adoptWK(WKMutableDictionaryCreate());
+    setValue(messageBody, "Tooltip", toolTip);
+    postPageMessage("CallTooltipDidChangeCallback", messageBody);
 }
 
 void TestInvocation::dumpResourceLoadStatisticsIfNecessary()
@@ -1628,7 +1637,7 @@ void TestInvocation::done()
     m_gotFinalMessage = true;
     invalidateWaitToDumpWatchdogTimer();
     invalidateWaitForPostDumpWatchdogTimer();
-    RunLoop::protectedMain()->dispatch([] {
+    RunLoop::mainSingleton().dispatch([] {
         TestController::singleton().notifyDone();
     });
 }

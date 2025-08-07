@@ -30,19 +30,19 @@
 #include "AccessibilityLabel.h"
 
 namespace WebCore {
-    
+
 using namespace HTMLNames;
 
-AccessibilityLabel::AccessibilityLabel(AXID axID, RenderObject& renderer)
-    : AccessibilityRenderObject(axID, renderer)
+AccessibilityLabel::AccessibilityLabel(AXID axID, RenderObject& renderer, AXObjectCache& cache)
+    : AccessibilityRenderObject(axID, renderer, cache)
 {
 }
 
 AccessibilityLabel::~AccessibilityLabel() = default;
 
-Ref<AccessibilityLabel> AccessibilityLabel::create(AXID axID, RenderObject& renderer)
+Ref<AccessibilityLabel> AccessibilityLabel::create(AXID axID, RenderObject& renderer, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilityLabel(axID, renderer));
+    return adoptRef(*new AccessibilityLabel(axID, renderer, cache));
 }
 
 String AccessibilityLabel::stringValue() const

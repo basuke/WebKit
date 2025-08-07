@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 #pragma once
 
 #include "AccessibilityMockObject.h"
@@ -36,10 +36,10 @@ class Scrollbar;
 
 class AccessibilityScrollbar final : public AccessibilityMockObject {
 public:
-    static Ref<AccessibilityScrollbar> create(AXID, Scrollbar&);
+    static Ref<AccessibilityScrollbar> create(AXID, Scrollbar&, AXObjectCache&);
 
 private:
-    explicit AccessibilityScrollbar(AXID, Scrollbar&);
+    explicit AccessibilityScrollbar(AXID, Scrollbar&, AXObjectCache&);
 
     bool canSetValueAttribute() const final { return true; }
 

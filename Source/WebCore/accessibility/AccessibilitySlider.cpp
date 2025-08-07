@@ -40,17 +40,17 @@
 #include <wtf/Scope.h>
 
 namespace WebCore {
-    
+
 using namespace HTMLNames;
 
-AccessibilitySlider::AccessibilitySlider(AXID axID, RenderObject& renderer)
-    : AccessibilityRenderObject(axID, renderer)
+AccessibilitySlider::AccessibilitySlider(AXID axID, RenderObject& renderer, AXObjectCache& cache)
+    : AccessibilityRenderObject(axID, renderer, cache)
 {
 }
 
-Ref<AccessibilitySlider> AccessibilitySlider::create(AXID axID, RenderObject& renderer)
+Ref<AccessibilitySlider> AccessibilitySlider::create(AXID axID, RenderObject& renderer, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilitySlider(axID, renderer));
+    return adoptRef(*new AccessibilitySlider(axID, renderer, cache));
 }
 
 std::optional<AccessibilityOrientation> AccessibilitySlider::explicitOrientation() const
@@ -68,19 +68,19 @@ std::optional<AccessibilityOrientation> AccessibilitySlider::explicitOrientation
     case StyleAppearance::SliderThumbHorizontal:
     case StyleAppearance::SliderHorizontal:
         return AccessibilityOrientation::Horizontal;
-    
+
     case StyleAppearance::SliderThumbVertical:
     case StyleAppearance::SliderVertical:
         return AccessibilityOrientation::Vertical;
-        
+
     default:
         return AccessibilityOrientation::Horizontal;
     }
 }
-    
+
 void AccessibilitySlider::addChildren()
 {
-    ASSERT(!m_childrenInitialized); 
+    ASSERT(!m_childrenInitialized);
     m_childrenInitialized = true;
     auto clearDirtySubtree = makeScopeExit([&] {
         m_subtreeDirty = false;
@@ -112,7 +112,7 @@ AccessibilityObject* AccessibilitySlider::elementAccessibilityHitTest(const IntP
         if (m_children[0]->elementRect().contains(point))
             return dynamicDowncast<AccessibilityObject>(m_children[0].get());
     }
-    
+
     return axObjectCache()->getOrCreate(renderer());
 }
 
@@ -154,21 +154,21 @@ HTMLInputElement* AccessibilitySlider::inputElement() const
 }
 
 
-AccessibilitySliderThumb::AccessibilitySliderThumb(AXID axID)
-    : AccessibilityMockObject(axID)
+AccessibilitySliderThumb::AccessibilitySliderThumb(AXID axID, AXObjectCache& cache)
+    : AccessibilityMockObject(axID, cache)
 {
 }
 
-Ref<AccessibilitySliderThumb> AccessibilitySliderThumb::create(AXID axID)
+Ref<AccessibilitySliderThumb> AccessibilitySliderThumb::create(AXID axID, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilitySliderThumb(axID));
+    return adoptRef(*new AccessibilitySliderThumb(axID, cache));
 }
-    
+
 LayoutRect AccessibilitySliderThumb::elementRect() const
 {
     if (!m_parent)
         return LayoutRect();
-    
+
     auto* sliderRenderer = dynamicDowncast<RenderSlider>(m_parent->renderer());
     if (!sliderRenderer)
         return LayoutRect();

@@ -37,17 +37,17 @@
 namespace WebCore {
 
 using namespace HTMLNames;
-    
-AccessibilityImageMapLink::AccessibilityImageMapLink(AXID axID, HTMLAreaElement& element)
-    : AccessibilityNodeObject(axID, &element)
+
+AccessibilityImageMapLink::AccessibilityImageMapLink(AXID axID, HTMLAreaElement& element, AXObjectCache& cache)
+    : AccessibilityNodeObject(axID, &element, cache)
 {
 }
 
 AccessibilityImageMapLink::~AccessibilityImageMapLink() = default;
 
-Ref<AccessibilityImageMapLink> AccessibilityImageMapLink::create(AXID axID, HTMLAreaElement& element)
+Ref<AccessibilityImageMapLink> AccessibilityImageMapLink::create(AXID axID, HTMLAreaElement& element, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilityImageMapLink(axID, element));
+    return adoptRef(*new AccessibilityImageMapLink(axID, element, cache));
 }
 
 AccessibilityObject* AccessibilityImageMapLink::parentObject() const
@@ -80,7 +80,7 @@ Element* AccessibilityImageMapLink::actionElement() const
 {
     return anchorElement();
 }
-    
+
 Element* AccessibilityImageMapLink::anchorElement() const
 {
     ASSERT(!node() || is<HTMLAreaElement>(node()));
@@ -114,11 +114,7 @@ String AccessibilityImageMapLink::description() const
     if (!ariaLabel.isEmpty())
         return ariaLabel;
 
-    const auto& alt = getAttribute(altAttr);
-    if (!alt.isEmpty())
-        return alt;
-
-    return { };
+    return altTextFromAttributeOrStyle();
 }
 
 String AccessibilityImageMapLink::title() const
@@ -148,12 +144,12 @@ Path AccessibilityImageMapLink::elementPath() const
     RefPtr areaElement = dynamicDowncast<HTMLAreaElement>(node());
     return renderer && areaElement ? areaElement->computePath(*renderer) : Path();
 }
-    
+
 LayoutRect AccessibilityImageMapLink::elementRect() const
 {
     CheckedPtr renderer = imageMapLinkRenderer();
     RefPtr areaElement = dynamicDowncast<HTMLAreaElement>(node());
     return renderer && areaElement ? areaElement->computeRect(renderer.get()) : LayoutRect();
 }
-    
+
 } // namespace WebCore

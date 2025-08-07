@@ -128,12 +128,12 @@ DragImageRef createDragImageForNode(LocalFrame& frame, Node& node)
 
 #if !PLATFORM(IOS_FAMILY) || !ENABLE(DRAG_SUPPORT)
 
-DragImageRef createDragImageForSelection(LocalFrame& frame, TextIndicatorData&, bool forceBlackText)
+DragImageData createDragImageForSelection(LocalFrame& frame, bool forceBlackText)
 {
     SnapshotOptions options { { }, ImageBufferPixelFormat::BGRA8, DestinationColorSpace::SRGB() };
     if (forceBlackText)
         options.flags.add(SnapshotFlags::ForceBlackText);
-    return createDragImageFromSnapshot(snapshotSelection(frame, WTFMove(options)), nullptr);
+    return { createDragImageFromSnapshot(snapshotSelection(frame, WTFMove(options)), nullptr), nullptr };
 }
 
 #endif
@@ -305,6 +305,12 @@ DragImageRef scaleDragImage(DragImageRef, FloatSize)
 }
 
 DragImageRef dissolveDragImageToFraction(DragImageRef, float)
+{
+    notImplemented();
+    return nullptr;
+}
+
+DragImageRef createDragImageForColor(const Color&, const FloatRect&, float, Path&)
 {
     notImplemented();
     return nullptr;

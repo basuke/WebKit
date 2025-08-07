@@ -33,6 +33,8 @@
 namespace WebCore {
 namespace Style {
 
+using namespace CSS::Literals;
+
 template<auto R, typename V> struct CSSValueConversion<Integer<R, V>> {
     auto operator()(BuilderState& builderState, const CSSPrimitiveValue& value) -> Integer<R, V>
     {
@@ -43,7 +45,7 @@ template<auto R, typename V> struct CSSValueConversion<Integer<R, V>> {
     {
         RefPtr protectedValue = requiredDowncast<CSSPrimitiveValue>(builderState, value);
         if (!protectedValue)
-            return 0_css_px;
+            return 0_css_integer;
         return { protectedValue->resolveAsNumber<V>(builderState.cssToLengthConversionData()) };
     }
 };
@@ -58,7 +60,7 @@ template<auto R, typename V> struct CSSValueConversion<Number<R, V>> {
     {
         RefPtr protectedValue = requiredDowncast<CSSPrimitiveValue>(builderState, value);
         if (!protectedValue)
-            return 0_css_px;
+            return 0_css_number;
         return { protectedValue->resolveAsNumber<V>(builderState.cssToLengthConversionData()) };
     }
 };
@@ -73,7 +75,7 @@ template<auto R, typename V> struct CSSValueConversion<Percentage<R, V>> {
     {
         RefPtr protectedValue = requiredDowncast<CSSPrimitiveValue>(builderState, value);
         if (!protectedValue)
-            return 0_css_px;
+            return 0_css_percentage;
         return { protectedValue->resolveAsPercentage<V>(builderState.cssToLengthConversionData()) };
     }
 };
@@ -88,7 +90,7 @@ template<auto R, typename V> struct CSSValueConversion<Angle<R, V>> {
     {
         RefPtr protectedValue = requiredDowncast<CSSPrimitiveValue>(builderState, value);
         if (!protectedValue)
-            return 0_css_px;
+            return 0_css_deg;
         return { protectedValue->resolveAsAngle<V>(builderState.cssToLengthConversionData()) };
     }
 };
@@ -124,7 +126,7 @@ template<auto R, typename V> struct CSSValueConversion<Time<R, V>> {
     {
         RefPtr protectedValue = requiredDowncast<CSSPrimitiveValue>(builderState, value);
         if (!protectedValue)
-            return 0_css_px;
+            return 0_css_s;
         return { protectedValue->resolveAsTime<V>(builderState.cssToLengthConversionData()) };
     }
 };
@@ -139,7 +141,7 @@ template<auto R, typename V> struct CSSValueConversion<Resolution<R, V>> {
     {
         RefPtr protectedValue = requiredDowncast<CSSPrimitiveValue>(builderState, value);
         if (!protectedValue)
-            return 0_css_px;
+            return 0_css_dppx;
         return { protectedValue->resolveAsResolution<V>(builderState.cssToLengthConversionData()) };
     }
 };
@@ -154,7 +156,7 @@ template<auto R, typename V> struct CSSValueConversion<Flex<R, V>> {
     {
         RefPtr protectedValue = requiredDowncast<CSSPrimitiveValue>(builderState, value);
         if (!protectedValue)
-            return 0_css_px;
+            return 0_css_fr;
         return { protectedValue->resolveAsFlex<V>(builderState.cssToLengthConversionData()) };
     }
 };

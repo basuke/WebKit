@@ -166,6 +166,7 @@ MESSAGE_RECEIVERS = \
 	UIProcess/WebAuthentication/WebAuthenticatorCoordinatorProxy \
 	UIProcess/WebPasteboardProxy \
 	UIProcess/UserContent/WebUserContentControllerProxy \
+	UIProcess/Inspector/WebInspectorBackendProxy \
 	UIProcess/Inspector/WebInspectorUIProxy \
 	UIProcess/Inspector/RemoteWebInspectorUIProxy \
 	UIProcess/Inspector/WebInspectorUIExtensionControllerProxy \
@@ -455,9 +456,12 @@ SANDBOX_PROFILES_IOS = \
 	com.apple.WebKit.adattributiond.sb \
 	com.apple.WebKit.webpushd.sb \
 	com.apple.WebKit.GPU.sb \
+	com.apple.WebKit.GPU.Development.sb \
 	com.apple.WebKit.Model.sb \
 	com.apple.WebKit.Networking.sb \
-	com.apple.WebKit.WebContent.sb
+	com.apple.WebKit.Networking.Development.sb \
+	com.apple.WebKit.WebContent.sb \
+	com.apple.WebKit.WebContent.Development.sb
 
 sandbox-profiles-ios : $(SANDBOX_PROFILES_IOS)
 
@@ -672,6 +676,7 @@ SERIALIZATION_DESCRIPTION_FILES = \
 	Shared/Cocoa/CoreIPCPresentationIntent.serialization.in \
 	Shared/Cocoa/CoreIPCSecureCoding.serialization.in \
 	Shared/Cocoa/CoreIPCString.serialization.in \
+	Shared/Cocoa/CoreIPCStringSet.serialization.in \
 	Shared/Cocoa/CoreIPCURL.serialization.in \
 	Shared/Cocoa/CoreIPCCFCharacterSet.serialization.in \
 	Shared/Cocoa/DataDetectionResult.serialization.in \
@@ -759,6 +764,7 @@ SERIALIZATION_DESCRIPTION_FILES = \
 	Shared/SandboxExtension.serialization.in \
 	Shared/ScriptTrackingPrivacyFilter.serialization.in \
 	Shared/ScrollingAccelerationCurve.serialization.in \
+	Shared/SerializedNode.serialization.in \
 	Shared/SessionState.serialization.in \
 	Shared/SyntheticEditingCommandType.serialization.in \
 	Shared/TextFlags.serialization.in \

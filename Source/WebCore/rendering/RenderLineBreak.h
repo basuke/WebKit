@@ -56,13 +56,10 @@ private:
     bool canHaveChildren() const final { return false; }
     void paint(PaintInfo&, const LayoutPoint&) final { }
 
-    VisiblePosition positionForPoint(const LayoutPoint&, HitTestSource, const RenderFragmentContainer*) final;
+    PositionWithAffinity positionForPoint(const LayoutPoint&, HitTestSource, const RenderFragmentContainer*) final;
     int caretMinOffset() const final;
     int caretMaxOffset() const final;
     bool canBeSelectionLeaf() const final;
-
-    LayoutUnit lineHeight(bool firstLine, LineDirectionMode) const final;
-    LayoutUnit baselinePosition() const final;
 
     LayoutUnit marginTop() const final { return 0; }
     LayoutUnit marginBottom() const final { return 0; }
@@ -80,8 +77,6 @@ private:
 
     void updateFromStyle() final;
     bool requiresLayer() const final { return false; }
-
-    mutable std::optional<LayoutUnit> m_cachedLineHeight { };
 };
 
 } // namespace WebCore

@@ -427,12 +427,18 @@ header: <WebCore/ScrollbarTrackCornerSystemImageMac.h>
 }
 #endif // USE(APPKIT)
 
-header: <WebCore/ListStyleType.h>
-[Nested] enum class WebCore::ListStyleType::Type : uint8_t {
-    CounterStyle,
-    String,
-    None
-}
+header: <WebCore/StyleListStyleType.h>
+[CustomHeader, Nested] struct WebCore::Style::ListStyleType {
+    Variant<WebCore::Style::ListStyleType::NoneData, WebCore::Style::ListStyleType::StringData, WebCore::Style::ListStyleType::CounterStyleData> ipcData()
+};
+[CustomHeader, Nested] struct WebCore::Style::ListStyleType::NoneData {
+};
+[CustomHeader, Nested] struct WebCore::Style::ListStyleType::StringData {
+    AtomString identifier;
+};
+[CustomHeader, Nested] struct WebCore::Style::ListStyleType::CounterStyleData {
+    AtomString identifier;
+};
 
 header: <WebCore/ScrollTypes.h>
 enum class WebCore::ScrollIsAnimated : bool;
@@ -855,6 +861,12 @@ enum class WebCore::ViewportFit : uint8_t {
     Auto,
     Contain,
     Cover,
+};
+
+enum class WebCore::InteractiveWidget : uint8_t {
+    ResizesVisual,
+    ResizesContent,
+    OverlaysContent
 };
 
 header: <WebCore/ShareData.h>
@@ -2028,6 +2040,7 @@ struct WebCore::ViewportArguments {
     float shrinkToFit;
     WebCore::ViewportFit viewportFit;
     bool widthWasExplicit;
+    WebCore::InteractiveWidget interactiveWidget;
 };
 #endif // ENABLE(META_VIEWPORT)
 
@@ -2292,7 +2305,7 @@ header: <WebCore/VP9Utilities.h>
 }
 
 class WebCore::BlobPart {
-    Variant<Vector<uint8_t>, URL> m_dataOrURL;
+    Variant<Vector<uint8_t>, Ref<WebCore::SharedBuffer>, URL> m_dataOrURL;
 };
 
 [WebKitPlatform] enum class WebCore::ColorSpace : uint8_t {
@@ -2610,6 +2623,13 @@ enum class WebCore::PixelFormat : uint8_t {
 #endif
 };
 
+enum class WebCore::UseLosslessCompression : bool;
+
+[AdditionalEncoder=StreamConnectionEncoder] struct WebCore::ImageBufferFormat {
+    WebCore::ImageBufferPixelFormat pixelFormat;
+    WebCore::UseLosslessCompression useLosslessCompression;
+};
+
 enum class WebCore::ImageBufferPixelFormat : uint8_t {
     BGRX8,
     BGRA8,
@@ -2832,7 +2852,7 @@ struct WebCore::DictationAlternative {
     WebCore::DictationContext context;
 };
 
-class WebCore::UserStyleSheet {
+[DebugDecodingFailure] class WebCore::UserStyleSheet {
     String source();
     URL url();
     Vector<String> allowlist();
@@ -2883,6 +2903,32 @@ header: <WebCore/ScrollingCoordinatorTypes.h>
 [CustomHeader] struct WebCore::RequestedKeyboardScrollData {
     WebCore::KeyboardScrollAction action;
     std::optional<WebCore::KeyboardScroll> keyboardScroll;
+};
+
+header: <WebCore/ScrollingCoordinatorTypes.h>
+[CustomHeader] enum class WebCore::ScrollUpdateType : uint8_t {
+    PositionUpdate,
+    AnimatedScrollWillStart,
+    AnimatedScrollDidEnd,
+    WheelEventScrollWillStart,
+    WheelEventScrollDidEnd,
+    ProgrammaticScrollDidEnd,
+};
+
+header: <WebCore/ScrollingCoordinatorTypes.h>
+[CustomHeader] enum class WebCore::ScrollingLayerPositionAction : uint8_t {
+    Set,
+    SetApproximate,
+    Sync
+};
+
+header: <WebCore/ScrollingCoordinatorTypes.h>
+[CustomHeader] struct WebCore::ScrollUpdate {
+    WebCore::ScrollingNodeID nodeID;
+    WebCore::FloatPoint scrollPosition;
+    std::optional<WebCore::FloatPoint> layoutViewportOrigin;
+    WebCore::ScrollUpdateType updateType;
+    WebCore::ScrollingLayerPositionAction updateLayerPositionAction;
 };
 
 header: <WebCore/ScrollingCoordinatorTypes.h>
@@ -3192,15 +3238,57 @@ using WebCore::Style::ShapeCommand = Variant<WebCore::Style::MoveCommand, WebCor
     Vector<WebCore::Style::ShapeCommand> value;
 };
 
+header: <WebCore/StyleLengthWrapperData.h>
+[CustomHeader] struct WebCore::Style::LengthWrapperData {
+    Variant<WebCore::Style::LengthWrapperData::AutoData, WebCore::Style::LengthWrapperData::NormalData, WebCore::Style::LengthWrapperData::RelativeData, WebCore::Style::LengthWrapperData::PercentData, WebCore::Style::LengthWrapperData::FixedData, WebCore::Style::LengthWrapperData::IntrinsicData, WebCore::Style::LengthWrapperData::MinIntrinsicData, WebCore::Style::LengthWrapperData::MinContentData, WebCore::Style::LengthWrapperData::MaxContentData, WebCore::Style::LengthWrapperData::FillAvailableData, WebCore::Style::LengthWrapperData::FitContentData, WebCore::Style::LengthWrapperData::ContentData, WebCore::Style::LengthWrapperData::UndefinedData> ipcData();
+}
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::AutoData {
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::NormalData {
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::FixedData {
+    float value
+    bool hasQuirk
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::RelativeData {
+    float value
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::PercentData {
+    float value
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::IntrinsicData {
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::MinIntrinsicData {
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::MinContentData {
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::MaxContentData {
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::FillAvailableData {
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::FitContentData {
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::ContentData {
+};
+[CustomHeader, Nested] struct WebCore::Style::LengthWrapperData::UndefinedData {
+};
+
 header: <WebCore/StylePosition.h>
+[CustomHeader, Nested] struct WebCore::Style::PositionX {
+    Variant<WebCore::Style::LengthWrapperData::AutoData, WebCore::Style::LengthWrapperData::NormalData, WebCore::Style::LengthWrapperData::RelativeData, WebCore::Style::LengthWrapperData::PercentData, WebCore::Style::LengthWrapperData::FixedData, WebCore::Style::LengthWrapperData::IntrinsicData, WebCore::Style::LengthWrapperData::MinIntrinsicData, WebCore::Style::LengthWrapperData::MinContentData, WebCore::Style::LengthWrapperData::MaxContentData, WebCore::Style::LengthWrapperData::FillAvailableData, WebCore::Style::LengthWrapperData::FitContentData, WebCore::Style::LengthWrapperData::ContentData, WebCore::Style::LengthWrapperData::UndefinedData> ipcData();
+};
+[CustomHeader, Nested] struct WebCore::Style::PositionY {
+    Variant<WebCore::Style::LengthWrapperData::AutoData, WebCore::Style::LengthWrapperData::NormalData, WebCore::Style::LengthWrapperData::RelativeData, WebCore::Style::LengthWrapperData::PercentData, WebCore::Style::LengthWrapperData::FixedData, WebCore::Style::LengthWrapperData::IntrinsicData, WebCore::Style::LengthWrapperData::MinIntrinsicData, WebCore::Style::LengthWrapperData::MinContentData, WebCore::Style::LengthWrapperData::MaxContentData, WebCore::Style::LengthWrapperData::FillAvailableData, WebCore::Style::LengthWrapperData::FitContentData, WebCore::Style::LengthWrapperData::ContentData, WebCore::Style::LengthWrapperData::UndefinedData> ipcData();
+};
 [CustomHeader, Nested] struct WebCore::Style::Position {
-    WebCore::SpaceSeparatedPoint<WebCore::Style::LengthPercentageAll> value;
+    WebCore::Style::PositionX x;
+    WebCore::Style::PositionY y;
 };
 [CustomHeader, Nested] struct WebCore::Style::TwoComponentPositionHorizontal {
-    WebCore::Style::LengthPercentageAll offset;
+    WebCore::Style::PositionX offset;
 };
 [CustomHeader, Nested] struct WebCore::Style::TwoComponentPositionVertical {
-    WebCore::Style::LengthPercentageAll offset;
+    WebCore::Style::PositionY offset;
 };
 
 header: <WebCore/StyleGradient.h>
@@ -3530,6 +3618,7 @@ struct WebCore::MediaEncodingConfiguration : WebCore::MediaConfiguration {
 
 struct WebCore::MediaDecodingConfiguration : WebCore::MediaConfiguration {
     WebCore::MediaDecodingType type;
+    std::optional<WebCore::PageIdentifier> pageIdentifier;
     bool canExposeVP9;
 };
 
@@ -4278,11 +4367,6 @@ enum class WebCore::TextGranularity : uint8_t {
     DocumentBoundary
 };
 
-struct WebCore::ListStyleType {
-    WebCore::ListStyleType::Type type;
-    AtomString identifier;
-};
-
 header: <pal/SessionID.h>
 [CustomHeader] class PAL::SessionID {
     [Validator='PAL::SessionID::isValidSessionIDValue(*toUInt64)'] uint64_t toUInt64();
@@ -4304,7 +4388,7 @@ struct WebKit::RunJavaScriptParameters {
 
 header: <WebCore/FontAttributes.h>
 [CustomHeader] struct WebCore::TextList {
-    WebCore::ListStyleType styleType;
+    WebCore::Style::ListStyleType styleType;
     int startingItemNumber
     bool ordered
 };
@@ -4847,7 +4931,7 @@ enum class WebCore::CreateNewGroupForHighlight : bool
 enum class WebCore::HighlightRequestOriginatedInApp : bool
 
 struct WebCore::AppHighlight {
-    Ref<WebCore::FragmentedSharedBuffer> highlight;
+    Ref<WebCore::SharedBuffer> highlight;
     std::optional<String> text;
     WebCore::CreateNewGroupForHighlight isNewGroup;
     WebCore::HighlightRequestOriginatedInApp requestOriginatedInApp;
@@ -4978,7 +5062,7 @@ header: <WebCore/ImageBuffer.h>
     WebCore::FloatSize logicalSize;
     float resolutionScale;
     WebCore::DestinationColorSpace colorSpace
-    WebCore::ImageBufferPixelFormat pixelFormat;
+    WebCore::ImageBufferFormat bufferFormat;
     WebCore::RenderingPurpose purpose;
 };
 
@@ -5619,6 +5703,8 @@ enum class WebCore::StorageAccessWasGranted : uint8_t {
 
 enum class WebCore::StorageAccessPromptWasShown : bool
 
+enum class WebCore::HasOrShouldIgnoreUserGesture : bool
+
 enum class WebCore::StorageAccessScope : bool
 
 enum class WebCore::StorageAccessQuickResult : bool
@@ -6144,6 +6230,7 @@ enum class WebCore::AllowsContentJavaScript : bool
     LinkDecorationFiltering,
     ScriptTrackingPrivacy,
     FailClosedForAllHosts,
+    StrictFailClosed,
 };
 
 enum class WebCore::ViolationReportType : uint8_t {
@@ -6440,6 +6527,7 @@ struct WebCore::InteractionRegion {
     OptionSet<WebCore::InteractionRegion::CornerMask> maskedCorners;
     WebCore::InteractionRegion::ContentHint contentHint;
     std::optional<WebCore::Path> clipPath;
+    bool useContinuousCorners;
 #if ENABLE(INTERACTION_REGION_TEXT_CONTENT)
     String text;
 #endif
@@ -7662,7 +7750,7 @@ enum class WebCore::UserContentMatchParentFrame : uint8_t {
     ForOpaqueOrigins
 }
 
-class WebCore::UserScript {
+[DebugDecodingFailure] class WebCore::UserScript {
     String source();
     URL url();
     Vector<String> allowlist();
@@ -8139,6 +8227,7 @@ enum class WebCore::AppleVisualEffect : uint8_t {
     BlurChromeMaterial,
 #if HAVE(MATERIAL_HOSTING)
     GlassMaterial,
+    GlassClearMaterial,
     GlassSubduedMaterial,
     GlassMediaControlsMaterial,
     GlassSubduedMediaControlsMaterial,
@@ -8746,7 +8835,20 @@ using WebCore::GraphicsContextGL::ExternalImageSource = Variant<WebCore::Graphic
 using WebCore::GraphicsContextGL::ExternalSyncSource = std::tuple<MachSendRight, uint64_t>
 #endif
 #if !PLATFORM(COCOA) && ENABLE(WEBGL)
+#if (PLATFORM(GTK) || PLATFORM(WPE))
+header: <WebCore/GraphicsContextGL.h>
+[CustomHeader] struct WebCore::GraphicsContextGLExternalImageSource {
+    Vector<WTF::UnixFileDescriptor> fds;
+    Vector<uint32_t> strides;
+    Vector<uint32_t> offsets;
+    uint32_t fourcc;
+    uint64_t modifier;
+    WebCore::IntSize size;
+};
+using WebCore::GraphicsContextGL::ExternalImageSource = WebCore::GraphicsContextGLExternalImageSource;
+#else
 using WebCore::GraphicsContextGL::ExternalImageSource = int
+#endif
 using WebCore::GraphicsContextGL::ExternalSyncSource = int
 #endif
 
@@ -9168,4 +9270,21 @@ header: <WebCore/AXObjectCache.h>
     bool isAccessibilityThreadInitialized;
     String liveTree;
     String isolatedTree;
+    uint64_t remoteTokenHash;
+    uint64_t webProcessLocalTokenHash;
 }
+
+header: <WebCore/ScriptTrackingPrivacyCategory.h>
+[OptionSet] enum class WebCore::ScriptTrackingPrivacyFlag : uint16_t {
+    Audio,
+    Canvas,
+    Cookies,
+    HardwareConcurrency,
+    LocalStorage,
+    Payments,
+    QueryParameters,
+    Referrer,
+    ScreenOrViewport,
+    Speech,
+    FormControls,
+};

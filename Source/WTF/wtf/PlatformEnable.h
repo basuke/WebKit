@@ -384,10 +384,6 @@
 #define ENABLE_ORIENTATION_EVENTS 0
 #endif
 
-#if !defined(ENABLE_OVERFLOW_SCROLLING_TOUCH)
-#define ENABLE_OVERFLOW_SCROLLING_TOUCH 0
-#endif
-
 #if OS(WINDOWS)
 #if !defined(ENABLE_PAN_SCROLLING)
 #define ENABLE_PAN_SCROLLING 1
@@ -537,6 +533,14 @@
 #define ENABLE_WEB_PLAYBACK_CONTROLS_MANAGER 0
 #endif
 
+#if !defined(ENABLE_WEBKIT_OVERFLOW_SCROLLING_CSS_PROPERTY)
+#define ENABLE_WEBKIT_OVERFLOW_SCROLLING_CSS_PROPERTY 0
+#endif
+
+#if !defined(ENABLE_WEBKIT_TOUCH_CALLOUT_CSS_PROPERTY)
+#define ENABLE_WEBKIT_TOUCH_CALLOUT_CSS_PROPERTY 0
+#endif
+
 #if !defined(ENABLE_WEBXR)
 #define ENABLE_WEBXR 0
 #endif
@@ -550,7 +554,7 @@
 #endif
 
 #if !defined(ENABLE_WEBXR_LAYERS)
-#define ENABLE_WEBXR_LAYERS (PLATFORM(VISION) && __VISION_OS_VERSION_MAX_ALLOWED >= 20200)
+#define ENABLE_WEBXR_LAYERS (PLATFORM(VISION) && __VISION_OS_VERSION_MIN_REQUIRED >= 20200)
 #endif
 
 #if !defined(ENABLE_WHEEL_EVENT_LATCHING)
@@ -569,10 +573,6 @@
 #define ENABLE_WRITING_TOOLS 0
 #endif
 
-#if !defined(ENABLE_WKPDFVIEW)
-#define ENABLE_WKPDFVIEW 0
-#endif
-
 #if !defined(ENABLE_WK_WEB_EXTENSIONS)
 #define ENABLE_WK_WEB_EXTENSIONS 0
 #endif
@@ -587,6 +587,15 @@
  */
 #if !defined(ENABLE_MALLOC_HEAP_BREAKDOWN)
 #define ENABLE_MALLOC_HEAP_BREAKDOWN 0
+#endif
+
+/*
+ * Enable this to allocate types which prefer, but do not require, compact-compatible allocation
+ * (indicated by WTF_MAKE_PREFERABLY_COMPACT_TZONE_ALLOCATED and friends)
+ * via the compact allocation path. If disabled, they are allocated like normal, non-compact types.
+ */
+#if !defined(ENABLE_COMPACT_ALLOCATION_FOR_PREFERABLY_COMPACT_TYPES)
+#define ENABLE_COMPACT_ALLOCATION_FOR_PREFERABLY_COMPACT_TYPES 1
 #endif
 
 // See RefTrackerMixin.h

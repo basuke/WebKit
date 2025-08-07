@@ -37,9 +37,6 @@ namespace Style {
 // https://drafts.csswg.org/css-scroll-snap-1/#padding-longhands-physical
 struct ScrollPaddingEdge : LengthWrapperBase<LengthPercentage<CSS::Nonnegative>, CSS::Keyword::Auto> {
     using Base::Base;
-
-private:
-    friend struct Evaluation<ScrollPaddingEdge>;
 };
 
 // <'scroll-padding'> = [ auto | <length-percentage [0,∞]> ]{1,4}
@@ -60,4 +57,4 @@ LayoutBoxExtent extentForRect(const ScrollPaddingBox&, const LayoutRect&);
 } // namespace Style
 } // namespace WebCore
 
-template<> inline constexpr auto WebCore::TreatAsVariantLike<WebCore::Style::ScrollPaddingEdge> = true;
+DEFINE_VARIANT_LIKE_CONFORMANCE(WebCore::Style::ScrollPaddingEdge)

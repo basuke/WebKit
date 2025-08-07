@@ -64,7 +64,11 @@ public:
 
     USING_CAN_MAKE_WEAKPTR(PlatformXRCoordinatorSessionEventClient);
 
-    void invalidate();
+    enum class InvalidationReason : uint8_t {
+        Client,
+        State
+    };
+    void invalidate(InvalidationReason invalidateReason = InvalidationReason::State);
 
     bool hasActiveSession() const { return !!m_immersiveSessionActivity; }
     void ensureImmersiveSessionActivity();
@@ -85,7 +89,12 @@ private:
     void initializeTrackingAndRendering(IPC::Connection&);
     void shutDownTrackingAndRendering(IPC::Connection&);
     void requestFrame(IPC::Connection&, std::optional<PlatformXR::RequestData>&&, CompletionHandler<void(PlatformXR::FrameData&&)>&&);
+#if USE(OPENXR)
+    void createLayerProjection(IPC::Connection&, uint32_t width, uint32_t height, bool alpha);
+    void submitFrame(IPC::Connection&, Vector<XRDeviceLayer>&&);
+#else
     void submitFrame(IPC::Connection&);
+#endif
     void didCompleteShutdownTriggeredBySystem(IPC::Connection&);
 
     // PlatformXRCoordinatorSessionEventClient

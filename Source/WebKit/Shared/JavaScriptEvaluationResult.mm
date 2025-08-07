@@ -27,17 +27,19 @@
 #import "JavaScriptEvaluationResult.h"
 
 #import "APINodeInfo.h"
+#import "APISerializedNode.h"
 #import "_WKNodeInfoInternal.h"
+#import "_WKSerializedNodeInternal.h"
 
 namespace WebKit {
 
-RetainPtr<id> JavaScriptEvaluationResult::toID(Variant&& root)
+RetainPtr<id> JavaScriptEvaluationResult::toID(Value&& root)
 {
-    return WTF::switchOn(WTFMove(root), [] (NullType nullType) -> RetainPtr<id> {
-        switch (nullType) {
-        case NullType::NSNull:
+    return WTF::switchOn(WTFMove(root), [] (EmptyType type) -> RetainPtr<id> {
+        switch (type) {
+        case EmptyType::Null:
             return NSNull.null;
-        case NullType::NullPointer:
+        case EmptyType::Undefined:
             break;
         }
         return nullptr;
@@ -59,17 +61,21 @@ RetainPtr<id> JavaScriptEvaluationResult::toID(Variant&& root)
         return dictionary;
     }, [] (NodeInfo&& nodeInfo) -> RetainPtr<id> {
         return wrapper(API::NodeInfo::create(WTFMove(nodeInfo)).get());
+    }, [] (UniqueRef<WebCore::SerializedNode>&& serializedNode) -> RetainPtr<id> {
+        return wrapper(API::SerializedNode::create(WTFMove(serializedNode.get())).get());
     });
 }
 
 RetainPtr<id> JavaScriptEvaluationResult::toID()
 {
-    for (auto [identifier, variant] : std::exchange(m_map, { }))
-        m_instantiatedNSObjects.add(identifier, toID(WTFMove(variant)));
+    for (auto&& [identifier, value] : std::exchange(m_map, { }))
+        m_instantiatedNSObjects.add(identifier, toID(WTFMove(value)));
     for (auto [vector, array] : std::exchange(m_nsArrays, { })) {
         for (auto identifier : vector) {
             if (RetainPtr element = m_instantiatedNSObjects.get(identifier))
                 [array addObject:element.get()];
+            else
+                [array addObject:NSNull.null];
         }
     }
     for (auto [map, dictionary] : std::exchange(m_nsDictionaries, { })) {
@@ -86,13 +92,13 @@ RetainPtr<id> JavaScriptEvaluationResult::toID()
     return std::exchange(m_instantiatedNSObjects, { }).take(m_root);
 }
 
-auto JavaScriptEvaluationResult::toVariant(id object) -> Variant
+auto JavaScriptEvaluationResult::toValue(id object) -> Value
 {
     if (!object)
-        return NullType::NullPointer;
+        return EmptyType::Undefined;
 
     if ([object isKindOfClass:NSNull.class])
-        return NullType::NSNull;
+        return EmptyType::Null;
 
     if ([object isKindOfClass:NSNumber.class]) {
         if (CFNumberGetType((CFNumberRef)object) == kCFNumberCharType) {
@@ -125,9 +131,15 @@ auto JavaScriptEvaluationResult::toVariant(id object) -> Variant
         return { WTFMove(map) };
     }
 
+    if ([object isKindOfClass:_WKSerializedNode.class])
+        return makeUniqueRef<WebCore::SerializedNode>(((_WKSerializedNode *)object)->_node->coreSerializedNode());
+
+    if ([object isKindOfClass:_WKNodeInfo.class])
+        return NodeInfo { ((_WKNodeInfo *)object)->_info->info() };
+
     // This object has been null checked and went through isSerializable which only supports these types.
     ASSERT_NOT_REACHED();
-    return NullType::NullPointer;
+    return EmptyType::Undefined;
 }
 
 JSObjectID JavaScriptEvaluationResult::addObjectToMap(id object)
@@ -135,7 +147,7 @@ JSObjectID JavaScriptEvaluationResult::addObjectToMap(id object)
     if (!object) {
         if (!m_nullObjectID) {
             m_nullObjectID = JSObjectID::generate();
-            m_map.add(*m_nullObjectID, Variant { NullType::NullPointer });
+            m_map.add(*m_nullObjectID, EmptyType::Undefined);
         }
         return *m_nullObjectID;
     }
@@ -146,7 +158,7 @@ JSObjectID JavaScriptEvaluationResult::addObjectToMap(id object)
 
     auto identifier = JSObjectID::generate();
     m_objectsInMap.set(object, identifier);
-    m_map.add(identifier, toVariant(object));
+    m_map.add(identifier, toValue(object));
     return identifier;
 }
 
@@ -155,7 +167,12 @@ static bool isSerializable(id argument)
     if (!argument)
         return true;
 
-    if ([argument isKindOfClass:[NSString class]] || [argument isKindOfClass:[NSNumber class]] || [argument isKindOfClass:[NSDate class]] || [argument isKindOfClass:[NSNull class]])
+    if ([argument isKindOfClass:NSString.class]
+        || [argument isKindOfClass:NSNumber.class]
+        || [argument isKindOfClass:NSDate.class]
+        || [argument isKindOfClass:NSNull.class]
+        || [argument isKindOfClass:_WKNodeInfo.class]
+        || [argument isKindOfClass:_WKSerializedNode.class])
         return true;
 
     if ([argument isKindOfClass:[NSArray class]]) {

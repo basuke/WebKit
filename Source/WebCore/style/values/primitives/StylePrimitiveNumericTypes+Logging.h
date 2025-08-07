@@ -40,7 +40,7 @@ WTF::TextStream& operator<<(WTF::TextStream& ts, Calc auto const& value)
 
 WTF::TextStream& operator<<(WTF::TextStream& ts, Numeric auto const& value)
 {
-    return ts << CSS::serializationForCSS(CSS::defaultSerializationContext(), CSS::SerializableNumber { value.value, CSS::unitString(value.unit) });
+    return ts << CSS::serializationForCSS(CSS::defaultSerializationContext(), CSS::SerializableNumber { static_cast<double>(value.value), CSS::unitString(value.unit) });
 }
 
 WTF::TextStream& operator<<(WTF::TextStream& ts, DimensionPercentageNumeric auto const& value)
@@ -58,21 +58,6 @@ template<auto nR, auto pR, typename V> WTF::TextStream& operator<<(WTF::TextStre
 template<auto nR, auto pR, typename V> WTF::TextStream& operator<<(WTF::TextStream& ts, const NumberOrPercentageResolvedToNumber<nR, pR, V>& value)
 {
     return ts << value.value;
-}
-
-template<typename T> WTF::TextStream& operator<<(WTF::TextStream& ts, const SpaceSeparatedPoint<T>& value)
-{
-    return ts << value.x() << ' ' << value.y();
-}
-
-template<typename T> WTF::TextStream& operator<<(WTF::TextStream& ts, const SpaceSeparatedSize<T>& value)
-{
-    return ts << value.width() << ' ' << value.height();
-}
-
-template<typename T> WTF::TextStream& operator<<(WTF::TextStream& ts, const MinimallySerializingSpaceSeparatedSize<T>& value)
-{
-    return ts << value.width() << ' ' << value.height();
 }
 
 } // namespace Style

@@ -131,7 +131,7 @@ protected:
     const RenderElement* pushMappingToContainer(const RenderLayerModelObject* ancestorToStopAt, RenderGeometryMap&) const override;
 
 private:
-    VisiblePosition positionForPoint(const LayoutPoint&, HitTestSource, const RenderFragmentContainer*) final;
+    PositionWithAffinity positionForPoint(const LayoutPoint&, HitTestSource, const RenderFragmentContainer*) final;
 
     LayoutRect frameRectForStickyPositioning() const final { return linesBoundingBox(); }
 
@@ -139,9 +139,6 @@ private:
 
     void dirtyLineFromChangedChild() final { m_legacyLineBoxes.dirtyLineFromChangedChild(*this); }
 
-    LayoutUnit lineHeight(bool firstLine, LineDirectionMode) const final;
-    LayoutUnit baselinePosition() const final;
-    
     void updateHitTestResult(HitTestResult&, const LayoutPoint&) const final;
 
     void imageChanged(WrappedImagePtr, const IntRect* = 0) final;

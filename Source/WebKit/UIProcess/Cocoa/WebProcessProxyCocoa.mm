@@ -199,7 +199,7 @@ void WebProcessProxy::sendAudioComponentRegistrations()
         if (!registrations)
             return;
         
-        RunLoop::protectedMain()->dispatch([weakThis = WTFMove(weakThis), registrations = WTFMove(registrations)] () mutable {
+        RunLoop::mainSingleton().dispatch([weakThis = WTFMove(weakThis), registrations = WTFMove(registrations)] () mutable {
             if (!weakThis)
                 return;
 
@@ -343,6 +343,20 @@ void WebProcessProxy::platformDestroy()
     if (m_logStream.get())
         removeMessageReceiver(Messages::LogStream::messageReceiverName(), m_logStream->identifier());
 #endif
+}
+
+void WebProcessProxy::platformResumeProcess()
+{
+    if (m_platformSuspendDidReleaseNearSuspendedAssertion) {
+        m_platformSuspendDidReleaseNearSuspendedAssertion = false;
+        protectedThrottler()->setShouldTakeNearSuspendedAssertion(true);
+    }
+}
+
+void WebProcessProxy::platformSuspendProcess()
+{
+    m_platformSuspendDidReleaseNearSuspendedAssertion = throttler().isHoldingNearSuspendedAssertion();
+    protectedThrottler()->setShouldTakeNearSuspendedAssertion(false);
 }
 
 }

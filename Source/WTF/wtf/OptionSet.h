@@ -38,19 +38,20 @@
 namespace WTF {
 
 template<typename E> class OptionSet;
+template<typename E> struct ConstexprOptionSet;
 
 // OptionSet is a class that represents a set of enumerators in a space-efficient manner. The enumerators
 // must be powers of two greater than 0. This class is useful as a replacement for passing a bitmask of
 // enumerators around.
 template<typename E> class OptionSet {
-    WTF_MAKE_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED(OptionSet);
     static_assert(std::is_enum<E>::value, "T is not an enum type");
 
 public:
     using StorageType = std::make_unsigned_t<std::underlying_type_t<E>>;
 
     template<typename StorageType> class Iterator {
-        WTF_MAKE_FAST_ALLOCATED;
+        WTF_DEPRECATED_MAKE_FAST_ALLOCATED(Iterator);
     public:
         // Isolate the rightmost set bit.
         E operator*() const { return static_cast<E>(m_value & -m_value); }
@@ -195,6 +196,8 @@ private:
     {
     }
     StorageType m_storage { 0 };
+
+    friend struct ConstexprOptionSet<E>;
 };
 
 namespace IsValidOptionSetHelper {
@@ -216,6 +219,24 @@ WARN_UNUSED_RETURN constexpr bool isValidOptionSet(OptionSet<E> optionSet)
     auto allValidBitsValue = IsValidOptionSetHelper::OptionSetValueChecker<std::make_unsigned_t<std::underlying_type_t<E>>, typename EnumTraits<E>::values>::allValidBits();
     return (optionSet.toRaw() | allValidBitsValue) == allValidBitsValue;
 }
+
+// A structural type requires all base classes and non-static data members are public and non-mutable.
+// This helper lets you use OptionSet in template parameters.
+template<typename E> struct ConstexprOptionSet {
+    constexpr ConstexprOptionSet(OptionSet<E> o)
+        : storage(o.m_storage)
+    {
+    }
+
+    constexpr ConstexprOptionSet(std::initializer_list<E> initializerList)
+        : ConstexprOptionSet<E>(OptionSet<E>(WTFMove(initializerList)))
+    {
+    }
+
+    constexpr OptionSet<E> operator*() const { return OptionSet<E>::fromRaw(storage); }
+
+    const OptionSet<E>::StorageType storage;
+};
 
 } // namespace WTF
 

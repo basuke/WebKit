@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2006-2025 Apple Inc. All rights reserved.
  * Copyright (C) 2008 Nokia Corporation and/or its subsidiary(-ies)
+ * Copyright (C) 2025 Samuel Weinig <sam@webkit.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -421,19 +422,6 @@ bool Editor::canEditRichly() const
     return document().selection().selection().isContentRichlyEditable();
 }
 
-enum class ClipboardEventKind {
-    Copy,
-    CopyFont,
-    Cut,
-    Paste,
-    PasteFont,
-    PasteAsPlainText,
-    PasteAsQuotation,
-    BeforeCopy,
-    BeforeCut,
-    BeforePaste,
-};
-
 static AtomString eventNameForClipboardEvent(ClipboardEventKind kind)
 {
     switch (kind) {
@@ -490,13 +478,11 @@ static Ref<DataTransfer> createDataTransferForClipboardEvent(Document& document,
 // Returns whether caller should continue with "the default processing", which is the same as
 // the event handler NOT setting the return value to false
 // https://w3c.github.io/clipboard-apis/#fire-a-clipboard-event
-static bool dispatchClipboardEvent(RefPtr<Element>&& target, ClipboardEventKind kind)
+bool Editor::dispatchClipboardEvent(RefPtr<Element>&& target, ClipboardEventKind kind, Ref<DataTransfer>&& dataTransfer)
 {
     // FIXME: Move the target selection code here.
     if (!target)
         return true;
-
-    auto dataTransfer = createDataTransferForClipboardEvent(target->document(), kind);
 
     auto event = ClipboardEvent::create(eventNameForClipboardEvent(kind), dataTransfer.copyRef());
 
@@ -508,6 +494,14 @@ static bool dispatchClipboardEvent(RefPtr<Element>&& target, ClipboardEventKind 
     dataTransfer->makeInvalidForSecurity();
 
     return !noDefaultProcessing;
+}
+
+bool Editor::dispatchClipboardEvent(RefPtr<Element>&& target, ClipboardEventKind kind)
+{
+    if (!target)
+        return true;
+
+    return Editor::dispatchClipboardEvent(WTFMove(target), kind, createDataTransferForClipboardEvent(target->document(), kind));
 }
 
 // WinIE uses onbeforecut and onbeforepaste to enables the cut and paste menu items.  They
@@ -4596,30 +4590,31 @@ FontAttributes Editor::fontAttributesAtSelectionStart()
     if (foregroundColor.isValid() && !Color::isBlackColor(foregroundColor))
         attributes.foregroundColor = foregroundColor;
 
-    WTF::switchOn(style->textShadow(),
-        [&](const CSS::Keyword::None&) { },
+    attributes.fontShadow = WTF::switchOn(style->textShadow(),
+        [&](const CSS::Keyword::None&) {
+            return FontShadow { };
+        },
         [&](const auto& shadows) {
-            attributes.fontShadow = { style->colorWithColorFilter(shadows[0].color), { shadows[0].location.x().value, shadows[0].location.y().value }, shadows[0].blur.value };
+            return FontShadow {
+                style->colorWithColorFilter(shadows[0].color),
+                { shadows[0].location.x().value, shadows[0].location.y().value },
+                shadows[0].blur.value
+            };
         }
     );
 
-    switch (style->verticalAlign()) {
-    case VerticalAlign::Baseline:
-    case VerticalAlign::Bottom:
-    case VerticalAlign::BaselineMiddle:
-    case VerticalAlign::Length:
-    case VerticalAlign::Middle:
-    case VerticalAlign::TextBottom:
-    case VerticalAlign::TextTop:
-    case VerticalAlign::Top:
-        break;
-    case VerticalAlign::Sub:
-        attributes.subscriptOrSuperscript = FontAttributes::SubscriptOrSuperscript::Subscript;
-        break;
-    case VerticalAlign::Super:
-        attributes.subscriptOrSuperscript = FontAttributes::SubscriptOrSuperscript::Superscript;
-        break;
-    }
+    attributes.subscriptOrSuperscript = WTF::switchOn(style->verticalAlign(),
+        [](const CSS::Keyword::Baseline&) { return FontAttributes::SubscriptOrSuperscript::None; },
+        [](const CSS::Keyword::Sub&) { return FontAttributes::SubscriptOrSuperscript::Subscript; },
+        [](const CSS::Keyword::Super&) { return FontAttributes::SubscriptOrSuperscript::Superscript; },
+        [](const CSS::Keyword::Bottom&) { return FontAttributes::SubscriptOrSuperscript::None; },
+        [](const CSS::Keyword::Middle&) { return FontAttributes::SubscriptOrSuperscript::None; },
+        [](const CSS::Keyword::TextBottom&) { return FontAttributes::SubscriptOrSuperscript::None; },
+        [](const CSS::Keyword::TextTop&) { return FontAttributes::SubscriptOrSuperscript::None; },
+        [](const CSS::Keyword::Top&) { return FontAttributes::SubscriptOrSuperscript::None; },
+        [](const CSS::Keyword::WebkitBaselineMiddle&) { return FontAttributes::SubscriptOrSuperscript::None; },
+        [](const Style::VerticalAlign::Length&) { return FontAttributes::SubscriptOrSuperscript::None; }
+    );
 
     attributes.textLists = editableTextListsAtPositionInDescendingOrder(document().selection().selection().start());
 

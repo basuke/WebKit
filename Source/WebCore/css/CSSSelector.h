@@ -66,7 +66,10 @@ public:
     std::array<uint8_t, 3> computeSpecificityTuple() const;
     unsigned specificityForPage() const;
 
-    bool visitAllSimpleSelectors(auto& apply) const;
+    enum class VisitFunctionalPseudoClasses { No, Yes };
+    enum class VisitOnlySubject { No, Yes };
+    using VisitFunctor = WTF::Function<bool(CSSSelector&)>;
+    bool visitSimpleSelectors(VisitFunctor&&, VisitFunctionalPseudoClasses = VisitFunctionalPseudoClasses::No, VisitOnlySubject = VisitOnlySubject::No) const;
 
     bool hasExplicitNestingParent() const;
     bool hasExplicitPseudoClassScope() const;
@@ -165,6 +168,7 @@ WTF_ALLOW_UNSAFE_BUFFER_USAGE_END
     bool isSiblingSelector() const;
     bool isAttributeSelector() const;
     bool isHostPseudoClass() const;
+    bool isScopePseudoClass() const;
 
     Relation relation() const { return static_cast<Relation>(m_relation); }
     Match match() const { return static_cast<Match>(m_match); }
@@ -229,7 +233,7 @@ private:
     CSSSelector(CSSSelector&&) = delete;
 
     struct RareData : public RefCounted<RareData> {
-        WTF_MAKE_STRUCT_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(CSSSelectorRareData);
+        WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(CSSSelectorRareData, RareData);
         static Ref<RareData> create(AtomString);
         WEBCORE_EXPORT ~RareData();
 

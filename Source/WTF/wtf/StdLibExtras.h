@@ -159,6 +159,25 @@ inline bool is8ByteAligned(void* p)
     return !((uintptr_t)(p) & (sizeof(double) - 1));
 }
 
+inline bool isAligned(void* ptr, int alignment = sizeof(void*))
+{
+    return reinterpret_cast<uintptr_t>(ptr) % alignment == 0;
+}
+
+template <typename T>
+inline bool isAligned(T* ptr, int alignment = sizeof(void*))
+{
+    ASSERT_UNDER_CONSTEXPR_CONTEXT(alignment >= alignof(T));
+    return reinterpret_cast<uintptr_t>(ptr) % alignment == 0;
+}
+
+template <typename T, int alignment = sizeof(void*)>
+inline bool isAligned(T* ptr)
+{
+    static_assert(alignment >= alignof(T));
+    return isAligned<T>(ptr, alignment);
+}
+
 inline std::byte* alignedBytes(std::byte* pointer, size_t alignment)
 {
     return reinterpret_cast<std::byte*>((reinterpret_cast<uintptr_t>(pointer) - 1u + alignment) & -alignment);
@@ -848,7 +867,7 @@ namespace WTF {
 template<class T, class... Args>
 ALWAYS_INLINE decltype(auto) makeUnique(Args&&... args)
 {
-    static_assert(std::is_same<typename T::WTFIsFastMallocAllocated, int>::value, "T should use FastMalloc (WTF_MAKE_FAST_ALLOCATED)");
+    static_assert(std::is_same<typename T::WTFIsFastMallocAllocated, int>::value, "T should use FastMalloc (WTF_DEPRECATED_MAKE_FAST_ALLOCATED)");
     static_assert(!HasRefPtrMemberFunctions<T>::value, "T should not be RefCounted");
     return std::make_unique<T>(std::forward<Args>(args)...);
 }
@@ -860,7 +879,7 @@ ALWAYS_INLINE decltype(auto) makeUnique(Args&&... args)
 template<class T, class U = T, class... Args>
 ALWAYS_INLINE const std::unique_ptr<U> makeUniqueWithoutRefCountedCheck(Args&&... args)
 {
-    static_assert(std::is_same<typename T::WTFIsFastMallocAllocated, int>::value, "T should use FastMalloc (WTF_MAKE_FAST_ALLOCATED)");
+    static_assert(std::is_same<typename T::WTFIsFastMallocAllocated, int>::value, "T should use FastMalloc (WTF_DEPRECATED_MAKE_FAST_ALLOCATED)");
     return std::unique_ptr<U>(std::make_unique<T>(std::forward<Args>(args)...));
 }
 
@@ -1082,7 +1101,7 @@ template<typename T, std::size_t Extent>
 void memsetSpan(std::span<T, Extent> destination, uint8_t byte)
 {
     static_assert(std::is_trivially_copyable_v<T>);
-    memset(destination.data(), byte, destination.size_bytes()); // NOLINT
+    memset(static_cast<void*>(destination.data()), byte, destination.size_bytes()); // NOLINT
 }
 
 template<typename T, std::size_t Extent>
@@ -1500,8 +1519,10 @@ namespace detail {
 template<typename T, typename U> using copy_const = std::conditional_t<std::is_const_v<T>, const U, U>;
 template<typename T, typename U> using override_ref = std::conditional_t<std::is_rvalue_reference_v<T>, std::remove_reference_t<U>&&, U&>;
 template<typename T, typename U> using forward_like_impl = override_ref<T&&, copy_const<std::remove_reference_t<T>, std::remove_reference_t<U>>>;
+template<typename T, typename U> using forward_like_preserving_const_impl = override_ref<T&&, std::remove_reference_t<U>>;
 } // namespace detail
 template<typename T, typename U> constexpr auto forward_like(U&& value) -> detail::forward_like_impl<T, U> { return static_cast<detail::forward_like_impl<T, U>>(value); }
+template<typename T, typename U> constexpr auto forward_like_preserving_const(U&& value) -> detail::forward_like_preserving_const_impl<T, U> { return static_cast<detail::forward_like_preserving_const_impl<T, U>>(value); }
 } // namespace WTF
 
 using WTF::GB;

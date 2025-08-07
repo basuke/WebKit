@@ -24,11 +24,36 @@
 
 #pragma once
 
+#include "CSSPrimitiveValue.h"
 #include "CSSValueList.h"
 #include "StyleValueTypes.h"
 
 namespace WebCore {
 namespace Style {
+
+// Specialization for `String`.
+template<> struct CSSValueConversion<String> {
+   String operator()(BuilderState& state, const CSSValue& value)
+   {
+        if (!value.isString()) {
+            state.setCurrentPropertyInvalidAtComputedValueTime();
+            return emptyString();
+        }
+        return value.string();
+   }
+};
+
+// Specialization for `AtomString`.
+template<> struct CSSValueConversion<AtomString> {
+   AtomString operator()(BuilderState& state, const CSSValue& value)
+   {
+        if (!value.isString()) {
+            state.setCurrentPropertyInvalidAtComputedValueTime();
+            return emptyAtom();
+        }
+        return AtomString { value.string() };
+   }
+};
 
 // Specialization for `CustomIdentifier`.
 template<> struct CSSValueConversion<CustomIdentifier> {
@@ -39,6 +64,14 @@ template<> struct CSSValueConversion<CustomIdentifier> {
             return { .value = emptyAtom() };
         }
         return { .value = AtomString { value.customIdent() } };
+   }
+};
+
+// Specialization for `TupleLike` (wrapper).
+template<TupleLike StyleType> requires (std::tuple_size_v<StyleType> == 1) struct CSSValueConversion<StyleType> {
+   StyleType operator()(BuilderState& state, const CSSValue& value)
+   {
+        return { toStyleFromCSSValue<std::remove_cvref_t<std::tuple_element_t<0, StyleType>>>(state, value) };
    }
 };
 
@@ -65,6 +98,26 @@ template<typename StyleType> struct CSSValueConversion<CommaSeparatedFixedVector
             });
         }
         return { toStyleFromCSSValue<StyleType>(state, value) };
+   }
+};
+
+// Specialization for `ValueOrKeyword`.
+template<typename StyleType, typename Keyword, typename StyleTypeMarkableTraits> struct CSSValueConversion<ValueOrKeyword<StyleType, Keyword, StyleTypeMarkableTraits>> {
+   ValueOrKeyword<StyleType, Keyword, StyleTypeMarkableTraits> operator()(BuilderState& state, const CSSValue& value)
+   {
+        if (value.valueID() == Keyword { }.value)
+            return Keyword { };
+        return toStyleFromCSSValue<StyleType>(state, value);
+   }
+};
+
+// Specialization for types derived from `ValueOrKeyword`.
+template<ValueOrKeywordDerived T> struct CSSValueConversion<T> {
+   T operator()(BuilderState& state, const CSSValue& value)
+   {
+        if (value.valueID() == typename T::Keyword { }.value)
+            return typename T::Keyword { };
+        return toStyleFromCSSValue<typename T::Value>(state, value);
    }
 };
 

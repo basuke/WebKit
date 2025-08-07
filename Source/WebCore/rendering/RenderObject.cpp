@@ -102,8 +102,8 @@ namespace WebCore {
 
 using namespace HTMLNames;
 
-WTF_MAKE_TZONE_OR_ISO_ALLOCATED_IMPL(RenderObject);
-WTF_MAKE_TZONE_ALLOCATED_IMPL(RenderObject::RenderObjectRareData);
+WTF_MAKE_PREFERABLY_COMPACT_TZONE_OR_ISO_ALLOCATED_IMPL(RenderObject);
+WTF_MAKE_PREFERABLY_COMPACT_TZONE_ALLOCATED_IMPL(RenderObject::RenderObjectRareData);
 
 #if ASSERT_ENABLED
 
@@ -122,7 +122,7 @@ RenderObject::SetLayoutNeededForbiddenScope::~SetLayoutNeededForbiddenScope()
 #endif
 
 struct SameSizeAsRenderObject final : public CachedImageClient {
-    WTF_MAKE_STRUCT_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(SameSizeAsRenderObject);
     WTF_STRUCT_OVERRIDE_DELETE_FOR_CHECKED_PTR(SameSizeAsRenderObject);
 
     virtual ~SameSizeAsRenderObject() = default; // Allocate vtable pointer.
@@ -1845,13 +1845,18 @@ void RenderObject::destroy()
 
 Position RenderObject::positionForPoint(const LayoutPoint& point, HitTestSource source)
 {
-    // FIXME: This should just create a Position object instead (webkit.org/b/168566). 
-    return positionForPoint(point, source, nullptr).deepEquivalent();
+    return positionForPoint(point, source, nullptr).position();
 }
 
-VisiblePosition RenderObject::positionForPoint(const LayoutPoint&, HitTestSource, const RenderFragmentContainer*)
+PositionWithAffinity RenderObject::positionForPoint(const LayoutPoint&, HitTestSource, const RenderFragmentContainer*)
 {
-    return createVisiblePosition(caretMinOffset(), Affinity::Downstream);
+    return createPositionWithAffinity(caretMinOffset(), Affinity::Downstream);
+}
+
+VisiblePosition RenderObject::visiblePositionForPoint(const LayoutPoint& point, HitTestSource source)
+{
+    auto positionWithAffinity = positionForPoint(point, source, nullptr);
+    return VisiblePosition(positionWithAffinity.position(), positionWithAffinity.affinity());
 }
 
 bool RenderObject::isComposited() const
@@ -1917,11 +1922,6 @@ bool RenderObject::nodeAtPoint(const HitTestRequest&, HitTestResult&, const HitT
     return false;
 }
 
-int RenderObject::innerLineHeight() const
-{
-    return style().computedLineHeight();
-}
-
 int RenderObject::caretMinOffset() const
 {
     return 0;
@@ -1956,7 +1956,7 @@ void RenderObject::imageChanged(CachedImage* image, const IntRect* rect)
     imageChanged(static_cast<WrappedImagePtr>(image), rect);
 }
 
-VisiblePosition RenderObject::createVisiblePosition(int offset, Affinity affinity) const
+PositionWithAffinity RenderObject::createPositionWithAffinity(int offset, Affinity affinity) const
 {
     // If this is a non-anonymous renderer in an editable area, then it's simple.
     if (RefPtr node = nonPseudoNode()) {
@@ -1965,13 +1965,13 @@ VisiblePosition RenderObject::createVisiblePosition(int offset, Affinity affinit
             Position position = makeDeprecatedLegacyPosition(node.get(), offset);
             Position candidate = position.downstream(CanCrossEditingBoundary);
             if (candidate.deprecatedNode()->hasEditableStyle())
-                return VisiblePosition(candidate, affinity);
+                return PositionWithAffinity(candidate, affinity);
             candidate = position.upstream(CanCrossEditingBoundary);
             if (candidate.deprecatedNode()->hasEditableStyle())
-                return VisiblePosition(candidate, affinity);
+                return PositionWithAffinity(candidate, affinity);
         }
         // FIXME: Eliminate legacy editing positions
-        return VisiblePosition(makeDeprecatedLegacyPosition(node.get(), offset), affinity);
+        return PositionWithAffinity(makeDeprecatedLegacyPosition(node.get(), offset), affinity);
     }
 
     // We don't want to cross the boundary between editable and non-editable
@@ -1986,7 +1986,7 @@ VisiblePosition RenderObject::createVisiblePosition(int offset, Affinity affinit
         CheckedPtr renderer = child;
         while ((renderer = renderer->nextInPreOrder(parent.get()))) {
             if (RefPtr node = renderer->nonPseudoNode())
-                return firstPositionInOrBeforeNode(node.get());
+                return PositionWithAffinity(firstPositionInOrBeforeNode(node.get()));
         }
 
         // Find non-anonymous content before.
@@ -1995,28 +1995,28 @@ VisiblePosition RenderObject::createVisiblePosition(int offset, Affinity affinit
             if (renderer == parent)
                 break;
             if (RefPtr node = renderer->nonPseudoNode())
-                return lastPositionInOrAfterNode(node.get());
+                return PositionWithAffinity(lastPositionInOrAfterNode(node.get()));
         }
 
         // Use the parent itself unless it too is anonymous.
         if (RefPtr element = parent->nonPseudoElement())
-            return firstPositionInOrBeforeNode(element.get());
+            return PositionWithAffinity(firstPositionInOrBeforeNode(element.get()));
 
         // Repeat at the next level up.
         child = WTFMove(parent);
     }
 
     // Everything was anonymous. Give up.
-    return VisiblePosition();
+    return PositionWithAffinity();
 }
 
-VisiblePosition RenderObject::createVisiblePosition(const Position& position) const
+PositionWithAffinity RenderObject::createPositionWithAffinity(const Position& position) const
 {
     if (position.isNotNull())
-        return VisiblePosition(position);
+        return PositionWithAffinity(position);
 
     ASSERT(!node());
-    return createVisiblePosition(0, Affinity::Downstream);
+    return createPositionWithAffinity(0, Affinity::Downstream);
 }
 
 CursorDirective RenderObject::getCursor(const LayoutPoint&, Cursor&) const
@@ -2123,6 +2123,11 @@ void RenderObject::setHasOutlineAutoAncestor(bool hasOutlineAutoAncestor)
 {
     if (hasOutlineAutoAncestor || hasRareData())
         ensureRareData().hasOutlineAutoAncestor = hasOutlineAutoAncestor;
+}
+
+void RenderObject::markIsYouTubeReplacement()
+{
+    ensureRareData().isYouTubeReplacement = true;
 }
 
 RenderObject::RareDataMap& RenderObject::rareDataMap()
@@ -2920,7 +2925,7 @@ auto RenderObject::collectSelectionGeometries(const SimpleRange& range) -> Selec
                     || interiorUnionRect.x() == currentGeometry.rect().maxX()
                     || interiorUnionRect.y() == currentGeometry.rect().maxY())) {
                 // Only union the lines that are attached.
-                // For iBooks, the interior lines may cross multiple horizontal pages.
+                // For Apple Books, the interior lines may cross multiple horizontal pages.
                 interiorUnionRect.unite(currentGeometry.rect());
             } else {
                 coalescedGeometries.append(SelectionGeometry({ interiorUnionRect }, SelectionRenderingBehavior::CoalesceBoundingRects, currentGeometry.isHorizontal(), currentGeometry.pageNumber()));

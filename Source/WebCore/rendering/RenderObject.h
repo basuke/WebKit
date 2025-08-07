@@ -56,6 +56,7 @@ class Node;
 class Page;
 class Path;
 class Position;
+class PositionWithAffinity;
 class ReferencedSVGResources;
 class RenderBox;
 class RenderBoxModelObject;
@@ -110,7 +111,7 @@ typedef const void* WrappedImagePtr;
 
 // Base class for all rendering tree objects.
 class RenderObject : public CachedImageClient {
-    WTF_MAKE_TZONE_OR_ISO_ALLOCATED(RenderObject);
+    WTF_MAKE_PREFERABLY_COMPACT_TZONE_OR_ISO_ALLOCATED(RenderObject);
     WTF_OVERRIDE_DELETE_FOR_CHECKED_PTR(RenderObject);
     friend class RenderBlock;
     friend class RenderBlockFlow;
@@ -684,6 +685,9 @@ public:
     void setIsExcludedFromNormalLayout(bool excluded) { m_stateBitfields.setFlag(StateFlag::IsExcludedFromNormalLayout, excluded); }
     bool isExcludedAndPlacedInBorder() const { return isExcludedFromNormalLayout() && isLegend(); }
 
+    bool isYouTubeReplacement() const { return hasRareData() && rareData().isYouTubeReplacement; }
+    void markIsYouTubeReplacement();
+
     bool hasLayer() const { return m_stateBitfields.hasFlag(StateFlag::HasLayer); }
 
     enum class BoxDecorationState : uint8_t {
@@ -781,10 +785,6 @@ public:
     void setPaintContainmentApplies(bool value = true) { m_stateBitfields.setFlag(StateFlag::PaintContainmentApplies, value); }
     void setHasSVGTransform(bool value = true) { m_stateBitfields.setFlag(StateFlag::HasSVGTransform, value); }
 
-    // Hook so that RenderTextControl can return the line height of its inner renderer.
-    // For other renderers, the value is the same as lineHeight(false).
-    virtual int innerLineHeight() const;
-
     // used for element state updates that cannot be fixed with a
     // repaint and do not need a relayout
     virtual void updateFromElement() { }
@@ -799,9 +799,11 @@ public:
     virtual bool nodeAtPoint(const HitTestRequest&, HitTestResult&, const HitTestLocation& locationInContainer, const LayoutPoint& accumulatedOffset, HitTestAction);
 
     virtual Position positionForPoint(const LayoutPoint&, HitTestSource);
-    virtual VisiblePosition positionForPoint(const LayoutPoint&, HitTestSource, const RenderFragmentContainer*);
-    VisiblePosition createVisiblePosition(int offset, Affinity) const;
-    VisiblePosition createVisiblePosition(const Position&) const;
+    virtual PositionWithAffinity positionForPoint(const LayoutPoint&, HitTestSource, const RenderFragmentContainer*);
+    PositionWithAffinity createPositionWithAffinity(int offset, Affinity) const;
+    PositionWithAffinity createPositionWithAffinity(const Position&) const;
+
+    WEBCORE_EXPORT VisiblePosition visiblePositionForPoint(const LayoutPoint&, HitTestSource);
 
     // Returns the containing block level element for this element.
     WEBCORE_EXPORT RenderBlock* containingBlock() const;
@@ -1281,7 +1283,7 @@ private:
 
     // FIXME: This should be RenderElementRareData.
     class RenderObjectRareData {
-        WTF_MAKE_TZONE_ALLOCATED(RenderObjectRareData);
+        WTF_MAKE_PREFERABLY_COMPACT_TZONE_ALLOCATED(RenderObjectRareData);
     public:
         RenderObjectRareData();
         ~RenderObjectRareData();
@@ -1290,6 +1292,7 @@ private:
         bool hasOutlineAutoAncestor { false };
         // Dirty bit was set with MarkingBehavior::MarkOnlyThis
         bool preferredLogicalWidthsNeedUpdateIsMarkOnlyThis { false };
+        bool isYouTubeReplacement { false };
         OptionSet<MarginTrimType> trimmedMargins;
 
         // From RenderElement

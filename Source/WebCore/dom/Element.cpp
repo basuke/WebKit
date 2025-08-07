@@ -142,6 +142,7 @@
 #include "ScrollToOptions.h"
 #include "SecurityPolicyViolationEvent.h"
 #include "SelectorQuery.h"
+#include "SerializedNode.h"
 #include "Settings.h"
 #include "ShadowRootInit.h"
 #include "SimulatedClick.h"
@@ -619,52 +620,85 @@ bool Element::dispatchSimulatedClick(Event* underlyingEvent, SimulatedClickMouse
     return simulateClick(*this, underlyingEvent, eventOptions, visualOptions, SimulatedClickSource::UserAgent);
 }
 
-Ref<Node> Element::cloneNodeInternal(Document& document, CloningOperation type, CustomElementRegistry* registry)
+Ref<Node> Element::cloneNodeInternal(Document& document, CloningOperation type, CustomElementRegistry* fallbackRegistry) const
 {
     switch (type) {
     case CloningOperation::SelfOnly:
     case CloningOperation::SelfWithTemplateContent: {
-        Ref clone = cloneElementWithoutChildren(document, registry);
+        Ref clone = cloneElementWithoutChildren(document, fallbackRegistry);
         ScriptDisallowedScope::EventAllowedScope eventAllowedScope { clone };
-        cloneShadowTreeIfPossible(clone, registry);
+        cloneShadowTreeIfPossible(clone);
         return clone;
     }
     case CloningOperation::Everything:
         break;
     }
-    return cloneElementWithChildren(document, registry);
+    return cloneElementWithChildren(document, fallbackRegistry);
 }
 
-void Element::cloneShadowTreeIfPossible(Element& newHost, CustomElementRegistry* registry)
+SerializedNode Element::serializeNode(CloningOperation type) const
+{
+    Vector<SerializedNode> children;
+    switch (type) {
+    case CloningOperation::SelfOnly:
+    case CloningOperation::SelfWithTemplateContent:
+        break;
+    case CloningOperation::Everything:
+        children = serializeChildNodes();
+        break;
+    }
+
+    // FIXME: Make an equivalent of cloneShadowTreeIfPossible.
+
+    auto attributes = this->elementData() ? WTF::map(this->attributes(), [] (const auto& attribute) {
+        return SerializedNode::Element::Attribute { { attribute.name() }, attribute.value() };
+    }) : Vector<SerializedNode::Element::Attribute>();
+
+    return { SerializedNode::Element { { WTFMove(children) }, { tagQName() }, WTFMove(attributes) } };
+}
+
+void Element::cloneShadowTreeIfPossible(Element& newHost) const
 {
     RefPtr oldShadowRoot = this->shadowRoot();
     if (!oldShadowRoot || !oldShadowRoot->isClonable())
         return;
 
     Ref clonedShadowRoot = [&] {
-        Ref clone = oldShadowRoot->cloneNodeInternal(newHost.document(), Node::CloningOperation::SelfWithTemplateContent, registry);
+        Ref clone = oldShadowRoot->cloneNodeInternal(newHost.document(), Node::CloningOperation::SelfWithTemplateContent, nullptr);
         return downcast<ShadowRoot>(WTFMove(clone));
     }();
     if (oldShadowRoot->usesNullCustomElementRegistry())
         clonedShadowRoot->setUsesNullCustomElementRegistry(); // Set this flag for Element::insertedIntoAncestor.
-    else if (RefPtr registry = oldShadowRoot->customElementRegistry())
-        clonedShadowRoot->setCustomElementRegistry(registry.releaseNonNull());
+    else {
+        clonedShadowRoot->clearUsesNullCustomElementRegistry(); // Unset flag potentially set by DocumentFragment constructor
+        if (RefPtr registry = oldShadowRoot->customElementRegistry()) {
+            if (!registry->isScoped())
+                registry = newHost.document().effectiveGlobalCustomElementRegistry();
+            clonedShadowRoot->setCustomElementRegistry(WTFMove(registry));
+        }
+    }
     newHost.addShadowRoot(clonedShadowRoot.copyRef());
-    oldShadowRoot->cloneChildNodes(newHost.document(), clonedShadowRoot->usesNullCustomElementRegistry() ? nullptr : registry, clonedShadowRoot);
+    oldShadowRoot->cloneChildNodes(newHost.document(), nullptr, clonedShadowRoot);
 }
 
-Ref<Element> Element::cloneElementWithChildren(Document& document, CustomElementRegistry* registry)
+Ref<Element> Element::cloneElementWithChildren(Document& document, CustomElementRegistry* fallbackRegistry) const
 {
-    Ref clone = cloneElementWithoutChildren(document, registry);
+    Ref clone = cloneElementWithoutChildren(document, fallbackRegistry);
     ScriptDisallowedScope::EventAllowedScope eventAllowedScope { clone };
-    cloneShadowTreeIfPossible(clone, registry);
-    cloneChildNodes(document, registry, clone);
+    cloneShadowTreeIfPossible(clone);
+    cloneChildNodes(document, fallbackRegistry, clone);
     return clone;
 }
 
-Ref<Element> Element::cloneElementWithoutChildren(Document& document, CustomElementRegistry* registry)
+Ref<Element> Element::cloneElementWithoutChildren(Document& document, CustomElementRegistry* fallbackRegistry) const
 {
-    Ref clone = cloneElementWithoutAttributesAndChildren(document, registry);
+    RefPtr registry = CustomElementRegistry::registryForElement(*this);
+    if (!registry)
+        registry = fallbackRegistry;
+    if (registry && !registry->isScoped())
+        registry = document.effectiveGlobalCustomElementRegistry();
+
+    Ref clone = cloneElementWithoutAttributesAndChildren(document, registry.get());
 
     // This will catch HTML elements in the wrong namespace that are not correctly copied.
     // This is a sanity check as HTML overloads some of the DOM methods.
@@ -678,7 +712,7 @@ Ref<Element> Element::cloneElementWithoutChildren(Document& document, CustomElem
     return clone;
 }
 
-Ref<Element> Element::cloneElementWithoutAttributesAndChildren(Document& document, CustomElementRegistry* registry)
+Ref<Element> Element::cloneElementWithoutAttributesAndChildren(Document& document, CustomElementRegistry* registry) const
 {
     return document.createElement(tagQName(), false, registry);
 }
@@ -3322,6 +3356,8 @@ ExceptionOr<ShadowRoot&> Element::attachShadow(const ShadowRootInit& init, std::
         return Exception { ExceptionCode::NotSupportedError };
     }
     RefPtr registry = init.customElementRegistry;
+    if (registry && !registry->isScoped() && registry != document().customElementRegistry())
+        return Exception { ExceptionCode::NotSupportedError };
     auto scopedRegistry = ShadowRoot::ScopedCustomElementRegistry::No;
     if (!registryKind)
         registryKind = !registry && usesNullCustomElementRegistry() ? CustomElementRegistryKind::Null : CustomElementRegistryKind::Window;
@@ -6162,7 +6198,7 @@ bool Element::checkVisibility(const CheckVisibilityOptions& options)
         if (ancestorStyle->display() == DisplayType::None)
             return false;
 
-        if ((options.opacityProperty || options.checkOpacity) && ancestorStyle->opacity() == 0.0f)
+        if ((options.opacityProperty || options.checkOpacity) && ancestorStyle->opacity().isTransparent())
             return false;
     }
 

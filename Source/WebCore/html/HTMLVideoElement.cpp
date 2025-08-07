@@ -300,7 +300,7 @@ bool HTMLVideoElement::isURLAttribute(const Attribute& attribute) const
 const AtomString& HTMLVideoElement::imageSourceURL() const
 {
     const auto& url = attributeWithoutSynchronization(posterAttr);
-    if (!StringView(url).containsOnly<isASCIIWhitespace<UChar>>())
+    if (!StringView(url).containsOnly<isASCIIWhitespace<char16_t>>())
         return url;
     return m_defaultPosterURL;
 }
@@ -345,7 +345,7 @@ std::optional<DestinationColorSpace> HTMLVideoElement::colorSpace() const
     return player->colorSpace();
 }
 
-RefPtr<ImageBuffer> HTMLVideoElement::createBufferForPainting(const FloatSize& size, RenderingMode renderingMode, const DestinationColorSpace& colorSpace, ImageBufferPixelFormat pixelFormat) const
+RefPtr<ImageBuffer> HTMLVideoElement::createBufferForPainting(const FloatSize& size, RenderingMode renderingMode, const DestinationColorSpace& colorSpace, ImageBufferFormat pixelFormat) const
 {
     auto* hostWindow = document().view() && document().view()->root() ? document().view()->root()->hostWindow() : nullptr;
     return ImageBuffer::create(size, renderingMode, RenderingPurpose::MediaPainting, 1, colorSpace, pixelFormat, hostWindow);

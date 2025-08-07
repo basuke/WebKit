@@ -83,10 +83,6 @@ OBJC_CLASS WKWebInspectorPreferenceObserver;
 #include "IPCTester.h"
 #endif
 
-#if ENABLE(EXTENSION_CAPABILITIES)
-#include "ExtensionCapabilityGranter.h"
-#endif
-
 #if PLATFORM(IOS_FAMILY)
 #include "HardwareKeyboardState.h"
 #endif
@@ -117,6 +113,7 @@ class PowerSourceNotifier;
 
 namespace WebKit {
 
+class ExtensionCapabilityGranter;
 class LockdownModeObserver;
 class PerActivityStateCPUUsageSampler;
 class SuspendedPageProxy;
@@ -157,9 +154,6 @@ class WebProcessPool final
     , public IPC::MessageReceiver
 #if PLATFORM(MAC)
     , private PAL::SystemSleepListener::Client
-#endif
-#if ENABLE(EXTENSION_CAPABILITIES)
-    , public ExtensionCapabilityGranterClient
 #endif
 {
 public:
@@ -591,8 +585,6 @@ public:
 
 #if ENABLE(EXTENSION_CAPABILITIES)
     ExtensionCapabilityGranter& extensionCapabilityGranter();
-    RefPtr<GPUProcessProxy> gpuProcessForCapabilityGranter(const ExtensionCapabilityGranter&) final;
-    RefPtr<WebProcessProxy> webProcessForCapabilityGranter(const ExtensionCapabilityGranter&, const String& environmentIdentifier) final;
 #endif
 
     bool usesSingleWebProcess() const { return m_configuration->usesSingleWebProcess(); }
@@ -626,11 +618,12 @@ public:
 #endif
 
 #if PLATFORM(COCOA)
-    void registerUserInstalledFonts(WebProcessProxy&);
     void registerAssetFonts(WebProcessProxy&);
+    void registerFontsForGPUProcessIfNeeded();
 #endif
 
 #if PLATFORM(MAC)
+    void registerUserInstalledFonts(WebProcessProxy&);
     void registerAdditionalFonts(NSArray *fontNames);
 #endif
 
@@ -642,6 +635,9 @@ public:
 #if ENABLE(INITIALIZE_ACCESSIBILITY_ON_DEMAND)
     void initializeAccessibilityIfNecessary();
 #endif
+
+    std::optional<SandboxExtension::Handle> sandboxExtensionForFile(const String& fileName);
+    void addSandboxExtensionForFile(const String& fileName, SandboxExtension::Handle);
 
 private:
     enum class NeedsGlobalStaticInitialization : bool { No, Yes };
@@ -1038,6 +1034,8 @@ private:
 
     bool m_hasReceivedAXRequestInUIProcess { false };
     bool m_suppressEDR { false };
+
+    HashMap<String, SandboxExtension::Handle> m_fileSandboxExtensions;
 };
 
 template<typename T>

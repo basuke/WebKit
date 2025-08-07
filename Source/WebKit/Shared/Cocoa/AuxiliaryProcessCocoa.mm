@@ -34,11 +34,15 @@
 #import "WKWebView.h"
 #import "XPCServiceEntryPoint.h"
 #import <WebCore/FloatingPointEnvironment.h>
+#import <algorithm>
 #import <mach/task.h>
 #import <objc/runtime.h>
 #import <pal/spi/cg/CoreGraphicsSPI.h>
 #import <pal/spi/cocoa/NSKeyedUnarchiverSPI.h>
 #import <pal/spi/cocoa/NotifySPI.h>
+#import <sys/resource.h>
+#import <sys/sysctl.h>
+#import <sys/types.h>
 #import <wtf/FileSystem.h>
 #import <wtf/MallocSpan.h>
 #import <wtf/RetainPtr.h>
@@ -115,11 +119,16 @@ void AuxiliaryProcess::platformInitialize(const AuxiliaryProcessInitializationPa
 #endif
 }
 
-void AuxiliaryProcess::didReceiveInvalidMessage(IPC::Connection&, IPC::MessageName messageName, int32_t indexOfObjectFailingDecoding)
+void AuxiliaryProcess::didReceiveInvalidMessage(IPC::Connection&, IPC::MessageName messageName, const Vector<uint32_t>& indicesOfObjectsFailingDecoding)
 {
-    auto errorMessage = makeString("Received invalid message: '"_s, description(messageName), "' ("_s, messageName, ", "_s, indexOfObjectFailingDecoding, ')');
+    auto errorMessage = makeString("Received invalid message: '"_s, description(messageName), "' ("_s, messageName, ')');
     logAndSetCrashLogMessage(errorMessage.utf8().data());
-    CRASH_WITH_INFO(WTF::enumToUnderlyingType(messageName), indexOfObjectFailingDecoding);
+
+    ASSERT(indicesOfObjectsFailingDecoding.size() <= 6);
+    auto index = [&](size_t i) -> int32_t {
+        return i < indicesOfObjectsFailingDecoding.size() ? indicesOfObjectsFailingDecoding[i] : -1;
+    };
+    CRASH_WITH_INFO(WTF::enumToUnderlyingType(messageName), index(5), index(4), index(3), index(2), index(1), index(0));
 }
 
 bool AuxiliaryProcess::parentProcessHasEntitlement(ASCIILiteral entitlement)
@@ -336,6 +345,36 @@ void AuxiliaryProcess::setNotifyOptions()
 #elif ENABLE(NOTIFY_FILTERING)
     notify_set_options(NOTIFY_OPT_DISPATCH | NOTIFY_OPT_REGEN | NOTIFY_OPT_FILTERED);
 #endif
+}
+
+void AuxiliaryProcess::increaseFileDescriptorLimit()
+{
+    struct rlimit currentLimits = { };
+    if (int returnCode = getrlimit(RLIMIT_NOFILE, &currentLimits)) {
+        RELEASE_LOG_ERROR(Process, "Could not getrlimit(RLIMIT_NOFILE): %d", returnCode);
+        return;
+    }
+
+    int mib[] = { CTL_KERN, KERN_MAXFILESPERPROC };
+    int maxFilesPerProc = 0;
+    size_t len = sizeof(maxFilesPerProc);
+    if (int returnCode = sysctl(mib, 2, &maxFilesPerProc, &len, NULL, 0)) {
+        RELEASE_LOG_ERROR(Process, "Could not get KERN_MAXFILESPERPROC: %d", returnCode);
+        return;
+    }
+
+    // Set the fd limit to 2560, which is the magic number used by several other frameworks. The
+    // default on macOS is 256 (see `launchctl limit`).
+    struct rlimit newLimits = currentLimits;
+    newLimits.rlim_cur = std::min({ rlim_t { 2560 }, currentLimits.rlim_max, static_cast<rlim_t>(maxFilesPerProc) });
+
+    if (newLimits.rlim_cur < currentLimits.rlim_cur) {
+        RELEASE_LOG_ERROR(Process, "Could not increase fd limit: proposed limit %llu is less than current limit %llu", newLimits.rlim_cur, currentLimits.rlim_cur);
+        return;
+    }
+
+    if (int returnCode = setrlimit(RLIMIT_NOFILE, &newLimits))
+        RELEASE_LOG_ERROR(Process, "Could not setrlimit(RLIMIT_NOFILE): %d", returnCode);
 }
 
 } // namespace WebKit

@@ -57,7 +57,7 @@ class PageClientImpl final : public PageClientImplCocoa
     , public WebFullScreenManagerProxyClient
 #endif
     {
-    WTF_MAKE_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED(PageClientImpl);
 #if ENABLE(FULLSCREEN_API)
     WTF_OVERRIDE_DELETE_FOR_CHECKED_PTR(PageClientImpl);
 #endif
@@ -74,7 +74,7 @@ private:
     WebCore::IntSize viewSize() override;
     bool isViewWindowActive() override;
     bool isViewFocused() override;
-    bool isViewVisible() override;
+    bool isActiveViewVisible() override;
     void viewIsBecomingVisible() override;
     bool canTakeForegroundAssertions() override;
     bool isViewInWindow() override;
@@ -299,7 +299,7 @@ private:
     void didPerformDragOperation(bool handled) override;
     void startDrag(const WebCore::DragItem&, WebCore::ShareableBitmap::Handle&& image, const std::optional<WebCore::NodeIdentifier>&) override;
     void willReceiveEditDragSnapshot() override;
-    void didReceiveEditDragSnapshot(std::optional<WebCore::TextIndicatorData>) override;
+    void didReceiveEditDragSnapshot(RefPtr<WebCore::TextIndicator>&&) override;
     void didChangeDragCaretRect(const WebCore::IntRect& previousCaretRect, const WebCore::IntRect& caretRect) override;
 #endif
 

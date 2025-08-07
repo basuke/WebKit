@@ -28,6 +28,7 @@
 
 #if ENABLE(COCOA_WEBM_PLAYER)
 
+#import "AudioMediaStreamTrackRenderer.h"
 #import "AudioTrackPrivateWebM.h"
 #import "FloatSize.h"
 #import "GraphicsContext.h"
@@ -59,6 +60,7 @@
 #import <pal/avfoundation/MediaTimeAVFoundation.h>
 #import <pal/spi/cocoa/AVFoundationSPI.h>
 #import <pal/spi/cocoa/QuartzCoreSPI.h>
+#import <wtf/BlockObjCExceptions.h>
 #import <wtf/MainThread.h>
 #import <wtf/NativePromise.h>
 #import <wtf/SoftLinking.h>
@@ -309,7 +311,7 @@ void MediaPlayerPrivateWebM::dataReceived(const SharedBuffer& buffer)
 
     invokeAsync(m_appendQueue, [buffer = Ref { buffer }, parser = m_parser]() mutable {
         return MediaPromise::createAndSettle(parser->appendData(WTFMove(buffer)));
-    })->whenSettled(RunLoop::protectedMain(), [weakThis = ThreadSafeWeakPtr { *this }](auto&& result) {
+    })->whenSettled(RunLoop::mainSingleton(), [weakThis = ThreadSafeWeakPtr { *this }](auto&& result) {
         if (RefPtr protectedThis = weakThis.get())
             protectedThis->appendCompleted(!!result);
     });
@@ -432,7 +434,7 @@ void MediaPlayerPrivateWebM::seekInternal()
 
     m_seekState = Seeking;
 
-    seekTo(m_lastSeekTime)->whenSettled(RunLoop::protectedMain(), [weakThis = ThreadSafeWeakPtr { *this }](auto&& result) {
+    seekTo(m_lastSeekTime)->whenSettled(RunLoop::mainSingleton(), [weakThis = ThreadSafeWeakPtr { *this }](auto&& result) {
         if (!result)
             return; // seek cancelled.
 
@@ -1402,9 +1404,14 @@ void MediaPlayerPrivateWebM::addAudioRenderer(TrackID trackId)
 #if HAVE(AUDIO_OUTPUT_DEVICE_UNIQUE_ID)
     auto deviceId = player->audioOutputDeviceIdOverride();
     if (!deviceId.isNull() && renderer) {
-        if (deviceId.isEmpty())
-            renderer.get().audioOutputDeviceUniqueID = nil;
-        else
+        if (deviceId.isEmpty() || deviceId == AudioMediaStreamTrackRenderer::defaultDeviceID()) {
+            // FIXME(rdar://155986053): Remove the @try/@catch when this exception is resolved.
+            @try {
+                renderer.get().audioOutputDeviceUniqueID = nil;
+            } @catch(NSException *exception) {
+                ERROR_LOG(LOGIDENTIFIER, "-[AVSampleBufferRenderSynchronizer setAudioOutputDeviceUniqueID:] threw an exception: ", exception.name, ", reason : ", exception.reason);
+            }
+        } else
             renderer.get().audioOutputDeviceUniqueID = deviceId.createNSString().get();
     }
 #endif

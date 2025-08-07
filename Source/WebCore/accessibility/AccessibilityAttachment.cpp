@@ -35,17 +35,17 @@
 #if ENABLE(ATTACHMENT_ELEMENT)
 
 namespace WebCore {
-    
+
 using namespace HTMLNames;
 
-AccessibilityAttachment::AccessibilityAttachment(AXID axID, RenderAttachment& renderer)
-    : AccessibilityRenderObject(axID, renderer)
+AccessibilityAttachment::AccessibilityAttachment(AXID axID, RenderAttachment& renderer, AXObjectCache& cache)
+    : AccessibilityRenderObject(axID, renderer, cache)
 {
 }
 
-Ref<AccessibilityAttachment> AccessibilityAttachment::create(AXID axID, RenderAttachment& renderer)
+Ref<AccessibilityAttachment> AccessibilityAttachment::create(AXID axID, RenderAttachment& renderer, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilityAttachment(axID, renderer));
+    return adoptRef(*new AccessibilityAttachment(axID, renderer, cache));
 }
 
 bool AccessibilityAttachment::hasProgress(float* progress) const
@@ -64,7 +64,7 @@ float AccessibilityAttachment::valueForRange() const
     hasProgress(&progress);
     return progress;
 }
-    
+
 HTMLAttachmentElement* AccessibilityAttachment::attachmentElement() const
 {
     ASSERT(is<HTMLAttachmentElement>(node()));
@@ -75,17 +75,17 @@ bool AccessibilityAttachment::computeIsIgnored() const
 {
     return false;
 }
-    
+
 void AccessibilityAttachment::accessibilityText(Vector<AccessibilityText>& textOrder) const
 {
     RefPtr attachmentElement = this->attachmentElement();
     if (!attachmentElement)
         return;
-    
+
     auto title = attachmentElement->attachmentTitle();
     auto& subtitle = attachmentElement->attachmentSubtitle();
     auto& action = getAttribute(actionAttr);
-    
+
     if (action.length())
         textOrder.append(AccessibilityText(WTFMove(action), AccessibilityTextSource::Action));
 

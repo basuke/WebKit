@@ -74,7 +74,7 @@ LayerTreeHost::LayerTreeHost(WebPage& webPage, WebCore::PlatformDisplayID displa
 #endif
     : m_webPage(webPage)
     , m_sceneState(CoordinatedSceneState::create())
-    , m_layerFlushTimer(RunLoop::main(), this, &LayerTreeHost::layerFlushTimerFired)
+    , m_layerFlushTimer(RunLoop::mainSingleton(), "LayerTreeHost::LayerFlushTimer"_s, this, &LayerTreeHost::layerFlushTimerFired)
 #if !HAVE(DISPLAY_LINK)
     , m_displayID(displayID)
 #endif
@@ -88,6 +88,10 @@ LayerTreeHost::LayerTreeHost(WebPage& webPage, WebCore::PlatformDisplayID displa
         auto& rootLayer = m_sceneState->rootLayer();
 #if ENABLE(DAMAGE_TRACKING)
         rootLayer.setDamagePropagationEnabled(webPage.corePage()->settings().propagateDamagingInformation());
+        if (webPage.corePage()->settings().propagateDamagingInformation()) {
+            m_damageInGlobalCoordinateSpace = std::make_shared<Damage>(m_webPage.size());
+            rootLayer.setDamageInGlobalCoordinateSpace(m_damageInGlobalCoordinateSpace);
+        }
 #endif
         Locker locker { rootLayer.lock() };
         rootLayer.setAnchorPoint(FloatPoint3D(0, 0, 0));
@@ -96,7 +100,6 @@ LayerTreeHost::LayerTreeHost(WebPage& webPage, WebCore::PlatformDisplayID displa
 
 #if USE(GLIB_EVENT_LOOP)
     m_layerFlushTimer.setPriority(RunLoopSourcePriority::LayerFlushTimer);
-    m_layerFlushTimer.setName("[WebKit] LayerTreeHost"_s);
 #endif
     scheduleLayerFlush();
 
@@ -416,6 +419,8 @@ void LayerTreeHost::attachLayer(CoordinatedPlatformLayer& layer)
 {
 #if ENABLE(DAMAGE_TRACKING)
     layer.setDamagePropagationEnabled(webPage().corePage()->settings().propagateDamagingInformation());
+    if (m_damageInGlobalCoordinateSpace)
+        layer.setDamageInGlobalCoordinateSpace(m_damageInGlobalCoordinateSpace);
 #endif
     m_sceneState->addLayer(layer);
 }

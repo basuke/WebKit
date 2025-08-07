@@ -7310,7 +7310,7 @@ class TestCheckOutSource(BuildStepMixinAdditions, unittest.TestCase):
 
     def test_success_security(self):
         self.setupStep(CheckOutSource())
-        self.setProperty('project', 'apple/WebKit')
+        self.setProperty('project', 'WebKit/WebKit-security')
         self.expectRemoteCommands(
             ExpectShell(
                 workdir='wkdir',
@@ -7581,8 +7581,8 @@ class TestInstallHooks(BuildStepMixinAdditions, unittest.TestCase):
 
     def test_apple_remote(self):
         self.setupStep(InstallHooks())
-        self.setProperty('github.head.repo.full_name', 'JonWBedard/WebKit-apple')
-        self.setProperty('project', 'apple/WebKit')
+        self.setProperty('github.head.repo.full_name', 'JonWBedard/WebKit-security')
+        self.setProperty('project', 'WebKit/WebKit-security')
         self.expectRemoteCommands(
             ExpectShell(workdir='wkdir',
                         timeout=30,
@@ -7595,7 +7595,7 @@ class TestInstallHooks(BuildStepMixinAdditions, unittest.TestCase):
                         command=[
                             'python3', 'Tools/Scripts/git-webkit',
                             'install-hooks', 'pre-push', '--mode', 'no-radar',
-                            '--level', 'github.com:JonWBedard/WebKit-apple=2',
+                            '--level', 'github.com:JonWBedard/WebKit-security=1',
                         ]) + ExpectShell.log('stdio', stdout='Unexpected failure') + 0,
         )
         self.expectOutcome(result=SUCCESS, state_string='Installed hooks to checkout')
@@ -8182,7 +8182,7 @@ class TestValidateCommitMessage(BuildStepMixinAdditions, unittest.TestCase):
                              logEnviron=False,
                              timeout=60,
                              command=['/bin/bash', '--posix', '-o', 'pipefail', '-c',
-                                      "git log eng/pull-request-branch ^main | grep -q '\\(Reviewed by\\|Rubber-stamped by\\|Rubber stamped by\\|Unreviewed\\|Versioning.\\)' || echo 'No reviewer information in commit message'"])
+                                      "git log eng/pull-request-branch ^main > commit_msg.txt; grep -q '\\(Reviewed by\\|Rubber-stamped by\\|Rubber stamped by\\|Unreviewed\\|Versioning.\\)' commit_msg.txt || echo 'No reviewer information in commit message';"])
             + 0, ExpectShell(workdir='wkdir',
                              logEnviron=False,
                              timeout=60,
@@ -8217,7 +8217,7 @@ class TestValidateCommitMessage(BuildStepMixinAdditions, unittest.TestCase):
             + 0, ExpectShell(workdir='wkdir',
                         logEnviron=False,
                         timeout=60,
-                        command=['/bin/bash', '--posix', '-o', 'pipefail', '-c', "git log HEAD ^origin/main | grep -q '\\(Reviewed by\\|Rubber-stamped by\\|Rubber stamped by\\|Unreviewed\\|Versioning.\\)' || echo 'No reviewer information in commit message'"])
+                        command=['/bin/bash', '--posix', '-o', 'pipefail', '-c', "git log HEAD ^origin/main > commit_msg.txt; grep -q '\\(Reviewed by\\|Rubber-stamped by\\|Rubber stamped by\\|Unreviewed\\|Versioning.\\)' commit_msg.txt || echo 'No reviewer information in commit message';"])
             + 0, ExpectShell(workdir='wkdir',
                         logEnviron=False,
                         timeout=60,
@@ -8277,7 +8277,7 @@ class TestValidateCommitMessage(BuildStepMixinAdditions, unittest.TestCase):
             + 0, ExpectShell(workdir='wkdir',
                         logEnviron=False,
                         timeout=60,
-                        command=['/bin/bash', '--posix', '-o', 'pipefail', '-c', "git log eng/pull-request-branch ^main | grep -q '\\(Reviewed by\\|Rubber-stamped by\\|Rubber stamped by\\|Unreviewed\\|Versioning.\\)' || echo 'No reviewer information in commit message'"])
+                        command=['/bin/bash', '--posix', '-o', 'pipefail', '-c', "git log eng/pull-request-branch ^main > commit_msg.txt; grep -q '\\(Reviewed by\\|Rubber-stamped by\\|Rubber stamped by\\|Unreviewed\\|Versioning.\\)' commit_msg.txt || echo 'No reviewer information in commit message';"])
             + 0, ExpectShell(workdir='wkdir',
                         logEnviron=False,
                         timeout=60,

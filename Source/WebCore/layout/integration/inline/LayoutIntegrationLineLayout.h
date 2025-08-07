@@ -63,7 +63,7 @@ struct LineAdjustment;
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(LayoutIntegration_LineLayout);
 
 class LineLayout final : public CanMakeCheckedPtr<LineLayout> {
-    WTF_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(LayoutIntegration_LineLayout);
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(LineLayout, LayoutIntegration_LineLayout);
     WTF_OVERRIDE_DELETE_FOR_CHECKED_PTR(LineLayout);
 public:
     LineLayout(RenderBlockFlow&);
@@ -111,9 +111,8 @@ public:
     bool isPaginated() const;
     size_t lineCount() const;
     bool hasInkOverflow() const;
-    LayoutUnit firstLinePhysicalBaseline() const;
-    LayoutUnit lastLinePhysicalBaseline() const;
-    LayoutUnit lastLineLogicalBaseline() const;
+    LayoutUnit firstLineBaseline() const;
+    LayoutUnit lastLineBaseline() const;
     LayoutRect firstInlineBoxRect(const RenderInline&) const;
     LayoutRect enclosingBorderBoxRectFor(const RenderInline&) const;
 
@@ -161,7 +160,7 @@ private:
     void clearInlineContent();
     void releaseCachesAndResetDamage();
 
-    LayoutUnit physicalBaselineForLine(const InlineDisplay::Line&) const;
+    LayoutUnit baselineForLine(const InlineDisplay::Line&) const;
 
     bool isContentConsideredStale() const;
 

@@ -148,6 +148,9 @@ messages -> WebPage WantsAsyncDispatchMessage {
     ClearServiceWorkerEntitlementOverride() -> ()
 #endif
 
+    ProcessWillSuspend()
+    ProcessDidResume()
+
     RequestImageBitmap(struct WebCore::ElementContext elementContext) -> (std::optional<WebCore::ShareableBitmapHandle> image, String sourceMIMEType)
 
     SetControlledByAutomation(bool controlled)
@@ -509,9 +512,11 @@ messages -> WebPage WantsAsyncDispatchMessage {
     ResolveAccessibilityHitTestForTesting(WebCore::FrameIdentifier frameID, WebCore::IntPoint point) -> (String result)
     EnableAccessibility()
 
+#if PLATFORM(MAC)
     GetAccessibilityWebProcessDebugInfo() -> (struct WebCore::AXDebugInfo result) Synchronous
 #if ENABLE(ACCESSIBILITY_ISOLATED_TREE)
     ClearAccessibilityIsolatedTree()
+#endif
 #endif
 
 #if PLATFORM(COCOA)
@@ -635,8 +640,6 @@ messages -> WebPage WantsAsyncDispatchMessage {
 #endif
 
 #if ENABLE(POINTER_LOCK)
-    DidAcquirePointerLock()
-    DidNotAcquirePointerLock()
     DidLosePointerLock()
 #endif
 
@@ -708,7 +711,7 @@ messages -> WebPage WantsAsyncDispatchMessage {
 #endif
 
 #if PLATFORM(WPE) && USE(GBM) && ENABLE(WPE_PLATFORM)
-    PreferredBufferFormatsDidChange(Vector<WebKit::DMABufRendererBufferFormat> preferredBufferFormats)
+    PreferredBufferFormatsDidChange(Vector<WebKit::RendererBufferFormat> preferredBufferFormats)
 #endif
 
     StartTextManipulations(Vector<WebCore::TextManipulationControllerExclusionRule> exclusionRules, bool includeSubframes) -> ()

@@ -2145,8 +2145,7 @@ static bool recompositeChangeRequiresGeometryUpdate(const RenderStyle& oldStyle,
         || oldStyle.transformOriginZ() != newStyle.transformOriginZ()
         || oldStyle.usedTransformStyle3D() != newStyle.usedTransformStyle3D()
         || oldStyle.perspective() != newStyle.perspective()
-        || oldStyle.perspectiveOriginX() != newStyle.perspectiveOriginX()
-        || oldStyle.perspectiveOriginY() != newStyle.perspectiveOriginY()
+        || oldStyle.perspectiveOrigin() != newStyle.perspectiveOrigin()
         || oldStyle.backfaceVisibility() != newStyle.backfaceVisibility()
         || oldStyle.offsetPath() != newStyle.offsetPath()
         || oldStyle.offsetAnchor() != newStyle.offsetAnchor()
@@ -2293,7 +2292,7 @@ void RenderLayerCompositor::layerStyleChanged(StyleDifference diff, RenderLayer&
             }
             // If we're changing to/from 0 opacity, then we need to reconfigure the layer since we try to
             // skip backing store allocation for opacity:0.
-            if (oldStyle && oldStyle->opacity() != newStyle.opacity() && (!oldStyle->opacity() || !newStyle.opacity()))
+            if (oldStyle && oldStyle->opacity() != newStyle.opacity() && (oldStyle->opacity().isTransparent() || newStyle.opacity().isTransparent()))
                 layer.setNeedsCompositingConfigurationUpdate();
         }
         if (oldStyle && recompositeChangeRequiresGeometryUpdate(*oldStyle, newStyle)) {

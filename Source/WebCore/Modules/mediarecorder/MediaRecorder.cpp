@@ -46,7 +46,7 @@
 #include "MediaRecorderPrivateAVFImpl.h"
 #endif
 
-#if USE(GSTREAMER_TRANSCODER)
+#if USE(GSTREAMER)
 #include "MediaRecorderPrivateGStreamer.h"
 #endif
 
@@ -58,14 +58,14 @@ MediaRecorder::CreatorFunction MediaRecorder::m_customCreator = nullptr;
 
 bool MediaRecorder::isTypeSupported(Document& document, const String& value)
 {
-#if PLATFORM(COCOA) || USE(GSTREAMER_TRANSCODER)
+#if PLATFORM(COCOA) || USE(GSTREAMER)
     if (value.isEmpty())
         return true;
 
     ContentType mimeType(value);
 #if PLATFORM(COCOA)
     return MediaRecorderPrivateAVFImpl::isTypeSupported(document, mimeType);
-#elif USE(GSTREAMER_TRANSCODER)
+#elif USE(GSTREAMER)
     UNUSED_PARAM(document);
     return MediaRecorderPrivateGStreamer::isTypeSupported(mimeType);
 #endif
@@ -102,7 +102,7 @@ ExceptionOr<std::unique_ptr<MediaRecorderPrivate>> MediaRecorder::createMediaRec
 
 #if PLATFORM(COCOA) && USE(AVFOUNDATION)
     std::unique_ptr<MediaRecorderPrivate> result = MediaRecorderPrivateAVFImpl::create(stream, options);
-#elif USE(GSTREAMER_TRANSCODER)
+#elif USE(GSTREAMER)
     std::unique_ptr<MediaRecorderPrivate> result = MediaRecorderPrivateGStreamer::create(stream, options);
 #else
     std::unique_ptr<MediaRecorderPrivate> result;
@@ -357,7 +357,7 @@ void MediaRecorder::fetchData(FetchDataCallback&& callback, TakePrivateRecorder 
         pendingActivity->object().m_isFetchingData = false;
         callback(pendingActivity->object(), WTFMove(buffer), mimeType, timeCode);
         for (auto& task : std::exchange(pendingActivity->object().m_pendingFetchDataTasks, { }))
-            task(pendingActivity->object(), FragmentedSharedBuffer::create(), mimeType, timeCode);
+            task(pendingActivity->object(), SharedBuffer::create(), mimeType, timeCode);
     });
 }
 

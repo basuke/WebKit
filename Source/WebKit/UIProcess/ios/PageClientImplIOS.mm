@@ -138,7 +138,7 @@ IntSize PageClientImpl::viewSize()
 bool PageClientImpl::isViewWindowActive()
 {
     // FIXME: https://bugs.webkit.org/show_bug.cgi?id=133098
-    return isViewVisible() || [webView() _isRetainingActiveFocusedState];
+    return isActiveViewVisible() || [webView() _isRetainingActiveFocusedState];
 }
 
 bool PageClientImpl::isViewFocused()
@@ -147,7 +147,7 @@ bool PageClientImpl::isViewFocused()
     return (isViewInWindow() && ![webView _isBackground] && [webView _contentViewIsFirstResponder]) || [webView _isRetainingActiveFocusedState];
 }
 
-bool PageClientImpl::isViewVisible()
+bool PageClientImpl::isActiveViewVisible()
 {
     auto webView = this->webView();
     if (!webView)
@@ -206,12 +206,12 @@ bool PageClientImpl::isViewInWindow()
 
 bool PageClientImpl::isViewVisibleOrOccluded()
 {
-    return isViewVisible();
+    return isActiveViewVisible();
 }
 
 bool PageClientImpl::isVisuallyIdle()
 {
-    return !isViewVisible();
+    return !isActiveViewVisible();
 }
 
 void PageClientImpl::processDidExit()
@@ -286,9 +286,13 @@ void PageClientImpl::preferencesDidChange()
     notImplemented();
 }
 
-void PageClientImpl::toolTipChanged(const String&, const String&)
+void PageClientImpl::toolTipChanged(const String&, const String& newToolTip)
 {
-    notImplemented();
+#if HAVE(UITOOLTIPINTERACTION)
+    [contentView() _toolTipChanged:newToolTip.createNSString().get()];
+#else
+    UNUSED_PARAM(newToolTip);
+#endif
 }
 
 void PageClientImpl::didNotHandleTapAsClick(const WebCore::IntPoint& point)
@@ -1050,9 +1054,9 @@ void PageClientImpl::willReceiveEditDragSnapshot()
     [contentView() _willReceiveEditDragSnapshot];
 }
 
-void PageClientImpl::didReceiveEditDragSnapshot(std::optional<TextIndicatorData> data)
+void PageClientImpl::didReceiveEditDragSnapshot(RefPtr<WebCore::TextIndicator>&& textIndicator)
 {
-    [contentView() _didReceiveEditDragSnapshot:data];
+    [contentView() _didReceiveEditDragSnapshot:WTFMove(textIndicator)];
 }
 
 void PageClientImpl::didChangeDragCaretRect(const IntRect& previousCaretRect, const IntRect& caretRect)

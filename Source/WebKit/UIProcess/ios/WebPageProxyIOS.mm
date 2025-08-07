@@ -59,6 +59,7 @@
 #import "UserData.h"
 #import "VideoPresentationManagerProxy.h"
 #import "ViewUpdateDispatcherMessages.h"
+#import "WKMouseDeviceObserver.h"
 #import "WebAuthenticatorCoordinatorProxy.h"
 #import "WebAutocorrectionContext.h"
 #import "WebAutocorrectionData.h"
@@ -1356,10 +1357,10 @@ void WebPageProxy::willReceiveEditDragSnapshot()
         pageClient->willReceiveEditDragSnapshot();
 }
 
-void WebPageProxy::didReceiveEditDragSnapshot(std::optional<TextIndicatorData> data)
+void WebPageProxy::didReceiveEditDragSnapshot(RefPtr<WebCore::TextIndicator>&& textIndicator)
 {
     if (RefPtr pageClient = this->pageClient())
-        pageClient->didReceiveEditDragSnapshot(data);
+        pageClient->didReceiveEditDragSnapshot(WTFMove(textIndicator));
 }
 
 void WebPageProxy::didConcludeDrop()
@@ -1655,7 +1656,7 @@ void WebPageProxy::willOpenAppLink()
     // We chose 25 seconds because the system only gives us 30 seconds and we don't want to get too close to that limit
     // to avoid assertion invalidation (or even termination).
     takeOpeningAppLinkActivity();
-    WorkQueue::protectedMain()->dispatchAfter(25_s, [weakThis = WeakPtr { *this }] {
+    WorkQueue::mainSingleton().dispatchAfter(25_s, [weakThis = WeakPtr { *this }] {
         if (RefPtr protectedThis = weakThis.get())
             protectedThis->dropOpeningAppLinkActivity();
     });
@@ -1874,6 +1875,14 @@ void WebPageProxy::didEndContextMenuInteraction()
 }
 
 #endif // USE(UICONTEXTMENU)
+
+
+#if HAVE(MOUSE_DEVICE_OBSERVATION)
+bool WebPageProxy::hasMouseDevice()
+{
+    return [[WKMouseDeviceObserver sharedInstance] hasMouseDevice];
+}
+#endif
 
 } // namespace WebKit
 

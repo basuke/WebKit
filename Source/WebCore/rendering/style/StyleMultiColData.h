@@ -38,7 +38,7 @@ namespace WebCore {
 
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(StyleMultiColData);
 class StyleMultiColData : public RefCounted<StyleMultiColData> {
-    WTF_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(StyleMultiColData);
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(StyleMultiColData, StyleMultiColData);
 public:
     static Ref<StyleMultiColData> create() { return adoptRef(*new StyleMultiColData); }
     Ref<StyleMultiColData> copy() const;
@@ -49,10 +49,10 @@ public:
     void dumpDifferences(TextStream&, const StyleMultiColData&) const;
 #endif
 
-    unsigned short ruleWidth() const
+    Style::LineWidth ruleWidth() const
     {
         if (rule.style() == BorderStyle::None || rule.style() == BorderStyle::Hidden)
-            return 0; 
+            return 0_css_px;
         return rule.width();
     }
 

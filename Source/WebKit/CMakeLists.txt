@@ -311,6 +311,7 @@ set(WebKit_MESSAGES_IN_FILES
     UIProcess/Model/ModelProcessProxy
 
     UIProcess/Inspector/RemoteWebInspectorUIProxy
+    UIProcess/Inspector/WebInspectorBackendProxy
     UIProcess/Inspector/WebInspectorUIProxy
 
     UIProcess/Network/NetworkProcessProxy
@@ -506,6 +507,7 @@ set(WebKit_SERIALIZATION_IN_FILES
     Shared/SandboxExtension.serialization.in
     Shared/ScriptTrackingPrivacyFilter.serialization.in
     Shared/ScrollingAccelerationCurve.serialization.in
+    Shared/SerializedNode.serialization.in
     Shared/SessionState.serialization.in
     Shared/SyntheticEditingCommandType.serialization.in
     Shared/TextFlags.serialization.in

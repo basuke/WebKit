@@ -221,18 +221,18 @@ class RemoteLayerBackingStoreProperties {
 public:
     RemoteLayerBackingStoreProperties() = default;
     RemoteLayerBackingStoreProperties(RemoteLayerBackingStoreProperties&&) = default;
-#if HAVE(SUPPORT_HDR_DISPLAY)
-    RemoteLayerBackingStoreProperties(ImageBufferBackendHandle&&, WebCore::RenderingResourceIdentifier, bool opaque, bool hasExtendedDynamicRangeContent);
-#else
     RemoteLayerBackingStoreProperties(ImageBufferBackendHandle&&, WebCore::RenderingResourceIdentifier, bool opaque);
-#endif
 
-    void applyBackingStoreToLayer(CALayer *, bool replayDynamicContentScalingDisplayListsIntoBackingStore, UIView * hostingView);
-    void updateCachedBuffers(RemoteLayerTreeNode&, UIView *);
+    void applyBackingStoreToNode(RemoteLayerTreeNode&, bool replayDynamicContentScalingDisplayListsIntoBackingStore, UIView* hostingView);
 
     const std::optional<ImageBufferBackendHandle>& bufferHandle() const { return m_bufferHandle; };
 
-    static RetainPtr<id> layerContentsBufferFromBackendHandle(ImageBufferBackendHandle&&, bool isDelegatedDisplay);
+    struct LayerContentsBufferInfo {
+        RetainPtr<id> buffer;
+        bool hasExtendedDynamicRange;
+    };
+
+    static LayerContentsBufferInfo layerContentsBufferFromBackendHandle(ImageBufferBackendHandle&&, bool isDelegatedDisplay);
 
     void dump(WTF::TextStream&) const;
 
@@ -243,8 +243,10 @@ public:
 
 private:
     friend struct IPC::ArgumentCoder<RemoteLayerBackingStoreProperties, void>;
+
+    LayerContentsBufferInfo lookupCachedBuffer(RemoteLayerTreeNode&);
+
     std::optional<ImageBufferBackendHandle> m_bufferHandle;
-    RetainPtr<id> m_contentsBuffer;
 
     std::optional<RemoteImageBufferSetIdentifier> m_bufferSet;
 
@@ -262,7 +264,6 @@ private:
     bool m_isOpaque { false };
     RemoteLayerBackingStore::Type m_type;
 #if HAVE(SUPPORT_HDR_DISPLAY)
-    bool m_hasExtendedDynamicRange { false };
     float m_maxRequestedEDRHeadroom { 1 };
 #endif
 };

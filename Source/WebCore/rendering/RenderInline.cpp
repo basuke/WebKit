@@ -3,6 +3,7 @@
  *           (C) 1999 Antti Koivisto (koivisto@kde.org)
  * Copyright (C) 2003-2023 Apple Inc. All rights reserved.
  * Copyright (C) 2014 Google Inc. All rights reserved.
+ * Copyright (C) 2025 Samuel Weinig <sam@webkit.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -210,8 +211,8 @@ bool RenderInline::mayAffectLayout() const
     auto hasHardLineBreakChildOnly = firstChild() && firstChild() == lastChild() && firstChild()->isBR();
     bool checkFonts = document().inNoQuirksMode();
     auto mayAffectLayout = (parentRenderInline && parentRenderInline->mayAffectLayout())
-        || (parentRenderInline && parentStyle->verticalAlign() != VerticalAlign::Baseline)
-        || style().verticalAlign() != VerticalAlign::Baseline
+        || (parentRenderInline && !WTF::holdsAlternative<CSS::Keyword::Baseline>(parentStyle->verticalAlign()))
+        || !WTF::holdsAlternative<CSS::Keyword::Baseline>(style().verticalAlign())
         || !style().textEmphasisStyle().isNone()
         || (checkFonts && (!parentStyle->fontCascade().metricsOfPrimaryFont().hasIdenticalAscentDescentAndLineGap(style().fontCascade().metricsOfPrimaryFont())
         || parentStyle->lineHeight() != style().lineHeight()))
@@ -222,7 +223,7 @@ bool RenderInline::mayAffectLayout() const
         parentStyle = &parent()->firstLineStyle();
         auto& childStyle = firstLineStyle();
         mayAffectLayout = !parentStyle->fontCascade().metricsOfPrimaryFont().hasIdenticalAscentDescentAndLineGap(childStyle.fontCascade().metricsOfPrimaryFont())
-            || childStyle.verticalAlign() != VerticalAlign::Baseline
+            || !WTF::holdsAlternative<CSS::Keyword::Baseline>(childStyle.verticalAlign())
             || parentStyle->lineHeight() != childStyle.lineHeight();
     }
     return mayAffectLayout;
@@ -414,7 +415,7 @@ bool RenderInline::nodeAtPoint(const HitTestRequest& request, HitTestResult& res
     return false;
 }
 
-VisiblePosition RenderInline::positionForPoint(const LayoutPoint& point, HitTestSource source, const RenderFragmentContainer* fragment)
+PositionWithAffinity RenderInline::positionForPoint(const LayoutPoint& point, HitTestSource source, const RenderFragmentContainer* fragment)
 {
     auto& containingBlock = *this->containingBlock();
 
@@ -817,18 +818,6 @@ LegacyInlineFlowBox* RenderInline::createAndAppendInlineFlowBox()
     return flowBox;
 }
 
-LayoutUnit RenderInline::lineHeight(bool firstLine, LineDirectionMode /*direction*/) const
-{
-    auto& lineStyle = firstLine ? firstLineStyle() : style();
-    return LayoutUnit::fromFloatCeil(lineStyle.computedLineHeight());
-}
-
-LayoutUnit RenderInline::baselinePosition() const
-{
-    auto& fontMetrics = style().metricsOfPrimaryFont();
-    return LayoutUnit { fontMetrics.ascent() + (lineHeight(false, parent()->writingMode().isHorizontal() ? HorizontalLine : VerticalLine) - fontMetrics.height()) / 2 };
-}
-
 LayoutSize RenderInline::offsetForInFlowPositionedInline(const RenderBox* child) const
 {
     // FIXME: This function isn't right with mixed writing modes.
@@ -870,10 +859,12 @@ LayoutSize RenderInline::offsetForInFlowPositionedInline(const RenderBox* child)
     // Per http://www.w3.org/TR/CSS2/visudet.html#abs-non-replaced-width an absolute positioned box with a static position
     // should locate itself as though it is a normal flow box in relation to its containing block.
     LayoutSize logicalOffset;
-    if (!child->style().hasStaticInlinePosition(writingMode().isHorizontal()))
+    if (!child->style().hasStaticInlinePosition(writingMode().isHorizontal())
+        || child->style().positionArea() || child->style().justifySelf().position() == ItemPosition::AnchorCenter)
         logicalOffset.setWidth(inlinePosition);
 
-    if (!child->style().hasStaticBlockPosition(writingMode().isHorizontal()))
+    if (!child->style().hasStaticBlockPosition(writingMode().isHorizontal())
+        || child->style().positionArea() || child->style().alignSelf().position() == ItemPosition::AnchorCenter)
         logicalOffset.setHeight(blockPosition);
 
     return writingMode().isHorizontal() ? logicalOffset : logicalOffset.transposedSize();

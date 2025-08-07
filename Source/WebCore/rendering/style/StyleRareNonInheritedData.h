@@ -30,14 +30,12 @@
 #include "LengthPoint.h"
 #include "LineClampValue.h"
 #include "NameScope.h"
-#include "NinePieceImage.h"
 #include "PositionArea.h"
 #include "PositionTryFallback.h"
 #include "ScopedName.h"
 #include "ScrollTypes.h"
-#include "ScrollbarGutter.h"
-#include "ShapeValue.h"
 #include "StyleAnchorName.h"
+#include "StyleBlockStepSize.h"
 #include "StyleClip.h"
 #include "StyleClipPath.h"
 #include "StyleColor.h"
@@ -45,30 +43,38 @@
 #include "StyleContainerName.h"
 #include "StyleContentAlignmentData.h"
 #include "StyleGapGutter.h"
+#include "StyleMaskBorder.h"
+#include "StyleMaximumLines.h"
 #include "StyleOffsetAnchor.h"
 #include "StyleOffsetDistance.h"
 #include "StyleOffsetPath.h"
 #include "StyleOffsetPosition.h"
 #include "StyleOffsetRotate.h"
 #include "StylePerspective.h"
+#include "StylePerspectiveOrigin.h"
 #include "StylePrimitiveNumericTypes.h"
 #include "StyleProgressTimelineAxes.h"
 #include "StyleProgressTimelineName.h"
 #include "StyleRotate.h"
 #include "StyleScale.h"
+#include "StyleScrollBehavior.h"
 #include "StyleScrollMargin.h"
 #include "StyleScrollPadding.h"
 #include "StyleScrollSnapPoints.h"
 #include "StyleScrollTimelines.h"
+#include "StyleScrollbarGutter.h"
 #include "StyleSelfAlignmentData.h"
+#include "StyleShapeImageThreshold.h"
+#include "StyleShapeMargin.h"
+#include "StyleShapeOutside.h"
+#include "StyleTextDecorationThickness.h"
 #include "StyleTextEdge.h"
 #include "StyleTranslate.h"
 #include "StyleViewTimelineInsets.h"
 #include "StyleViewTimelines.h"
 #include "StyleViewTransitionClass.h"
-#include "TextDecorationThickness.h"
+#include "StyleViewTransitionName.h"
 #include "TouchAction.h"
-#include "ViewTransitionName.h"
 #include <memory>
 #include <wtf/DataRef.h>
 #include <wtf/Markable.h>
@@ -83,7 +89,6 @@ namespace WebCore {
 using namespace CSS::Literals;
 
 class AnimationList;
-class ContentData;
 class PathOperation;
 class StyleCustomPropertyData;
 class StyleDeprecatedFlexibleBoxData;
@@ -119,7 +124,7 @@ enum class PageSizeType : uint8_t {
 // actually uses one of these properties.
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(StyleRareNonInheritedData);
 class StyleRareNonInheritedData : public RefCounted<StyleRareNonInheritedData> {
-    WTF_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(StyleRareNonInheritedData);
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(StyleRareNonInheritedData, StyleRareNonInheritedData);
 public:
     static Ref<StyleRareNonInheritedData> create() { return adoptRef(*new StyleRareNonInheritedData); }
     Ref<StyleRareNonInheritedData> copy() const;
@@ -131,8 +136,6 @@ public:
     void dumpDifferences(TextStream&, const StyleRareNonInheritedData&) const;
 #endif
 
-    LengthPoint perspectiveOrigin() const { return { perspectiveOriginX, perspectiveOriginY }; }
-
     bool hasBackdropFilters() const;
     bool hasScrollTimelines() const { return !scrollTimelines.isEmpty() || !scrollTimelineNames.isNone(); }
     bool hasViewTimelines() const { return !viewTimelines.isEmpty() || !viewTimelineNames.isNone(); }
@@ -142,14 +145,11 @@ public:
     Style::ContainIntrinsicSize containIntrinsicWidth;
     Style::ContainIntrinsicSize containIntrinsicHeight;
 
-    Length perspectiveOriginX;
-    Length perspectiveOriginY;
-
     LineClampValue lineClamp; // An Apple extension.
 
     float zoom;
 
-    size_t maxLines { 0 };
+    Style::MaximumLines maxLines;
 
     OverflowContinue overflowContinue { OverflowContinue::Auto };
 
@@ -177,15 +177,16 @@ public:
     
     RefPtr<StyleReflection> boxReflect;
 
-    NinePieceImage maskBorder;
+    Style::MaskBorder maskBorder;
 
     LengthSize pageSize;
 
-    RefPtr<ShapeValue> shapeOutside;
-    Length shapeMargin;
-    float shapeImageThreshold;
+    Style::ShapeOutside shapeOutside;
+    Style::ShapeMargin shapeMargin;
+    Style::ShapeImageThreshold shapeImageThreshold;
 
     Style::Perspective perspective;
+    Style::PerspectiveOrigin perspectiveOrigin;
 
     Style::ClipPath clipPath;
 
@@ -212,7 +213,7 @@ public:
     Style::OffsetAnchor offsetAnchor;
     Style::OffsetRotate offsetRotate;
 
-    TextDecorationThickness textDecorationThickness;
+    Style::TextDecorationThickness textDecorationThickness;
 
     Style::ScrollTimelines scrollTimelines;
     Style::ProgressTimelineAxes scrollTimelineAxes;
@@ -225,7 +226,7 @@ public:
 
     NameScope timelineScope;
 
-    ScrollbarGutter scrollbarGutter;
+    Style::ScrollbarGutter scrollbarGutter;
 
     ScrollSnapType scrollSnapType;
     ScrollSnapAlign scrollSnapAlign;
@@ -239,7 +240,7 @@ public:
     std::optional<PositionArea> positionArea;
     FixedVector<Style::PositionTryFallback> positionTryFallbacks;
 
-    std::optional<Length> blockStepSize;
+    Style::BlockStepSize blockStepSize;
     PREFERRED_TYPE(BlockStepAlign) unsigned blockStepAlign : 2;
     PREFERRED_TYPE(BlockStepInsert) unsigned blockStepInsert : 2;
     PREFERRED_TYPE(BlockStepRound) unsigned blockStepRound : 2;
@@ -252,7 +253,7 @@ public:
     PREFERRED_TYPE(bool) unsigned transformStyleForcedToFlat : 1; // The used value for transform-style is forced to flat by a grouping property.
     PREFERRED_TYPE(BackfaceVisibility) unsigned backfaceVisibility : 1;
 
-    PREFERRED_TYPE(ScrollBehavior) unsigned useSmoothScrolling : 1;
+    PREFERRED_TYPE(Style::ScrollBehavior) unsigned scrollBehavior : 1;
     PREFERRED_TYPE(TextDecorationStyle) unsigned textDecorationStyle : 3;
     PREFERRED_TYPE(TextGroupAlign) unsigned textGroupAlign : 3;
     PREFERRED_TYPE(ContentVisibility) unsigned contentVisibility : 2;

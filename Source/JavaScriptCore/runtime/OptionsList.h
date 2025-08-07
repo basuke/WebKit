@@ -216,7 +216,9 @@ bool hasCapacityToUseLargeGigacage();
     v(Double, miniVMHeapGrowthFactor, 1.20, Normal, nullptr) \
     v(Double, heapGrowthSteepnessFactor, 2.00, Normal, nullptr) \
     v(Double, heapGrowthMaxIncrease, 3.00, Normal, nullptr) \
-    v(Unsigned, heapGrowthFunctionThresholdInMB, 16 * 1024, Normal, nullptr) \
+    v(Unsigned, aggressiveHeapThresholdInMB, 16 * 1024, Normal, nullptr) \
+    v(Double, maxEdenSizeForRateLimitingMultiplier, 8.0, Normal, nullptr) \
+    v(Double, gcRateLimitingHalfLifeInMS, 1000.00, Normal, nullptr) \
     v(Double, criticalGCMemoryThreshold, 0.80, Normal, "percent memory in use the GC considers critical.  The collector is much more aggressive above this threshold"_s) \
     v(Double, customFullGCCallbackBailThreshold, -1.0, Normal, "percent of memory paged out before we bail out of timer based Full GCs. -1.0 means use (maxHeapGrowthFactor - 1)"_s) \
     v(Double, minimumMutatorUtilization, 0, Normal, nullptr) \
@@ -356,6 +358,7 @@ bool hasCapacityToUseLargeGigacage();
     v(Int32, maximumExecutionCountsBetweenCheckpointsForBaseline, 1000, Normal, nullptr) \
     v(Int32, maximumExecutionCountsBetweenCheckpointsForUpperTiers, 30000, Normal, nullptr) \
     v(Int32, highCostBaselineProfilingFunctionBytecodeCost, 10000, Normal, nullptr) \
+    v(Int32, valueProfileFillingRateMonitoringBytecodeCost, 5000, Normal, nullptr) \
     \
     v(Unsigned, likelyToTakeSlowCaseMinimumCount, 20, Normal, nullptr) \
     v(Unsigned, couldTakeSlowCaseMinimumCount, 10, Normal, nullptr) \
@@ -441,6 +444,7 @@ bool hasCapacityToUseLargeGigacage();
     v(Bool, exitOnResourceExhaustion, false, Normal, nullptr) \
     v(Bool, useExceptionFuzz, false, Normal, nullptr) \
     v(Unsigned, fireExceptionFuzzAt, 0, Normal, nullptr) \
+    v(Bool, fuzzAtomicJITMemcpy, false, Normal, nullptr) \
     v(Bool, validateDFGExceptionHandling, ASSERT_ENABLED, Normal, "Causes the DFG to emit code validating exception handling for each node that can exit"_s) \
     v(Bool, dumpSimulatedThrows, false, Normal, "Dumps the call stack of the last simulated throw if exception scope verification fails"_s) \
     v(Bool, validateExceptionChecks, false, Normal, "Verifies that needed exception checks are performed."_s) \
@@ -640,8 +644,8 @@ bool hasCapacityToUseLargeGigacage();
     v(Bool, useIteratorChunking, false, Normal, "Expose the Iterator.prototype.chunks and Iterator.prototype.windows methods."_s) \
     v(Bool, useIteratorSequencing, false, Normal, "Expose the Iterator.concat method."_s) \
     v(Bool, useJSONSourceTextAccess, true, Normal, "Expose JSON source text access feature."_s) \
-    v(Bool, useMapGetOrInsert, false, Normal, "Expose the Map.prototype.getOrInsert family of methods."_s) \
-    v(Bool, useMathSumPreciseMethod, false, Normal, "Expose the Math.sumPrecise() method."_s) \
+    v(Bool, useMapGetOrInsert, true, Normal, "Expose the Map.prototype.getOrInsert family of methods."_s) \
+    v(Bool, useMathSumPreciseMethod, true, Normal, "Expose the Math.sumPrecise() method."_s) \
     v(Bool, useMoreCurrencyDisplayChoices, false, Normal, "Enable more currencyDisplay choices for Intl.NumberFormat"_s) \
     v(Bool, useSharedArrayBuffer, false, Normal, nullptr) \
     v(Bool, useShadowRealm, false, Normal, "Expose the ShadowRealm object."_s) \

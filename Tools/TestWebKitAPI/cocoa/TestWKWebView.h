@@ -140,7 +140,10 @@ class Color;
 - (id)objectByEvaluatingJavaScriptWithUserGesture:(NSString *)script;
 - (id)objectByEvaluatingJavaScript:(NSString *)script;
 - (id)objectByEvaluatingJavaScript:(NSString *)script inFrame:(WKFrameInfo *)frame;
+- (id)objectByEvaluatingJavaScript:(NSString *)script inFrame:(WKFrameInfo *)frame inContentWorld:(WKContentWorld *)world;
+- (id)objectByCallingAsyncFunction:(NSString *)script withArguments:(NSDictionary *)arguments;
 - (id)objectByCallingAsyncFunction:(NSString *)script withArguments:(NSDictionary *)arguments error:(NSError **)errorOut;
+- (id)objectByCallingAsyncFunction:(NSString *)script withArguments:(NSDictionary *)arguments inFrame:(WKFrameInfo *)frame inContentWorld:(WKContentWorld *)world;
 - (unsigned)waitUntilClientWidthIs:(unsigned)expectedClientWidth;
 - (CGRect)elementRectFromSelector:(NSString *)selector;
 - (CGPoint)elementMidpointFromSelector:(NSString *)selector;
@@ -183,6 +186,7 @@ class Color;
 - (std::optional<CGPoint>)getElementMidpoint:(NSString *)selector;
 - (Vector<WebCore::Color>)sampleColors;
 - (Vector<WebCore::Color>)sampleColorsWithInterval:(unsigned)interval;
+- (RetainPtr<_WKFrameTreeNode>)frameTree;
 @end
 
 #if PLATFORM(IOS_FAMILY)

@@ -55,7 +55,7 @@ class LayoutTree;
 enum class LayoutOptions : uint8_t;
 
 struct UpdateScrollInfoAfterLayoutTransaction {
-    WTF_MAKE_STRUCT_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(UpdateScrollInfoAfterLayoutTransaction);
 
     UpdateScrollInfoAfterLayoutTransaction();
     ~UpdateScrollInfoAfterLayoutTransaction();
@@ -212,6 +212,9 @@ private:
     bool isVisiblityAutoIgnored() const { return m_visiblityAutoIsIgnored; }
     void setIsVisiblityAutoIgnored(bool ignored) { m_visiblityAutoIsIgnored = ignored; }
 
+    bool isRevealedWhenFoundIgnored() const { return m_revealedWhenFoundIgnored; }
+    void setIsRevealedWhenFoundIgnored(bool ignored) { m_revealedWhenFoundIgnored = ignored; }
+
     void disablePercentHeightResolveFor(const RenderBox& flexItem);
     void enablePercentHeightResolveFor(const RenderBox& flexItem);
 
@@ -235,6 +238,7 @@ private:
     bool m_setNeedsLayoutWasDeferred { false };
     bool m_visiblityHiddenIsIgnored { false };
     bool m_visiblityAutoIsIgnored { false };
+    bool m_revealedWhenFoundIgnored { false };
     bool m_updateCompositingLayersIsPending { false };
     LayoutPhase m_layoutPhase { LayoutPhase::OutsideLayout };
     enum class LayoutNestedState : uint8_t  { NotInLayout, NotNested, Nested };

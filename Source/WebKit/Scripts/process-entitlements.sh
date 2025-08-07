@@ -91,6 +91,7 @@ function mac_process_gpu_entitlements()
 
         if (( "${TARGET_MAC_OS_X_VERSION_MAJOR}" >= 110000 ))
         then
+            plistbuddy Add :com.apple.developer.videotoolbox.client-sandboxed-decoder bool YES
             plistbuddy Add :com.apple.avfoundation.allow-system-wide-context bool YES
             plistbuddy add :com.apple.QuartzCore.webkit-limited-types bool YES
         fi
@@ -199,6 +200,7 @@ function webcontent_sandbox_entitlements()
     plistbuddy Add :com.apple.private.security.mutable-state-flags:9 string BlockFontServiceInWebContentSandbox
     plistbuddy Add :com.apple.private.security.mutable-state-flags:10 string UnifiedPDFEnabled
     plistbuddy Add :com.apple.private.security.mutable-state-flags:11 string WebProcessDidNotInjectStoreBundle
+    plistbuddy Add :com.apple.private.security.mutable-state-flags:12 string BlockUserInstalledFonts
     plistbuddy Add :com.apple.private.security.enable-state-flags array
     plistbuddy Add :com.apple.private.security.enable-state-flags:0 string EnableExperimentalSandbox
     plistbuddy Add :com.apple.private.security.enable-state-flags:1 string BlockIOKitInWebContentSandbox
@@ -211,6 +213,7 @@ function webcontent_sandbox_entitlements()
     plistbuddy Add :com.apple.private.security.enable-state-flags:8 string BlockFontServiceInWebContentSandbox
     plistbuddy Add :com.apple.private.security.enable-state-flags:9 string UnifiedPDFEnabled
     plistbuddy Add :com.apple.private.security.enable-state-flags:10 string WebProcessDidNotInjectStoreBundle
+    plistbuddy Add :com.apple.private.security.enable-state-flags:11 string BlockUserInstalledFonts
 }
 
 function extract_notification_names() {

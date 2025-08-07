@@ -256,9 +256,6 @@ fast/workers/worker-storagequota-query-usage.html
 fast/events/autoscroll-with-software-keyboard.html [ Skip ]
 fast/events/autoscroll-when-input-is-offscreen.html [ Skip ]
 
-# HTTP 204 (No Content) should be ignored
-webkit.org/b/60206 http/tests/navigation/response204.html
-
 # JSC does not support setIsolatedWorldSecurityOrigin
 webkit.org/b/61540 http/tests/security/isolatedWorld/cross-origin-xhr.html
 
@@ -1397,6 +1394,12 @@ imported/w3c/web-platform-tests/pointerevents/pointerup_after_pointerdown_target
 imported/w3c/web-platform-tests/pointerevents/predicted_events_attributes.html?touch [ Skip ]
 imported/w3c/web-platform-tests/pointerevents/touch-action-with-swipe-dir-change.html?touch [ Skip ]
 imported/w3c/web-platform-tests/pointerevents/coalesced_events_attributes_on_redispatch.https.html?touch [ Skip ]
+imported/w3c/web-platform-tests/pointerevents/pointerevent_element_haspointercapture_release_pending_capture.html?touch [ Skip ]
+imported/w3c/web-platform-tests/pointerevents/pointerevent_element_haspointercapture.html?touch [ Skip ]
+imported/w3c/web-platform-tests/pointerevents/pointerevent_releasepointercapture_release_right_after_capture.html?touch [ Skip ]
+imported/w3c/web-platform-tests/pointerevents/pointerevent_setpointercapture_override_pending_capture_element.html?touch [ Skip ]
+imported/w3c/web-platform-tests/pointerevents/pointerevent_setpointercapture_to_same_element_twice.html?touch [ Skip ]
+imported/w3c/web-platform-tests/pointerevents/pointerevent_pointerrawupdate_changes_pointer_capture.https.html [ Skip ]
 
 webkit.org/b/274686 imported/w3c/web-platform-tests/pointerevents/pointerevent_capture_mouse_and_release_and_capture_again.html [ Skip ]
 
@@ -1564,7 +1567,11 @@ fast/text/text-styles/-apple-system [ Pass ]
 
 webkit.org/b/214155 imported/w3c/web-platform-tests/html/cross-origin-embedder-policy/blob.https.html [ Pass Failure ]
 
-webkit.org/b/214422 imported/w3c/web-platform-tests/webaudio/the-audio-api/the-audiocontext-interface/suspend-after-construct.html [ Pass Failure ]
+webkit.org/b/214422 imported/w3c/web-platform-tests/webaudio/the-audio-api/the-audiocontext-interface/suspend-after-construct.html [ Skip ]
+
+# Skipping `setSinkId` tests due to lack of implementation.
+webkit.org/b/280303  imported/w3c/web-platform-tests/webaudio/the-audio-api/the-audiocontext-interface/audiocontext-sinkid-constructor.https.html [ Skip ]
+webkit.org/b/280303  imported/w3c/web-platform-tests/webaudio/the-audio-api/the-audiocontext-interface/audiocontext-sinkid-setsinkid.https.html [ Skip ]
 
 webkit.org/b/214498 imported/w3c/web-platform-tests/cors/remote-origin.htm [ Pass ]
 
@@ -2028,8 +2035,8 @@ webkit.org/b/237415 webgl/1.0.x/conformance/rendering/clipping-wide-points.html 
 [ x86_64 ] imported/w3c/web-platform-tests/css/css-color/parsing/color-computed-color-mix-function.html [ Failure ]
 
 # webkit.org/b/255427 [ Ventura ] 4/13 batch mark expectations and branch bugs
-[ arm64 ] imported/w3c/web-platform-tests/webaudio/the-audio-api/the-audioparam-interface/k-rate-audiobuffersource-connections.html [ Failure ]
-[ arm64 ] imported/w3c/web-platform-tests/webaudio/the-audio-api/the-audioparam-interface/k-rate-dynamics-compressor-connections.html [ Failure ]
+imported/w3c/web-platform-tests/webaudio/the-audio-api/the-audioparam-interface/k-rate-audiobuffersource-connections.html [ Failure ]
+imported/w3c/web-platform-tests/webaudio/the-audio-api/the-audioparam-interface/k-rate-dynamics-compressor-connections.html [ Failure ]
 [ arm64 ] webaudio/ScriptProcessor/scriptprocessor-offlineaudiocontext.html [ Failure ]
 
 # webkit.org/b/275963 -- these tests have slight differences on x86_64 and arm64
@@ -2215,7 +2222,6 @@ webkit.org/b/269873 imported/w3c/web-platform-tests/webrtc-extensions/transfer-d
 [ Sonoma ] fast/canvas/putImageData-multiple.html [ ImageOnlyFailure ]
 [ Sonoma ] fast/canvas/webgl/match-page-color-space-p3.html [ ImageOnlyFailure ]
 [ Sonoma ] fast/clip/hidpi-background-clip-with-text-fill-color.html [ ImageOnlyFailure ]
-[ Sonoma ] fast/images/decode-static-image-resolve.html [ ImageOnlyFailure ]
 [ Sonoma ] fast/images/image-orientation-none-canvas.html [ ImageOnlyFailure ]
 [ Sonoma ] fast/images/svg-mask-in-canvas.html [ ImageOnlyFailure ]
 [ Sonoma ] fast/overflow/containing-block-and-overflow-hidden.html [ ImageOnlyFailure ]
@@ -2288,8 +2294,6 @@ imported/w3c/web-platform-tests/fetch/metadata/generated/window-location.sub.htm
 
 webkit.org/b/275713 fast/text/international/system-language/declarative-language.html [ Failure ]
 
-webkit.org/b/275962 imported/w3c/web-platform-tests/navigation-api/navigation-history-entry/no-referrer-dynamic-url-censored.html [ Timeout ]
-
 # rdar://124307254 ([ Sequoia+ ]: Bad rendering of EmojiImage)
 [ Sequoia+ ] fast/css/font-fallback-private-use-area-apple-logo-exception.html [ ImageOnlyFailure ]
 
@@ -2327,7 +2331,7 @@ imported/w3c/web-platform-tests/html/semantics/embedded-content/the-img-element/
 [ Sequoia arm64 ] http/tests/media/fairplay/fps-init-data-cenc.html [ Failure ]
 [ Sequoia arm64 ] http/tests/media/fairplay/fps-init-data-sinf.html [ Failure ]
 [ Sequoia arm64 ] http/tests/media/fairplay/fps-init-data-skd.html [ Failure ]
-[ Sequoia arm64 ] http/tests/media/fairplay/fps-mse-play-while-not-in-dom.html [ Pass Failure ]
+[ Sequoia ] http/tests/media/fairplay/fps-mse-play-while-not-in-dom.html [ Pass Failure ]
 [ Sequoia arm64 ] http/tests/media/fairplay/fps-mse-unmuxed-audio-only.html [ Failure ]
 [ Sequoia arm64 ] http/tests/media/fairplay/fps-mse-unmuxed-key-renewal.html [ Failure ]
 [ Sequoia arm64 ] http/tests/media/fairplay/fps-mse-unmuxed-multiple-keys.html [ Failure ]
@@ -2487,4 +2491,22 @@ fast/forms/appearance-default-button.html  [ Pass ]
 fast/forms/form-control-refresh [ Pass ]
 imported/w3c/web-platform-tests/css/css-ui/button-author-level-padding-applies.html [ Pass ]
 
+# Tests which do not pass with form control refresh enabled due to differences in appearance
+fast/forms/datalist/input-appearance-range-with-datalist-rtl.html [ Skip ]
+
 webkit.org/b/295810 [ Debug ] fast/dynamic/disappearing-content-on-size-change-crash.html [ Timeout ]
+
+webkit.org/b/296010 fast/frames/frame-append-body-child-crash.html [ Pass Failure ]
+
+webkit.org/b/296138 compositing/transforms/transformed-replaced-with-shadow-children.html [ Pass ImageOnlyFailure ]
+
+# Test seems to pass on WPT dashboard but fails on macOS
+imported/w3c/web-platform-tests/css/css-tables/paint/table-border-paint-caption-change.html [ Skip ]
+
+webkit.org/b/296017 [ Release ] imported/w3c/web-platform-tests/css/css-shapes/shape-outside/shape-image/shape-image-022.html [ Pass ImageOnlyFailure ]
+
+[ x86_64 ] imported/w3c/web-platform-tests/svg/text/reftests/dominant-baseline-central-large-font-size.svg [ Skip ]
+
+webkit.org/b/296944 [ Release ] imported/w3c/web-platform-tests/html/dom/idlharness.worker.html [ Pass Failure ]
+
+webkit.org/b/296976 [ x86_64 ] imported/w3c/web-platform-tests/webaudio/the-audio-api/the-audioworklet-interface/audioworklet-denormals.https.window.html [ Failure ]

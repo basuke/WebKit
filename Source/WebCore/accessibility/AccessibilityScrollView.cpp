@@ -38,11 +38,11 @@
 #include "Widget.h"
 
 namespace WebCore {
-    
-AccessibilityScrollView::AccessibilityScrollView(AXID axID, ScrollView& view)
-    : AccessibilityObject(axID)
-    , m_scrollView(view)
+
+AccessibilityScrollView::AccessibilityScrollView(AXID axID, ScrollView& view, AXObjectCache& cache)
+    : AccessibilityObject(axID, cache)
     , m_childrenDirty(false)
+    , m_scrollView(view)
 {
     if (RefPtr localFrameView = dynamicDowncast<LocalFrameView>(view))
         m_frameOwnerElement = localFrameView->frame().ownerElement();
@@ -51,6 +51,26 @@ AccessibilityScrollView::AccessibilityScrollView(AXID axID, ScrollView& view)
 AccessibilityScrollView::~AccessibilityScrollView()
 {
     ASSERT(isDetached());
+}
+
+bool AccessibilityScrollView::isRoot() const
+{
+    RefPtr frameView = dynamicDowncast<FrameView>(m_scrollView.get());
+    return frameView && frameView->frame().isMainFrame();
+}
+
+String AccessibilityScrollView::ownerDebugDescription() const
+{
+    if (!m_frameOwnerElement) {
+        StringBuilder builder;
+        builder.append("null frame owner"_s);
+        if (isRoot())
+            builder.append(" (root)"_s);
+        return builder.toString();
+    }
+
+    CheckedPtr renderer = m_frameOwnerElement->renderer();
+    return makeString("owned by: "_s, renderer ? renderer->debugDescription() : m_frameOwnerElement->debugDescription());
 }
 
 void AccessibilityScrollView::detachRemoteParts(AccessibilityDetachmentType detachmentType)
@@ -70,9 +90,9 @@ void AccessibilityScrollView::detachRemoteParts(AccessibilityDetachmentType deta
     m_frameOwnerElement = nullptr;
 }
 
-Ref<AccessibilityScrollView> AccessibilityScrollView::create(AXID axID, ScrollView& view)
+Ref<AccessibilityScrollView> AccessibilityScrollView::create(AXID axID, ScrollView& view, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilityScrollView(axID, view));
+    return adoptRef(*new AccessibilityScrollView(axID, view, cache));
 }
 
 ScrollView* AccessibilityScrollView::currentScrollView() const
@@ -83,7 +103,7 @@ ScrollView* AccessibilityScrollView::currentScrollView() const
 AccessibilityObject* AccessibilityScrollView::scrollBar(AccessibilityOrientation orientation)
 {
     updateScrollbars();
-    
+
     switch (orientation) {
     // ARIA 1.1 Elements with the role scrollbar have an implicit aria-orientation value of vertical.
     case AccessibilityOrientation::Undefined:
@@ -92,7 +112,7 @@ AccessibilityObject* AccessibilityScrollView::scrollBar(AccessibilityOrientation
     case AccessibilityOrientation::Horizontal:
         return m_horizontalScrollbar ? m_horizontalScrollbar.get() : nullptr;
     }
-    
+
     return nullptr;
 }
 
@@ -118,7 +138,7 @@ bool AccessibilityScrollView::canSetFocusAttribute() const
     RefPtr webArea = webAreaObject();
     return webArea && webArea->canSetFocusAttribute();
 }
-    
+
 bool AccessibilityScrollView::isFocused() const
 {
     RefPtr webArea = webAreaObject();
@@ -172,7 +192,7 @@ void AccessibilityScrollView::updateScrollbars()
         m_verticalScrollbar = nullptr;
     }
 }
-    
+
 void AccessibilityScrollView::removeChildScrollbar(AccessibilityObject* scrollbar)
 {
     if (!scrollbar)
@@ -190,7 +210,7 @@ void AccessibilityScrollView::removeChildScrollbar(AccessibilityObject* scrollba
             cache->remove(scrollbar->objectID());
     }
 }
-    
+
 AccessibilityScrollbar* AccessibilityScrollView::addChildScrollbar(Scrollbar* scrollbar)
 {
     if (!scrollbar)
@@ -205,7 +225,7 @@ AccessibilityScrollbar* AccessibilityScrollView::addChildScrollbar(Scrollbar* sc
     addChild(scrollBarObject.get());
     return scrollBarObject.ptr();
 }
-        
+
 void AccessibilityScrollView::clearChildren()
 {
     AccessibilityObject::clearChildren();
@@ -293,12 +313,12 @@ AccessibilityObject* AccessibilityScrollView::accessibilityHitTest(const IntPoin
     RefPtr webArea = webAreaObject();
     if (!webArea)
         return nullptr;
-    
+
     if (m_horizontalScrollbar && m_horizontalScrollbar->elementRect().contains(point))
         return m_horizontalScrollbar.get();
     if (m_verticalScrollbar && m_verticalScrollbar->elementRect().contains(point))
         return m_verticalScrollbar.get();
-    
+
     return webArea->accessibilityHitTest(point);
 }
 
@@ -338,15 +358,19 @@ AccessibilityObject* AccessibilityScrollView::parentObject() const
     if (!cache)
         return nullptr;
 
-    WeakPtr owner = m_frameOwnerElement.get();
+    RefPtr<Element> ancestorElement = m_frameOwnerElement.get();
     if (RefPtr localFrameView = dynamicDowncast<LocalFrameView>(m_scrollView.get()))
-        owner = localFrameView->frame().ownerElement();
+        ancestorElement = localFrameView->frame().ownerElement();
     else if (RefPtr remoteFrameView = dynamicDowncast<RemoteFrameView>(m_scrollView.get()))
-        owner = remoteFrameView->frame().ownerElement();
+        ancestorElement = remoteFrameView->frame().ownerElement();
 
-    if (owner && owner->renderer())
-        return cache->getOrCreate(*owner);
-    return nullptr;
+    RefPtr<AccessibilityObject> ancestorAccessibilityObject;
+    while (ancestorElement && !ancestorAccessibilityObject) {
+        if ((ancestorAccessibilityObject = cache->getOrCreate(*ancestorElement)))
+            break;
+        ancestorElement = ancestorElement->parentElementInComposedTree();
+    }
+    return ancestorAccessibilityObject.get();
 }
 
 void AccessibilityScrollView::scrollTo(const IntPoint& point) const
@@ -355,4 +379,4 @@ void AccessibilityScrollView::scrollTo(const IntPoint& point) const
         scrollView->setScrollPosition(point);
 }
 
-} // namespace WebCore    
+} // namespace WebCore

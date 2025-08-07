@@ -30,6 +30,7 @@
 #include "EventDispatcher.h"
 #include "IdentifierTypes.h"
 #include "ScriptTrackingPrivacyFilter.h"
+#include "SharedPreferencesForWebProcess.h"
 #include "StorageAreaMapIdentifier.h"
 #include "TextCheckerState.h"
 #include "WebInspectorInterruptDispatcher.h"
@@ -109,8 +110,10 @@ class Site;
 class UserGestureToken;
 
 enum class EventMakesGamepadsVisible : bool;
+enum class PlatformMediaSessionRemoteControlCommandType : uint8_t;
 enum class RenderAsTextFlag : uint16_t;
 enum class RenderingPurpose : uint8_t;
+enum class ScriptTrackingPrivacyCategory : uint8_t;
 
 struct ClientOrigin;
 struct DisplayUpdate;
@@ -118,6 +121,7 @@ struct MessagePortIdentifier;
 struct MessageWithMessagePorts;
 struct MockMediaDevice;
 struct PrewarmInformation;
+struct PlatformMediaSessionRemoteCommandArgument;
 struct ScreenProperties;
 struct ServiceWorkerContextData;
 }
@@ -199,6 +203,12 @@ public:
     }
 
     template <typename T>
+    RefPtr<T> protectedSupplement()
+    {
+        return supplement<T>();
+    }
+
+    template <typename T>
     void addSupplement()
     {
         m_supplements.add(T::supplementName(), makeUnique<T>(*this));
@@ -225,6 +235,7 @@ public:
     WebPage* focusedWebPage() const;
     bool hasEverHadAnyWebPages() const { return m_hasEverHadAnyWebPages; }
     bool isWebTransportEnabled() const { return m_isWebTransportEnabled; }
+    bool isBroadcastChannelEnabled() const { return m_isBroadcastChannelEnabled; }
 
     InjectedBundle* injectedBundle() const { return m_injectedBundle.get(); }
     
@@ -276,6 +287,10 @@ public:
     RefPtr<WebTransportSession> webTransportSession(WebTransportSessionIdentifier);
     void addWebTransportSession(WebTransportSessionIdentifier, WebTransportSession&);
     void removeWebTransportSession(WebTransportSessionIdentifier);
+
+    std::optional<SharedPreferencesForWebProcess> sharedPreferencesForWebProcess() const { return m_sharedPreferencesForWebProcess; }
+    const SharedPreferencesForWebProcess& sharedPreferencesForWebProcessValue() const { return m_sharedPreferencesForWebProcess; }
+    void updateSharedPreferencesForWebProcess(SharedPreferencesForWebProcess sharedPreferencesForWebProcess) { m_sharedPreferencesForWebProcess = WTFMove(sharedPreferencesForWebProcess); }
 
 #if ENABLE(GPU_PROCESS)
     GPUProcessConnection& ensureGPUProcessConnection();
@@ -458,6 +473,7 @@ public:
 #endif
 
     bool requiresScriptTrackingPrivacyProtections(const URL&, const WebCore::SecurityOrigin& topOrigin) const;
+    bool shouldAllowScriptAccess(const URL&, const WebCore::SecurityOrigin& topOrigin, WebCore::ScriptTrackingPrivacyCategory) const;
 
     bool isLockdownModeEnabled() const { return m_isLockdownModeEnabled.value(); }
     bool imageAnimationEnabled() const { return m_imageAnimationEnabled; }
@@ -503,6 +519,8 @@ public:
     void registerAdditionalFonts(AdditionalFonts&&);
     void registerFontMap(HashMap<String, URL>&&, HashMap<String, Vector<String>>&&, Vector<SandboxExtension::Handle>&& sandboxExtensions);
 #endif
+
+    void didReceiveRemoteCommand(WebCore::PlatformMediaSessionRemoteControlCommandType, const WebCore::PlatformMediaSessionRemoteCommandArgument&);
 
 #if ENABLE(INITIALIZE_ACCESSIBILITY_ON_DEMAND)
     void initializeAccessibility(Vector<SandboxExtension::Handle>&&);
@@ -874,6 +892,7 @@ private:
     HashMap<StorageAreaMapIdentifier, WeakPtr<StorageAreaMap>> m_storageAreaMaps;
 
     void updateIsWebTransportEnabled();
+    void updateIsBroadcastChannelEnabled();
     
     // Prewarmed WebProcesses do not have an associated sessionID yet, which is why this is an optional.
     // By the time the WebProcess gets a WebPage, it is guaranteed to have a sessionID.
@@ -911,6 +930,8 @@ private:
     bool m_hasEverHadAnyWebPages { false };
     bool m_hasPendingAccessibilityUnsuspension { false };
     bool m_isWebTransportEnabled { false };
+    bool m_isBroadcastChannelEnabled { false };
+
 #if ENABLE(ACCESSIBILITY_NON_BLINKING_CURSOR)
     bool m_prefersNonBlinkingCursor { false };
 #endif
@@ -922,6 +943,8 @@ private:
     HashSet<WebCore::RegistrableDomain> m_domainsWithStorageAccessQuirks;
     std::unique_ptr<ScriptTrackingPrivacyFilter> m_scriptTrackingPrivacyFilter;
     bool m_mediaPlaybackEnabled { false };
+
+    SharedPreferencesForWebProcess m_sharedPreferencesForWebProcess;
 
 #if ENABLE(NOTIFY_BLOCKING)
     HashMap<String, int> m_notifyTokens;

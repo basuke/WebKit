@@ -62,7 +62,7 @@
 #endif
 
 #if PLATFORM(GTK)
-#include "AcceleratedBackingStoreDMABuf.h"
+#include "AcceleratedBackingStore.h"
 #include "Display.h"
 #include <gtk/gtk.h>
 #endif
@@ -191,11 +191,11 @@ void WebProcessPool::platformInitializeWebProcess(const WebProcessProxy& process
 #endif
 
 #if USE(GBM)
-    parameters.renderDeviceFile = drmRenderNodeDevice();
+    parameters.renderDeviceFile = drmRenderNodeOrPrimaryDevice();
 #endif
 
 #if PLATFORM(GTK)
-    parameters.rendererBufferTransportMode = AcceleratedBackingStoreDMABuf::rendererBufferTransportMode();
+    parameters.rendererBufferTransportMode = AcceleratedBackingStore::rendererBufferTransportMode();
 #elif ENABLE(WPE_PLATFORM)
     if (usingWPEPlatformAPI) {
 #if USE(GBM)

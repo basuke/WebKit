@@ -85,7 +85,7 @@ std::optional<FloatRect> SVGRenderSupport::computeFloatVisibleRectInContainer(co
         return FloatRect();
 
     FloatRect adjustedRect = rect;
-    adjustedRect.inflate(renderer.style().outlineWidth());
+    adjustedRect.inflate(Style::evaluate(renderer.style().outlineWidth()));
 
     // Translate to coords in our parent renderer, and then call computeFloatVisibleRectInContainer() on our parent.
     adjustedRect = renderer.localToParentTransform().mapRect(adjustedRect);
@@ -485,10 +485,10 @@ void SVGRenderSupport::applyStrokeStyleToContext(GraphicsContext& context, const
     context.setLineCap(style.capStyle());
     context.setLineJoin(style.joinStyle());
     if (style.joinStyle() == LineJoin::Miter)
-        context.setMiterLimit(style.strokeMiterLimit());
+        context.setMiterLimit(style.strokeMiterLimit().value.value);
 
     auto& dashes = svgStyle.strokeDashArray();
-    if (dashes.isEmpty())
+    if (dashes.isNone())
         context.setStrokeStyle(StrokeStyle::SolidStroke);
     else {
         float scaleFactor = 1;
@@ -505,7 +505,7 @@ void SVGRenderSupport::applyStrokeStyleToContext(GraphicsContext& context, const
         }
         
         bool canSetLineDash = false;
-        auto dashArray = WTF::map(dashes, [&](auto& dash) -> DashArrayElement {
+        auto dashArray = DashArray::map(dashes, [&](auto& dash) -> DashArrayElement {
             auto value = lengthContext.valueForLength(dash) * scaleFactor;
             if (value > 0)
                 canSetLineDash = true;
@@ -527,7 +527,7 @@ void SVGRenderSupport::styleChanged(RenderElement& renderer, const RenderStyle* 
 
 bool SVGRenderSupport::isolatesBlending(const RenderStyle& style)
 {
-    return style.hasPositionedMask() || style.hasFilter() || style.hasBlendMode() || style.opacity() < 1.0f;
+    return style.hasPositionedMask() || style.hasFilter() || style.hasBlendMode() || !style.opacity().isOpaque();
 }
 
 void SVGRenderSupport::updateMaskedAncestorShouldIsolateBlending(const RenderElement& renderer)
@@ -581,7 +581,7 @@ FloatRect SVGRenderSupport::calculateApproximateStrokeBoundingBox(const RenderEl
         case Renderer::ShapeType::Line: {
             auto& style = renderer.style();
             if (renderer.shapeType() == Renderer::ShapeType::Path && style.joinStyle() == LineJoin::Miter) {
-                const float miter = style.strokeMiterLimit();
+                auto miter = style.strokeMiterLimit().value.value;
                 if (miter < std::numbers::sqrt2 && style.capStyle() == LineCap::Square)
                     delta *= std::numbers::sqrt2;
                 else

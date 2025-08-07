@@ -28,6 +28,7 @@
 #include "MIMETypeRegistry.h"
 
 #include "DeprecatedGlobalSettings.h"
+#include "HTTPParsers.h"
 #include "MediaPlayer.h"
 #include "ThreadGlobalData.h"
 #include <ranges>
@@ -561,8 +562,10 @@ bool MIMETypeRegistry::isSupportedJSONMIMEType(const String& mimeType)
     // When detecting +json ensure there is a non-empty type / subtype preceeding the suffix.
     if (mimeType.endsWithIgnoringASCIICase("+json"_s) && mimeType.length() >= 8) {
         size_t slashPosition = mimeType.find('/');
-        if (slashPosition != notFound && slashPosition > 0 && slashPosition <= mimeType.length() - 6)
-            return true;
+        if (slashPosition != notFound && slashPosition > 0 && slashPosition <= mimeType.length() - 6) {
+            if (isValidHTTPToken(mimeType.substring(slashPosition + 1, mimeType.length() - slashPosition - 6)))
+                return true;
+        }
     }
 
     return false;
@@ -603,7 +606,7 @@ bool MIMETypeRegistry::isTextMIMEType(const String& mimeType)
             && !equalLettersIgnoringASCIICase(mimeType, "text/xsl"_s));
 }
 
-static inline bool isValidXMLMIMETypeChar(UChar c)
+static inline bool isValidXMLMIMETypeChar(char16_t c)
 {
     // Valid characters per RFCs 3023 and 2045: 0-9a-zA-Z_-+~!$^{}|.%'`#&*
     return isASCIIAlphanumeric(c) || c == '!' || c == '#' || c == '$' || c == '%' || c == '&' || c == '\'' || c == '*' || c == '+'

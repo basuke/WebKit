@@ -34,18 +34,18 @@
 
 namespace WebCore {
 
-AccessibilityTableHeaderContainer::AccessibilityTableHeaderContainer(AXID axID)
-    : AccessibilityMockObject(axID)
+AccessibilityTableHeaderContainer::AccessibilityTableHeaderContainer(AXID axID, AXObjectCache& cache)
+    : AccessibilityMockObject(axID, cache)
 {
 }
 
 AccessibilityTableHeaderContainer::~AccessibilityTableHeaderContainer() = default;
 
-Ref<AccessibilityTableHeaderContainer> AccessibilityTableHeaderContainer::create(AXID axID)
+Ref<AccessibilityTableHeaderContainer> AccessibilityTableHeaderContainer::create(AXID axID, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilityTableHeaderContainer(axID));
+    return adoptRef(*new AccessibilityTableHeaderContainer(axID, cache));
 }
-    
+
 LayoutRect AccessibilityTableHeaderContainer::elementRect() const
 {
     // this will be filled in when addChildren is called
@@ -62,8 +62,8 @@ bool AccessibilityTableHeaderContainer::computeIsIgnored() const
 
 void AccessibilityTableHeaderContainer::addChildren()
 {
-    ASSERT(!m_childrenInitialized); 
-    
+    ASSERT(!m_childrenInitialized);
+
     m_childrenInitialized = true;
     RefPtr parentTable = dynamicDowncast<AccessibilityTable>(m_parent.get());
     if (!parentTable || !parentTable->isExposable())

@@ -66,6 +66,7 @@ class HTMLTextFormControlElement;
 class Node;
 class Page;
 class RenderBlock;
+class RenderImage;
 class RenderObject;
 class RenderStyle;
 class RenderText;
@@ -106,7 +107,7 @@ struct CharacterOffset {
 
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(AXComputedObjectAttributeCache);
 class AXComputedObjectAttributeCache {
-    WTF_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(AXComputedObjectAttributeCache);
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(AXComputedObjectAttributeCache, AXComputedObjectAttributeCache);
 public:
     AccessibilityObjectInclusion getIgnored(AXID) const;
     void setIgnored(AXID, AccessibilityObjectInclusion);
@@ -145,6 +146,8 @@ struct AXDebugInfo {
     bool isAccessibilityThreadInitialized;
     String liveTree;
     String isolatedTree;
+    uint64_t remoteTokenHash;
+    uint64_t webProcessLocalTokenHash;
 };
 
 #if PLATFORM(COCOA)
@@ -174,8 +177,10 @@ protected:
     macro(AutocorrectionOccured) \
     macro(AutofillTypeChanged) \
     macro(ARIAColumnIndexChanged) \
+    macro(ARIAColumnIndexTextChanged) \
     macro(ARIARoleDescriptionChanged) \
     macro(ARIARowIndexChanged) \
+    macro(ARIARowIndexTextChanged) \
     macro(BrailleLabelChanged) \
     macro(BrailleRoleDescriptionChanged) \
     macro(CellSlotsChanged) \
@@ -312,6 +317,8 @@ class AXObjectCache final : public CanMakeWeakPtr<AXObjectCache>, public CanMake
 public:
     explicit AXObjectCache(Page&, Document*);
     ~AXObjectCache();
+
+    String debugDescription() const;
 
     // Returns the root object for a specific frame.
     WEBCORE_EXPORT AXCoreObject* rootObjectForFrame(LocalFrame&);
@@ -491,6 +498,9 @@ public:
 
     static void enableAccessibility();
     static void disableAccessibility();
+#if PLATFORM(MAC)
+    WEBCORE_EXPORT static bool isAppleInternalInstall();
+#endif
     static bool forceDeferredSpellChecking();
     static void setForceDeferredSpellChecking(bool);
 #if PLATFORM(MAC)
@@ -563,26 +573,26 @@ public:
     CharacterOffset previousWordStartCharacterOffset(const CharacterOffset&);
     std::optional<SimpleRange> leftWordRange(const CharacterOffset&);
     std::optional<SimpleRange> rightWordRange(const CharacterOffset&);
-    
+
     // Paragraph
     std::optional<SimpleRange> paragraphForCharacterOffset(const CharacterOffset&);
     CharacterOffset nextParagraphEndCharacterOffset(const CharacterOffset&);
     CharacterOffset previousParagraphStartCharacterOffset(const CharacterOffset&);
-    
+
     // Sentence
     std::optional<SimpleRange> sentenceForCharacterOffset(const CharacterOffset&);
     CharacterOffset nextSentenceEndCharacterOffset(const CharacterOffset&);
     CharacterOffset previousSentenceStartCharacterOffset(const CharacterOffset&);
-    
+
     // Bounds
     CharacterOffset characterOffsetForPoint(const IntPoint&, AXCoreObject*);
     IntRect absoluteCaretBoundsForCharacterOffset(const CharacterOffset&);
     CharacterOffset characterOffsetForBounds(const IntRect&, bool);
-    
+
     // Lines
     CharacterOffset endCharacterOffsetOfLine(const CharacterOffset&);
     CharacterOffset startCharacterOffsetOfLine(const CharacterOffset&);
-    
+
     // Index
     CharacterOffset characterOffsetForIndex(int, const AXCoreObject*);
 
@@ -673,7 +683,9 @@ public:
 #if PLATFORM(MAC)
     AXCoreObject::AccessibilityChildrenVector sortedLiveRegions();
     AXCoreObject::AccessibilityChildrenVector sortedNonRootWebAreas();
-    void addSortedObject(AccessibilityObject&, PreSortedObjectType);
+    void deferSortForNewLiveRegion(Ref<AccessibilityObject>&&);
+    void queueUnsortedObject(Ref<AccessibilityObject>&&, PreSortedObjectType);
+    void addSortedObjects(Vector<Ref<AccessibilityObject>>&&, PreSortedObjectType);
     void removeLiveRegion(AccessibilityObject&);
     void initializeSortedIDLists();
 
@@ -686,12 +698,12 @@ public:
     WEBCORE_EXPORT static bool isIsolatedTreeEnabled();
     WEBCORE_EXPORT static void initializeAXThreadIfNeeded();
     WEBCORE_EXPORT static bool isAXThreadInitialized();
+    WEBCORE_EXPORT RefPtr<AXIsolatedTree> getOrCreateIsolatedTree();
 private:
     static bool clientSupportsIsolatedTree();
     // Propagates the root of the isolated tree back into the Core and WebKit.
     void setIsolatedTree(Ref<AXIsolatedTree>);
     void setIsolatedTreeFocusedObject(AccessibilityObject*);
-    RefPtr<AXIsolatedTree> getOrCreateIsolatedTree();
     void buildIsolatedTree();
     void updateIsolatedTree(AccessibilityObject&, AXNotification);
     void updateIsolatedTree(AccessibilityObject*, AXNotification);
@@ -943,7 +955,7 @@ private:
     std::optional<std::pair<WeakPtr<Element, WeakPtrImplWithEventTargetData>, WeakPtr<Element, WeakPtrImplWithEventTargetData>>> m_deferredFocusedNodeChange;
     WeakHashSet<AccessibilityObject> m_deferredUnconnectedObjects;
 #if PLATFORM(MAC)
-    WeakHashSet<Document, WeakPtrImplWithEventTargetData> m_deferredDocumentAddedList;
+    HashMap<PreSortedObjectType, Vector<Ref<AccessibilityObject>>, IntHash<PreSortedObjectType>, WTF::StrongEnumHashTraits<PreSortedObjectType>> m_deferredUnsortedObjects;
 #endif
 
 #if ENABLE(ACCESSIBILITY_ISOLATED_TREE)
@@ -976,6 +988,11 @@ private:
     VisibleSelection m_lastSelection;
 #endif
 };
+
+inline AXObjectCache* AccessibilityObject::axObjectCache() const
+{
+    return m_axObjectCache.get();
+}
 
 template<typename U>
 inline Vector<Ref<AXCoreObject>> AXObjectCache::objectsForIDs(const U& axIDs) const
@@ -1030,7 +1047,7 @@ public:
     ~AXAttributeCacheEnabler();
 
 private:
-    AXObjectCache* m_cache;
+    const WeakPtr<AXObjectCache> m_cache;
     bool m_wasAlreadyCaching { false };
 };
 
@@ -1047,6 +1064,8 @@ ContainerNode* composedParentIgnoringDocumentFragments(Node*);
 
 ElementName elementName(Node*);
 ElementName elementName(Node&);
+
+RenderImage* toSimpleImage(RenderObject&);
 
 // Returns true if the element has an attribute that will result in an accname being computed.
 // https://www.w3.org/TR/accname-1.2/

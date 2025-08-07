@@ -95,11 +95,10 @@ public:
     Device& device() const { return m_device; }
 
     bool isValid() const { return m_renderCommandEncoder; }
-    bool colorDepthStencilTargetsMatch(const RenderPipeline&) const;
+    NSString* errorValidatingColorDepthStencilTargets(const RenderPipeline&) const;
     id<MTLRenderCommandEncoder> renderCommandEncoder() const;
     void makeInvalid(NSString* = nil);
     CommandEncoder& parentEncoder() const { return m_parentEncoder; }
-    Ref<CommandEncoder> protectedParentEncoder() const { return m_parentEncoder; }
 
     bool setCommandEncoder(const BindGroupEntryUsageData::Resource&);
     void addResourceToActiveResources(const BindGroupEntryUsageData::Resource&, OptionSet<BindGroupEntryUsage>);
@@ -166,7 +165,7 @@ private:
     Vector<uint32_t> m_priorVertexDynamicOffsets;
     Vector<uint32_t> m_fragmentDynamicOffsets;
     Vector<uint32_t> m_priorFragmentDynamicOffsets;
-    Ref<CommandEncoder> m_parentEncoder;
+    const Ref<CommandEncoder> m_parentEncoder;
     HashMap<uint32_t, Vector<uint32_t>, DefaultHash<uint32_t>, WTF::UnsignedWithZeroKeyHashTraits<uint32_t>> m_bindGroupDynamicOffsets;
     using EntryUsage = OptionSet<BindGroupEntryUsage>;
     using EntryMap = HashMap<uint64_t, EntryUsage, DefaultHash<uint64_t>, WTF::UnsignedWithZeroKeyHashTraits<uint64_t>>;
@@ -206,8 +205,10 @@ private:
     float m_depthClearValue { 0 };
     uint64_t m_drawCount { 0 };
     const uint64_t m_maxDrawCount { 0 };
+    id<MTLRasterizationRateMap> m_rasterizationRateMap { nil };
     uint32_t m_stencilClearValue { 0 };
     std::optional<MTLViewport> m_viewport;
+    MTLDepthClipMode m_overrideDepthClipMode { MTLDepthClipModeClip };
     bool m_clearDepthAttachment { false };
     bool m_clearStencilAttachment { false };
     bool m_occlusionQueryActive { false };

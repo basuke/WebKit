@@ -45,16 +45,16 @@ namespace WebCore {
 
 using namespace HTMLNames;
 
-AccessibilityListBoxOption::AccessibilityListBoxOption(AXID axID, HTMLElement& element)
-    : AccessibilityNodeObject(axID, &element)
+AccessibilityListBoxOption::AccessibilityListBoxOption(AXID axID, HTMLElement& element, AXObjectCache& cache)
+    : AccessibilityNodeObject(axID, &element, cache)
 {
 }
 
 AccessibilityListBoxOption::~AccessibilityListBoxOption() = default;
 
-Ref<AccessibilityListBoxOption> AccessibilityListBoxOption::create(AXID axID, HTMLElement& element)
+Ref<AccessibilityListBoxOption> AccessibilityListBoxOption::create(AXID axID, HTMLElement& element, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilityListBoxOption(axID, element));
+    return adoptRef(*new AccessibilityListBoxOption(axID, element, cache));
 }
 
 bool AccessibilityListBoxOption::isEnabled() const
@@ -165,14 +165,14 @@ void AccessibilityListBoxOption::setSelected(bool selected)
     RefPtr selectElement = listBoxOptionParentNode();
     if (!selectElement)
         return;
-    
+
     if (!canSetSelectedAttribute())
         return;
-    
+
     bool isOptionSelected = isSelected();
     if ((isOptionSelected && selected) || (!isOptionSelected && !selected))
         return;
-    
+
     // Convert from the entire list index to the option index.
     int optionIndex = selectElement->listToOptionIndex(listBoxOptionIndex());
     selectElement->accessKeySetSelectedIndex(optionIndex);

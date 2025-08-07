@@ -201,6 +201,7 @@ class LocalFrame;
 class LocalFrameView;
 class MediaPlaybackTargetContext;
 class MediaSessionCoordinator;
+class MediaSessionManagerInterface;
 class Page;
 class PolicyDecision;
 class PrintContext;
@@ -236,6 +237,7 @@ enum class EventHandling : uint8_t;
 enum class EventMakesGamepadsVisible : bool;
 enum class ExceptionCode : uint8_t;
 enum class FinalizeRenderingUpdateFlags : uint8_t;
+enum class HasOrShouldIgnoreUserGesture : bool;
 enum class HighlightRequestOriginatedInApp : bool;
 enum class ImageDecodingError : uint8_t;
 enum class InputMode : uint8_t;
@@ -248,6 +250,7 @@ enum class MediaProducerMediaCaptureKind : uint8_t;
 enum class MediaProducerMediaState : uint32_t;
 enum class MediaProducerMutedState : uint8_t;
 enum class PlatformEventModifier : uint8_t;
+enum class PlatformMediaSessionRemoteControlCommandType : uint8_t;
 enum class RenderAsTextFlag : uint16_t;
 enum class ScheduleLocationChangeResult : uint8_t;
 enum class SelectionDirection : uint8_t;
@@ -305,6 +308,7 @@ struct MediaUsageInfo;
 struct MessageWithMessagePorts;
 struct NavigationIdentifierType;
 struct NowPlayingInfo;
+struct PlatformMediaSessionRemoteCommandArgument;
 struct ProcessSyncData;
 struct PromisedAttachmentInfo;
 struct RemoteUserInputEventData;
@@ -470,7 +474,7 @@ struct ContentWorldData;
 struct ContentWorldIdentifierType;
 struct CoreIPCAuditToken;
 #if (PLATFORM(GTK) || PLATFORM(WPE)) && USE(GBM)
-struct DMABufRendererBufferFormat;
+struct RendererBufferFormat;
 #endif
 struct DataDetectionResult;
 struct DeferredDidReceiveMouseEvent;
@@ -826,10 +830,12 @@ public:
     void enableAccessibilityForAllProcesses();
     void enableAccessibility();
 
+#if PLATFORM(MAC)
     void getAccessibilityWebProcessDebugInfo(CompletionHandler<void(WebCore::AXDebugInfo)>&&);
 #if ENABLE(ACCESSIBILITY_ISOLATED_TREE)
     void clearAccessibilityIsolatedTree();
 #endif
+#endif // PLATFORM(MAC)
 
     void screenPropertiesDidChange();
 
@@ -1292,6 +1298,8 @@ public:
 
     bool isStoppingLoadingDueToProcessSwap() const { return m_isStoppingLoadingDueToProcessSwap; }
 
+    bool isIOSurfaceLosslessCompressionEnabled() const;
+
     bool isSmartInsertDeleteEnabled();
     void setSmartInsertDeleteEnabled(bool);
 
@@ -1437,6 +1445,15 @@ public:
     bool canShowWhileLocked() const;
 
     void shouldDismissKeyboardAfterTapAtPoint(WebCore::FloatPoint, CompletionHandler<void(bool)>&&);
+#endif
+
+    void processWillSuspend();
+    void processDidResume();
+    void didReceiveRemoteCommand(WebCore::PlatformMediaSessionRemoteControlCommandType, const WebCore::PlatformMediaSessionRemoteCommandArgument&);
+
+#if PLATFORM(COCOA)
+    void processSystemWillSleep() const;
+    void processSystemDidWake() const;
 #endif
 
 #if ENABLE(META_VIEWPORT)
@@ -1633,7 +1650,7 @@ public:
 #endif
 
     void hasStorageAccess(WebCore::RegistrableDomain&& subFrameDomain, WebCore::RegistrableDomain&& topFrameDomain, WebFrame&, CompletionHandler<void(bool)>&&);
-    void requestStorageAccess(WebCore::RegistrableDomain&& subFrameDomain, WebCore::RegistrableDomain&& topFrameDomain, WebFrame&, WebCore::StorageAccessScope, CompletionHandler<void(WebCore::RequestStorageAccessResult)>&&);
+    void requestStorageAccess(WebCore::RegistrableDomain&& subFrameDomain, WebCore::RegistrableDomain&& topFrameDomain, WebFrame&, WebCore::StorageAccessScope, WebCore::HasOrShouldIgnoreUserGesture, CompletionHandler<void(WebCore::RequestStorageAccessResult)>&&);
     void setLoginStatus(WebCore::RegistrableDomain&&, WebCore::IsLoggedIn, CompletionHandler<void()>&&);
     void isLoggedIn(WebCore::RegistrableDomain&&, CompletionHandler<void(bool)>&&);
     bool hasPageLevelStorageAccess(const WebCore::RegistrableDomain& topLevelDomain, const WebCore::RegistrableDomain& resourceDomain) const;
@@ -1940,7 +1957,7 @@ public:
 
 #if PLATFORM(GTK) || PLATFORM(WPE)
 #if USE(GBM)
-    const Vector<DMABufRendererBufferFormat>& preferredBufferFormats() const { return m_preferredBufferFormats; }
+    const Vector<RendererBufferFormat>& preferredBufferFormats() const { return m_preferredBufferFormats; }
 #endif
 #endif
 
@@ -2020,6 +2037,9 @@ public:
     bool shouldSendConsoleLogsToUIProcessForTesting() const { return m_shouldSendConsoleLogsToUIProcessForTesting; }
 
     void setNeedsFixedContainerEdgesUpdate() { m_needsFixedContainerEdgesUpdate = true; }
+
+    RefPtr<WebCore::MediaSessionManagerInterface> mediaSessionManager() const;
+    WebCore::MediaSessionManagerInterface* mediaSessionManagerIfExists() const;
 
 #if ENABLE(MODEL_ELEMENT)
     bool shouldDisableModelLoadDelaysForTesting() const;
@@ -2493,7 +2513,7 @@ private:
 #endif
 
 #if PLATFORM(WPE) && USE(GBM) && ENABLE(WPE_PLATFORM)
-    void preferredBufferFormatsDidChange(Vector<DMABufRendererBufferFormat>&&);
+    void preferredBufferFormatsDidChange(Vector<RendererBufferFormat>&&);
 #endif
 
     void platformDidScalePage();
@@ -3026,7 +3046,7 @@ private:
 
 #if PLATFORM(GTK) || PLATFORM(WPE)
 #if USE(GBM)
-    Vector<DMABufRendererBufferFormat> m_preferredBufferFormats;
+    Vector<RendererBufferFormat> m_preferredBufferFormats;
 #endif
 #endif
 

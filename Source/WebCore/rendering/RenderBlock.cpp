@@ -1354,7 +1354,7 @@ bool RenderBlock::establishesIndependentFormattingContextIgnoringDisplayType(con
         || style.containsLayout()
         || style.containerType() != ContainerType::Normal
         || WebCore::shouldApplyPaintContainment(style, *protectedElement())
-        || (style.isDisplayBlockLevel() && style.blockStepSize());
+        || (style.isDisplayBlockLevel() && !style.blockStepSize().isNone());
 }
 
 bool RenderBlock::establishesIndependentFormattingContext() const
@@ -1366,7 +1366,7 @@ bool RenderBlock::establishesIndependentFormattingContext() const
     if (isGridItem()) {
         // Grid items establish a new independent formatting context, unless they're a subgrid
         // https://drafts.csswg.org/css-grid-2/#grid-item-display
-        if (!style.gridSubgridColumns() && !style.gridSubgridRows())
+        if (!style.gridTemplateColumns().subgrid && !style.gridTemplateRows().subgrid)
             return true;
         // Masonry makes grid items not subgrids.
         if (CheckedPtr parentGridBox = dynamicDowncast<RenderGrid>(parent()))
@@ -2144,7 +2144,7 @@ static inline bool isEditingBoundary(RenderElement* ancestor, RenderBox& child)
 // FIXME: This function should go on RenderObject as an instance method. Then
 // all cases in which positionForPoint recurs could call this instead to
 // prevent crossing editable boundaries. This would require many tests.
-VisiblePosition positionForPointRespectingEditingBoundaries(RenderBlock& parent, RenderBox& child, const LayoutPoint& pointInParentCoordinates, HitTestSource source)
+PositionWithAffinity positionForPointRespectingEditingBoundaries(RenderBlock& parent, RenderBox& child, const LayoutPoint& pointInParentCoordinates, HitTestSource source)
 {
     LayoutPoint childLocation = child.location();
     if (child.isInFlowPositioned())
@@ -2172,14 +2172,14 @@ VisiblePosition positionForPointRespectingEditingBoundaries(RenderBlock& parent,
     LayoutUnit childMiddle = parent.logicalWidthForChild(child) / 2;
     LayoutUnit logicalLeft = parent.isHorizontalWritingMode() ? pointInChildCoordinates.x() : pointInChildCoordinates.y();
     if (logicalLeft < childMiddle)
-        return ancestor->createVisiblePosition(childElement->computeNodeIndex(), Affinity::Downstream);
-    return ancestor->createVisiblePosition(childElement->computeNodeIndex() + 1, Affinity::Upstream);
+        return ancestor->createPositionWithAffinity(childElement->computeNodeIndex(), Affinity::Downstream);
+    return ancestor->createPositionWithAffinity(childElement->computeNodeIndex() + 1, Affinity::Upstream);
 }
 
-VisiblePosition RenderBlock::positionForPointWithInlineChildren(const LayoutPoint&, HitTestSource)
+PositionWithAffinity RenderBlock::positionForPointWithInlineChildren(const LayoutPoint&, HitTestSource)
 {
     ASSERT_NOT_REACHED();
-    return VisiblePosition();
+    return PositionWithAffinity();
 }
 
 static inline bool isChildHitTestCandidate(const RenderBox& box, HitTestSource source)
@@ -2203,7 +2203,7 @@ static inline bool isChildHitTestCandidate(const RenderBox& box, const RenderFra
     return block.fragmentAtBlockOffset(point.y()) == fragment;
 }
 
-VisiblePosition RenderBlock::positionForPoint(const LayoutPoint& point, HitTestSource source, const RenderFragmentContainer* fragment)
+PositionWithAffinity RenderBlock::positionForPoint(const LayoutPoint& point, HitTestSource source, const RenderFragmentContainer* fragment)
 {
     if (isRenderTable())
         return RenderBox::positionForPoint(point, source, fragment);
@@ -2214,13 +2214,13 @@ VisiblePosition RenderBlock::positionForPoint(const LayoutPoint& point, HitTestS
         LayoutUnit pointLogicalTop = isHorizontalWritingMode() ? point.y() : point.x();
 
         if (pointLogicalTop < 0)
-            return createVisiblePosition(caretMinOffset(), Affinity::Downstream);
+            return createPositionWithAffinity(caretMinOffset(), Affinity::Downstream);
         if (pointLogicalLeft >= logicalWidth())
-            return createVisiblePosition(caretMaxOffset(), Affinity::Downstream);
+            return createPositionWithAffinity(caretMaxOffset(), Affinity::Downstream);
         if (pointLogicalTop < 0)
-            return createVisiblePosition(caretMinOffset(), Affinity::Downstream);
+            return createPositionWithAffinity(caretMinOffset(), Affinity::Downstream);
         if (pointLogicalTop >= logicalHeight())
-            return createVisiblePosition(caretMaxOffset(), Affinity::Downstream);
+            return createPositionWithAffinity(caretMaxOffset(), Affinity::Downstream);
     }
     if (isFlexibleBoxIncludingDeprecated() || isRenderGrid())
         return RenderBox::positionForPoint(point, source, fragment);
@@ -2474,70 +2474,6 @@ bool RenderBlock::hasLineIfEmpty() const
     return element && element->isRootEditableElement();
 }
 
-LayoutUnit RenderBlock::lineHeight(bool firstLine, LineDirectionMode) const
-{
-    auto& lineStyle = firstLine ? firstLineStyle() : style();
-    return LayoutUnit::fromFloatCeil(lineStyle.computedLineHeight());
-}
-
-LayoutUnit RenderBlock::baselinePosition() const
-{
-    auto direction = containingBlock()->writingMode().isHorizontal() ? HorizontalLine : VerticalLine;
-    // Inline blocks are replaced elements. Otherwise, just pass off to
-    // the base class.  If we're being queried as though we're the root line
-    // box, then the fact that we're an inline-block is irrelevant, and we behave
-    // just like a block.
-    if (isBlockLevelReplacedOrAtomicInline()) {
-        // For "leaf" theme objects, let the theme decide what the baseline position is.
-        // FIXME: Might be better to have a custom CSS property instead, so that if the theme
-        // is turned off, checkboxes/radios will still have decent baselines.
-        // FIXME: Need to patch form controls to deal with vertical lines.
-        if (style().hasUsedAppearance() && !theme().isControlContainer(style().usedAppearance()))
-            return theme().baselinePosition(*this);
-            
-        // CSS2.1 states that the baseline of an inline block is the baseline of the last line box in
-        // the normal flow.  We make an exception for marquees, since their baselines are meaningless
-        // (the content inside them moves).  This matches WinIE as well, which just bottom-aligns them.
-        // We also give up on finding a baseline if we have a vertical scrollbar, or if we are scrolled
-        // vertically (e.g., an overflow:hidden block that has had scrollTop moved).
-        auto ignoreBaseline = [this, direction]() -> bool {
-            if (isWritingModeRoot())
-                return true;
-
-            CheckedPtr scrollableArea = layer() ? layer()->scrollableArea() : nullptr;
-            if (!scrollableArea)
-                return false;
-
-            if (scrollableArea->marquee())
-                return true;
-
-            if (direction == HorizontalLine)
-                return scrollableArea->verticalScrollbar() || scrollableArea->scrollOffset().y();
-            return scrollableArea->horizontalScrollbar() || scrollableArea->scrollOffset().x();
-        };
-
-        auto baselinePos = ignoreBaseline() ? std::optional<LayoutUnit>() : inlineBlockBaseline(direction);
-        
-        if (isRenderDeprecatedFlexibleBox()) {
-            // Historically, we did this check for all baselines. But we can't
-            // remove this code from deprecated flexbox, because it effectively
-            // breaks -webkit-line-clamp, which is used in the wild -- we would
-            // calculate the baseline as if -webkit-line-clamp wasn't used.
-            // For simplicity, we use this for all uses of deprecated flexbox.
-            LayoutUnit bottomOfContent = direction == HorizontalLine ? borderTop() + paddingTop() + contentBoxHeight() : borderRight() + paddingRight() + contentBoxWidth();
-            if (baselinePos && baselinePos.value() > bottomOfContent)
-                baselinePos = std::optional<LayoutUnit>();
-        }
-        if (baselinePos)
-            return direction == HorizontalLine ? marginTop() + baselinePos.value() : marginRight() + baselinePos.value();
-
-        return RenderBox::baselinePosition();
-    }
-
-    const FontMetrics& fontMetrics = style().metricsOfPrimaryFont();
-    return LayoutUnit { fontMetrics.intAscent() + (lineHeight(true, direction) - fontMetrics.intHeight()) / 2 }.toInt();
-}
-
 std::optional<LayoutUnit> RenderBlock::firstLineBaseline() const
 {
     if (shouldApplyLayoutContainment())
@@ -2569,36 +2505,6 @@ std::optional<LayoutUnit> RenderBlock::lastLineBaseline() const
         if (auto baseline = child->lastLineBaseline())
             return LayoutUnit { floorToInt(child->logicalTop() + baseline.value()) };
     } 
-    return { };
-}
-
-std::optional<LayoutUnit> RenderBlock::inlineBlockBaseline(LineDirectionMode lineDirection) const
-{
-    if (shouldApplyLayoutContainment()) {
-        if (isInline())
-            return synthesizedBaseline(*this, *parentStyle(), lineDirection, BorderBox) + (lineDirection == HorizontalLine ? marginBottom() : marginLeft());
-        return { };
-    }
-
-    if (isWritingModeRoot())
-        return { };
-
-    bool haveNormalFlowChild = false;
-    for (auto* box = lastChildBox(); box; box = box->previousSiblingBox()) {
-        if (box->isFloatingOrOutOfFlowPositioned())
-            continue;
-        haveNormalFlowChild = true;
-        if (auto result = box->inlineBlockBaseline(lineDirection))
-            return LayoutUnit { (box->logicalTop() + result.value()).toInt() }; // Translate to our coordinate space.
-    }
-
-    if (!haveNormalFlowChild && hasLineIfEmpty()) {
-        auto& fontMetrics = firstLineStyle().metricsOfPrimaryFont();
-        return LayoutUnit { LayoutUnit(fontMetrics.intAscent()
-            + (lineHeight(true, lineDirection) - fontMetrics.intHeight()) / 2
-            + (lineDirection == HorizontalLine ? borderTop() + paddingTop() : borderRight() + paddingRight())).toInt() };
-    }
-
     return { };
 }
 
@@ -3187,7 +3093,7 @@ TextRun RenderBlock::constructTextRun(std::span<const LChar> characters, const R
     return constructTextRun(StringView { characters }, style, expansion);
 }
 
-TextRun RenderBlock::constructTextRun(std::span<const UChar> characters, const RenderStyle& style, ExpansionBehavior expansion)
+TextRun RenderBlock::constructTextRun(std::span<const char16_t> characters, const RenderStyle& style, ExpansionBehavior expansion)
 {
     return constructTextRun(StringView { characters }, style, expansion);
 }
@@ -3569,16 +3475,16 @@ String RenderBlock::updateSecurityDiscCharacters(const RenderStyle& style, Strin
     if (style.textSecurity() == TextSecurity::None)
         return WTFMove(string);
     // This PUA character in the system font is used to render password field dots on Cocoa platforms.
-    constexpr UChar textSecurityDiscPUACodePoint = 0xF79A;
+    constexpr char16_t textSecurityDiscPUACodePoint = 0xF79A;
     Ref font = style.fontCascade().primaryFont();
     if (!(font->platformData().isSystemFont() && font->glyphForCharacter(textSecurityDiscPUACodePoint)))
         return WTFMove(string);
 
     // See RenderText::setRenderedText()
 #if PLATFORM(IOS_FAMILY)
-    constexpr UChar discCharacterToReplace = blackCircle;
+    constexpr char16_t discCharacterToReplace = blackCircle;
 #else
-    constexpr UChar discCharacterToReplace = bullet;
+    constexpr char16_t discCharacterToReplace = bullet;
 #endif
 
     return makeStringByReplacingAll(string, discCharacterToReplace, textSecurityDiscPUACodePoint);

@@ -496,7 +496,7 @@ static bool isInWindowOrStandardFullscreen(HTMLMediaElementEnums::VideoFullscree
 }
 
 struct HTMLMediaElement::CueData {
-    WTF_MAKE_STRUCT_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(HTMLMediaElement);
     TextTrackCueIntervalTree cueTree;
     CueList currentlyActiveCues;
 };
@@ -643,6 +643,16 @@ HTMLMediaElement::HTMLMediaElement(const QualifiedName& tagName, Document& docum
     InspectorInstrumentation::addEventListenersToNode(*this);
 }
 
+void HTMLMediaElement::invalidateMediaSession()
+{
+    if (!m_mediaSession)
+        return;
+
+    m_mediaSession->unregisterWithDocument(protectedDocument());
+    m_mediaSession->invalidateClient();
+    m_mediaSession = nullptr;
+}
+
 void HTMLMediaElement::initializeMediaSession()
 {
     ASSERT(!m_mediaSession);
@@ -707,7 +717,7 @@ void HTMLMediaElement::initializeMediaSession()
     registerWithDocument(document);
 
 #if USE(AUDIO_SESSION) && PLATFORM(MAC)
-    AudioSession::sharedSession().addConfigurationChangeObserver(*this);
+    AudioSession::singleton().addConfigurationChangeObserver(*this);
 #endif
 
     m_mediaSession->clientWillBeginAutoplaying();
@@ -746,10 +756,9 @@ HTMLMediaElement::~HTMLMediaElement()
     allMediaElements().remove(*this);
 
     setShouldDelayLoadEvent(false);
-    unregisterWithDocument(Ref<Document> { document() });
 
 #if USE(AUDIO_SESSION) && PLATFORM(MAC)
-    AudioSession::sharedSession().removeConfigurationChangeObserver(*this);
+    AudioSession::singleton().removeConfigurationChangeObserver(*this);
 #endif
 
 #if ENABLE(WIRELESS_PLAYBACK_TARGET)
@@ -795,35 +804,15 @@ HTMLMediaElement::~HTMLMediaElement()
         m_player = nullptr;
     }
 
-    if (m_mediaSession) {
-        m_mediaSession->invalidateClient();
-        m_mediaSession = nullptr;
-    }
     schedulePlaybackControlsManagerUpdate();
+
+    invalidateMediaSession();
+    unregisterWithDocument(Ref<Document> { document() });
 }
 
 std::optional<MediaPlayerIdentifier> HTMLMediaElement::playerIdentifier() const
 {
     return m_player ? std::optional { m_player->identifier() } : std::nullopt;
-}
-
-RefPtr<HTMLMediaElement> HTMLMediaElement::bestMediaElementForRemoteControls(MediaElementSession::PlaybackControlsPurpose purpose, const Document* document)
-{
-    auto selectedSession = PlatformMediaSessionManager::singleton().bestEligibleSessionForRemoteControls([&document] (auto& session) {
-        auto* mediaElementSession = dynamicDowncast<MediaElementSession>(session);
-        if (!mediaElementSession)
-            return false;
-
-        RefPtr element = mediaElementSession->element().get();
-        if (!element)
-            return false;
-
-        return !document || &element->document() == document;
-    }, purpose);
-
-    if (auto* mediaElementSession = dynamicDowncast<MediaElementSession>(selectedSession.get()))
-        return mediaElementSession->protectedElement();
-    return nullptr;
 }
 
 bool HTMLMediaElement::isNowPlayingEligible() const
@@ -898,8 +887,7 @@ void HTMLMediaElement::unregisterWithDocument(Document& document)
     }
 #endif
 
-    if (m_mediaSession)
-        m_mediaSession->unregisterWithDocument(document);
+    invalidateMediaSession();
 
     if (m_isWaitingUntilMediaCanStart)
         document.removeMediaCanStartListener(*this);
@@ -2486,7 +2474,7 @@ SpeechSynthesis& HTMLMediaElement::speechSynthesis()
 {
     if (!m_speechSynthesis) {
         m_speechSynthesis = SpeechSynthesis::create(protectedDocument());
-        RefPtr { m_speechSynthesis }->removeBehaviorRestriction(SpeechSynthesis::RequireUserGestureForSpeechStartRestriction);
+        RefPtr { m_speechSynthesis }->removeBehaviorRestriction(SpeechSynthesis::BehaviorRestrictionFlags::RequireUserGestureForSpeechStart);
     }
 
     return *m_speechSynthesis;
@@ -3017,7 +3005,7 @@ void HTMLMediaElement::setNetworkState(MediaPlayer::NetworkState state)
     if (state == MediaPlayer::NetworkState::FormatError && m_readyState < HAVE_METADATA && m_loadState == LoadingFromSrcAttr && needsContentTypeToPlay() && m_firstTimePlaying && !m_sniffer && !m_networkErrorOccured && m_lastContentTypeUsed) {
         // We couldn't find a suitable MediaPlayer, this could be due to the content-type having been initially set incorrectly.
         auto url = m_blob ? m_blobURLForReading.url() : currentSrc();
-        sniffForContentType(url)->whenSettled(RunLoop::protectedMain(), [weakThis = WeakPtr { *this }, url, player = m_player, lastContentType = *m_lastContentTypeUsed](auto&& result) {
+        sniffForContentType(url)->whenSettled(RunLoop::mainSingleton(), [weakThis = WeakPtr { *this }, url, player = m_player, lastContentType = *m_lastContentTypeUsed](auto&& result) {
             RefPtr protectedThis = weakThis.get();
             if (!protectedThis)
                 return;
@@ -5972,7 +5960,8 @@ void HTMLMediaElement::seekToPlaybackPositionEndedTimerFired()
     if (!m_isScrubbingRemotely)
         return;
 
-    PlatformMediaSessionManager::singleton().sessionDidEndRemoteScrubbing(mediaSession());
+    if (RefPtr manager = sessionManager())
+        manager->sessionDidEndRemoteScrubbing(mediaSession());
     m_isScrubbingRemotely = false;
     m_seekToPlaybackPositionEndedTimer.stop();
 #endif
@@ -6330,7 +6319,8 @@ bool HTMLMediaElement::couldPlayIfEnoughData() const
     if (pausedForUserInteraction())
         return false;
 
-    if (!canProduceAudio() || PlatformMediaSessionManager::singleton().hasActiveAudioSession())
+    RefPtr manager = sessionManager();
+    if (!canProduceAudio() || (manager && manager->hasActiveAudioSession()))
         return true;
 
     if (mediaSession().activeAudioSessionRequired() && mediaSession().blockedBySystemInterruption())
@@ -6522,8 +6512,8 @@ void HTMLMediaElement::playPlayer()
         return;
 
 #if USE(AUDIO_SESSION)
-    m_categoryAtMostRecentPlayback = AudioSession::sharedSession().category();
-    m_modeAtMostRecentPlayback = AudioSession::sharedSession().mode();
+    m_categoryAtMostRecentPlayback = AudioSession::singleton().category();
+    m_modeAtMostRecentPlayback = AudioSession::singleton().mode();
 #endif
 
 #if ENABLE(MEDIA_SESSION) && ENABLE(MEDIA_SESSION_COORDINATOR)
@@ -7025,8 +7015,12 @@ void HTMLMediaElement::setTextTrackRepresentation(TextTrackRepresentation* repre
     }
 
 #if ENABLE(VIDEO_PRESENTATION_MODE)
-    if (representation->bounds().isEmpty())
-        representation->setBounds(enclosingIntRect(m_videoFullscreenFrame));
+    if (representation->bounds().isEmpty()) {
+        if (!m_textTrackRepresentationBounds.isEmpty())
+            representation->setBounds(m_textTrackRepresentationBounds);
+        else if (!m_videoFullscreenFrame.isEmpty())
+            representation->setBounds(enclosingIntRect(m_videoFullscreenFrame));
+    }
 #endif
 
     protectedDocument()->setMediaElementShowingTextTrack(*this);
@@ -8319,7 +8313,7 @@ HTMLMediaElement::SleepType HTMLMediaElement::shouldDisableSleep() const
         return SleepType::System;
 #endif
 
-    if (PlatformMediaSessionManager::singleton().processIsSuspended())
+    if (RefPtr manager = sessionManager(); manager && manager->processIsSuspended())
         return SleepType::None;
 
     bool shouldBeAbleToSleep = mediaType() != PlatformMediaSession::MediaType::VideoAudio;
@@ -9196,7 +9190,7 @@ bool HTMLMediaElement::shouldOverrideBackgroundPlaybackRestriction(PlatformMedia
             INFO_LOG(LOGIDENTIFIER, "returning true because isPlayingToExternalTarget() is true");
             return true;
         }
-        if (PlatformMediaSessionManager::singleton().isPlayingToAutomotiveHeadUnit()) {
+        if (RefPtr manager = sessionManager(); manager && manager->isPlayingToAutomotiveHeadUnit()) {
             INFO_LOG(LOGIDENTIFIER, "returning true because isPlayingToAutomotiveHeadUnit() is true");
             return true;
         }
@@ -9225,7 +9219,7 @@ bool HTMLMediaElement::shouldOverrideBackgroundPlaybackRestriction(PlatformMedia
             INFO_LOG(LOGIDENTIFIER, "returning true because isPlayingToExternalTarget() is true");
             return true;
         }
-        if (PlatformMediaSessionManager::singleton().isPlayingToAutomotiveHeadUnit()) {
+        if (RefPtr manager = sessionManager(); manager && manager->isPlayingToAutomotiveHeadUnit()) {
             INFO_LOG(LOGIDENTIFIER, "returning true because isPlayingToAutomotiveHeadUnit() is true");
             return true;
         }
@@ -10239,6 +10233,14 @@ bool HTMLMediaElement::limitedMatroskaSupportEnabled() const
 #else
     return false;
 #endif
+}
+
+RefPtr<MediaSessionManagerInterface> HTMLMediaElement::sessionManager() const
+{
+    if (RefPtr page = document().page())
+        return &page->mediaSessionManager();
+
+    return nullptr;
 }
 
 } // namespace WebCore

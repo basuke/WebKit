@@ -110,7 +110,7 @@
 
 namespace WebCore {
 
-WTF_MAKE_TZONE_OR_ISO_ALLOCATED_IMPL(Node);
+WTF_MAKE_PREFERABLY_COMPACT_TZONE_OR_ISO_ALLOCATED_IMPL(Node);
 
 using namespace HTMLNames;
 
@@ -826,14 +826,14 @@ ExceptionOr<void> Node::normalize()
     return { };
 }
 
-Ref<Node> Node::cloneNode(bool deep)
+Ref<Node> Node::cloneNode(bool deep) const
 {
     ASSERT(!isShadowRoot());
     RefPtr registry = CustomElementRegistry::registryForNodeOrTreeScope(*this, treeScope());
     return cloneNodeInternal(document(), deep ? CloningOperation::Everything : CloningOperation::SelfOnly, registry.get());
 }
 
-ExceptionOr<Ref<Node>> Node::cloneNodeForBindings(bool deep)
+ExceptionOr<Ref<Node>> Node::cloneNodeForBindings(bool deep) const
 {
     if (isShadowRoot()) [[unlikely]]
         return Exception { ExceptionCode::NotSupportedError };

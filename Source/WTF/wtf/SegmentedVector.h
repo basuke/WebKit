@@ -28,7 +28,6 @@
 
 #pragma once
 
-#include <wtf/MallocPtr.h>
 #include <wtf/Vector.h>
 
 namespace WTF {
@@ -94,7 +93,7 @@ namespace WTF {
     class SegmentedVector final {
         friend class SegmentedVectorIterator<T, SegmentSize, Malloc>;
         WTF_MAKE_NONCOPYABLE(SegmentedVector);
-        WTF_MAKE_FAST_ALLOCATED;
+        WTF_DEPRECATED_MAKE_FAST_ALLOCATED(SegmentedVectorIterator);
 
     public:
         using Iterator = SegmentedVectorIterator<T, SegmentSize, Malloc>;
@@ -225,6 +224,8 @@ namespace WTF {
             T m_entries[0];
         };
 
+        using SegmentPtr = std::unique_ptr<Segment, NonDestructingDeleter<Segment, Malloc>>;
+
         void destroyAllItems()
         {
             for (size_t i = 0; i < m_size; ++i)
@@ -264,11 +265,12 @@ namespace WTF {
 
         void allocateSegment()
         {
-            m_segments.append(MallocPtr<Segment, Malloc>::malloc(sizeof(T) * SegmentSize));
+            auto* ptr = static_cast<Segment*>(Malloc::malloc(sizeof(T) * SegmentSize));
+            m_segments.append(SegmentPtr(ptr, { }));
         }
 
         size_t m_size { 0 };
-        Vector<MallocPtr<Segment>, 0, CrashOnOverflow, 16, Malloc> m_segments;
+        Vector<SegmentPtr, 0, CrashOnOverflow, 16, Malloc> m_segments;
     };
 
 } // namespace WTF

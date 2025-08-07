@@ -390,6 +390,10 @@ struct ImageAnalysisContextMenuActionData {
     BOOL _pointerInteractionRegionNeedsUpdate;
 #endif
 
+#if HAVE(UITOOLTIPINTERACTION)
+    RetainPtr<UIToolTipInteraction> _toolTip;
+#endif
+
     RetainPtr<WKTextInteractionWrapper> _textInteractionWrapper;
     OptionSet<WebKit::SuppressSelectionAssistantReason> _suppressSelectionAssistantReasons;
 
@@ -702,6 +706,9 @@ struct ImageAnalysisContextMenuActionData {
     , WTWritingToolsDelegate
     , WKTextAnimationSourceDelegate
 #endif
+#if HAVE(UITOOLTIPINTERACTION)
+    , UIToolTipInteractionDelegate
+#endif
 >
 
 @property (nonatomic, readonly) CGPoint lastInteractionLocation;
@@ -871,6 +878,11 @@ FOR_EACH_PRIVATE_WKCONTENTVIEW_ACTION(DECLARE_WKCONTENTVIEW_ACTION_FOR_WEB_VIEW)
 - (void)doAfterEditorStateUpdateAfterFocusingElement:(dispatch_block_t)block;
 - (void)runModalJavaScriptDialog:(CompletionHandler<void()>&&)callback;
 
+#if HAVE(UITOOLTIPINTERACTION)
+- (void)_toolTipChanged:(NSString *)newToolTip;
+- (UIToolTipConfiguration *)toolTipInteraction:(UIToolTipInteraction *)interaction configurationAtPoint:(CGPoint)point;
+#endif
+
 #if ENABLE(DRAG_SUPPORT)
 - (void)_didChangeDragInteractionPolicy;
 - (void)_didPerformDragOperation:(BOOL)handled;
@@ -878,7 +890,7 @@ FOR_EACH_PRIVATE_WKCONTENTVIEW_ACTION(DECLARE_WKCONTENTVIEW_ACTION_FOR_WEB_VIEW)
 - (void)_didHandleAdditionalDragItemsRequest:(BOOL)added;
 - (void)_startDrag:(RetainPtr<CGImageRef>)image item:(const WebCore::DragItem&)item nodeID:(std::optional<WebCore::NodeIdentifier>)nodeID;
 - (void)_willReceiveEditDragSnapshot;
-- (void)_didReceiveEditDragSnapshot:(std::optional<WebCore::TextIndicatorData>)data;
+- (void)_didReceiveEditDragSnapshot:(RefPtr<WebCore::TextIndicator>&&)textIndicator;
 - (void)_didChangeDragCaretRect:(CGRect)previousRect currentRect:(CGRect)rect;
 #endif
 
@@ -935,7 +947,7 @@ FOR_EACH_PRIVATE_WKCONTENTVIEW_ACTION(DECLARE_WKCONTENTVIEW_ACTION_FOR_WEB_VIEW)
 #if USE(UICONTEXTMENU)
 - (UIView *)containerForContextMenuHintPreviews;
 - (UIView *)textEffectsWindow;
-- (UITargetedPreview *)_createTargetedPreviewFromTextIndicator:(WebCore::TextIndicatorData)textIndicatorData previewContainer:(UIView *)previewContainer;
+- (UITargetedPreview *)_createTargetedPreviewFromTextIndicator:(RefPtr<WebCore::TextIndicator>&&)textIndicator previewContainer:(UIView *)previewContainer;
 - (UITargetedPreview *)_createTargetedContextMenuHintPreviewForFocusedElement:(WebKit::TargetedPreviewPositioning)positioning;
 - (UITargetedPreview *)_createTargetedContextMenuHintPreviewIfPossible;
 - (void)_removeContextMenuHintContainerIfPossible;

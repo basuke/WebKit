@@ -264,15 +264,6 @@ void RenderFlexibleBox::computeChildIntrinsicLogicalWidths(RenderBox& flexBoxChi
     RenderBlock::computeChildIntrinsicLogicalWidths(flexBoxChild, minPreferredLogicalWidth, maxPreferredLogicalWidth);
 }
 
-LayoutUnit RenderFlexibleBox::baselinePosition() const
-{
-    auto baseline = firstLineBaseline();
-    if (!baseline)
-        return synthesizedBaseline(*this, *parentStyle(), containingBlock()->writingMode().isHorizontal() ? HorizontalLine : VerticalLine, BorderBox) + marginLogicalHeight();
-
-    return baseline.value() + (containingBlock()->writingMode().isHorizontal() ? marginTop() : marginRight()).toInt();
-}
-
 std::optional<LayoutUnit> RenderFlexibleBox::firstLineBaseline() const
 {
     if ((isWritingModeRoot() && !isFlexItem()) || !m_numberOfFlexItemsOnFirstLine || shouldApplyLayoutContainment())
@@ -291,8 +282,10 @@ std::optional<LayoutUnit> RenderFlexibleBox::firstLineBaseline() const
     if (!baseline) {
         // FIXME: We should pass |direction| into firstLineBoxBaseline and stop bailing out if we're a writing mode root.
         // This would also fix some cases where the flexbox is orthogonal to its container.
-        LineDirectionMode direction = isHorizontalWritingMode() ? HorizontalLine : VerticalLine;
-        return synthesizedBaseline(*baselineFlexItem, style(), direction, BorderBox) + baselineFlexItem->logicalTop();
+        auto direction = isHorizontalWritingMode() ? LineDirection::Horizontal : LineDirection::Vertical;
+        auto flexboxWritingMode = style().writingMode();
+        return BaselineAlignmentState::synthesizedBaseline(*baselineFlexItem, BaselineAlignmentState::dominantBaseline(flexboxWritingMode),
+            flexboxWritingMode, direction, BaselineSynthesisEdge::BorderBox) + baselineFlexItem->logicalTop();
     }
 
     return LayoutUnit { (baseline.value() + baselineFlexItem->logicalTop()).toInt() };
@@ -316,16 +309,13 @@ std::optional <LayoutUnit> RenderFlexibleBox::lastLineBaseline() const
     if (!baseline) {
         // FIXME: We should pass |direction| into firstLineBoxBaseline and stop bailing out if we're a writing mode root.
         // This would also fix some cases where the flexbox is orthogonal to its container.
-        LineDirectionMode direction = isHorizontalWritingMode() ? HorizontalLine : VerticalLine;
-        return synthesizedBaseline(*baselineFlexItem, style(), direction, BorderBox) + baselineFlexItem->logicalTop();
+        auto direction = isHorizontalWritingMode() ? LineDirection::Horizontal : LineDirection::Vertical;
+        auto flexboxWritingMode = style().writingMode();
+        return BaselineAlignmentState::synthesizedBaseline(*baselineFlexItem, BaselineAlignmentState::dominantBaseline(flexboxWritingMode),
+            flexboxWritingMode, direction, BaselineSynthesisEdge::BorderBox) + baselineFlexItem->logicalTop();
     }
 
     return LayoutUnit { (baseline.value() + baselineFlexItem->logicalTop()).toInt() };
-}
-
-std::optional<LayoutUnit> RenderFlexibleBox::inlineBlockBaseline(LineDirectionMode) const
-{
-    return firstLineBaseline();
 }
 
 static const StyleContentAlignmentData& contentAlignmentNormalBehavior()
@@ -553,6 +543,24 @@ bool RenderFlexibleBox::isLeftToRightFlow() const
     if (isColumnFlow())
         return writingMode().blockDirection() == FlowDirection::TopToBottom || writingMode().blockDirection() == FlowDirection::LeftToRight;
     return writingMode().isLogicalLeftInlineStart() ^ (style().flexDirection() == FlexDirection::RowReverse);
+}
+
+RenderFlexibleBox::Direction RenderFlexibleBox::crossAxisDirection() const
+{
+    auto crossAxisDirection = style().isRowFlexDirection() ? writingMode().blockDirection() : writingMode().inlineDirection();
+    switch (crossAxisDirection) {
+    case FlowDirection::TopToBottom:
+        return style().flexWrap() == FlexWrap::Reverse ? Direction::BottomToTop : Direction::TopToBottom;
+    case FlowDirection::BottomToTop:
+        return style().flexWrap() == FlexWrap::Reverse ? Direction::TopToBottom : Direction::BottomToTop;
+    case FlowDirection::LeftToRight:
+        return style().flexWrap() == FlexWrap::Reverse ? Direction::RightToLeft : Direction::LeftToRight;
+    case FlowDirection::RightToLeft:
+        return style().flexWrap() == FlexWrap::Reverse ? Direction::LeftToRight : Direction::RightToLeft;
+    default:
+        ASSERT_NOT_REACHED();
+        return Direction::TopToBottom;
+    }
 }
 
 bool RenderFlexibleBox::isMultiline() const
@@ -1346,7 +1354,7 @@ void RenderFlexibleBox::performFlexLayout(RelayoutChildren relayoutChildren)
 
     if (allItems.isEmpty()) {
         if (hasLineIfEmpty()) {
-            auto minHeight = borderAndPaddingLogicalHeight() + lineHeight(true, isHorizontalWritingMode() ? HorizontalLine : VerticalLine) + scrollbarLogicalHeight();
+            auto minHeight = borderAndPaddingLogicalHeight() + lineHeight() + scrollbarLogicalHeight();
             if (height() < minHeight)
                 setLogicalHeight(minHeight);
         }
@@ -1423,7 +1431,7 @@ void RenderFlexibleBox::performFlexLayout(RelayoutChildren relayoutChildren)
         // a line because all our children might be out of flow positioned.
         // Instead of just checking if we have a line, make sure the flexbox
         // has at least a line's worth of height to cover this case.
-        LayoutUnit minHeight = borderAndPaddingLogicalHeight() + lineHeight(true, isHorizontalWritingMode() ? HorizontalLine : VerticalLine) + scrollbarLogicalHeight();
+        LayoutUnit minHeight = borderAndPaddingLogicalHeight() + lineHeight() + scrollbarLogicalHeight();
         if (size().height() < minHeight)
             setLogicalHeight(minHeight);
     }
@@ -1595,13 +1603,19 @@ bool RenderFlexibleBox::updateAutoMarginsInCrossAxis(RenderBox& flexItem, Layout
 LayoutUnit RenderFlexibleBox::marginBoxAscentForFlexItem(const RenderBox& flexItem)
 {
     auto isHorizontalFlow = this->isHorizontalFlow();
-    auto direction = isHorizontalFlow ? HorizontalLine : VerticalLine;
+    auto direction = isHorizontalFlow ? LineDirection::Horizontal : LineDirection::Vertical;
 
-    if (!mainAxisIsFlexItemInlineAxis(flexItem))
-        return synthesizedBaseline(flexItem, style(), direction, BorderBox) + flowAwareMarginBeforeForFlexItem(flexItem);
+    if (!mainAxisIsFlexItemInlineAxis(flexItem)) {
+        auto flexboxWritingMode = style().writingMode();
+        return BaselineAlignmentState::synthesizedBaseline(flexItem, BaselineAlignmentState::dominantBaseline(flexboxWritingMode),
+            flexboxWritingMode, direction, BaselineSynthesisEdge::BorderBox) + flowAwareMarginBeforeForFlexItem(flexItem);
+    }
     auto ascent = alignmentForFlexItem(flexItem) == ItemPosition::LastBaseline ? flexItem.lastLineBaseline() : flexItem.firstLineBaseline();
-    if (!ascent)
-        return synthesizedBaseline(flexItem, style(), direction, BorderBox) + flowAwareMarginBeforeForFlexItem(flexItem);
+    if (!ascent) {
+        auto flexboxWritingMode = style().writingMode();
+        return BaselineAlignmentState::synthesizedBaseline(flexItem, BaselineAlignmentState::dominantBaseline(flexboxWritingMode),
+            flexboxWritingMode, direction, BaselineSynthesisEdge::BorderBox) + flowAwareMarginBeforeForFlexItem(flexItem);
+    }
 
     if (!flexItem.writingMode().isBlockMatchingAny(writingMode())) {
         // Baseline from flex item with opposite block direction needs to be resolved as if flex item had the same block direction.
@@ -2781,17 +2795,17 @@ bool RenderFlexibleBox::layoutUsingFlexFormattingContext()
     return true;
 }
 
-const RenderBox* RenderFlexibleBox::firstBaselineCandidateOnLine(OrderIterator flexItemIterator, ItemPosition baselinePosition, size_t numberOfItemsOnLine) const
+const RenderBox* RenderFlexibleBox::firstBaselineCandidateOnLine(OrderIterator flexItemIterator, size_t numberOfItemsOnLine) const
 {
     // Note that "first" here means in iterator order and not logical flex order (caller can pass in reversed order).
-    ASSERT(baselinePosition == ItemPosition::Baseline || baselinePosition == ItemPosition::LastBaseline);
-
     size_t index = 0;
     const RenderBox* baselineFlexItem = nullptr;
     for (auto* flexItem = flexItemIterator.first(); flexItem; flexItem = flexItemIterator.next()) {
         if (flexItemIterator.shouldSkipChild(*flexItem))
             continue;
-        if (alignmentForFlexItem(*flexItem) == baselinePosition && mainAxisIsFlexItemInlineAxis(*flexItem) && !hasAutoMarginsInCrossAxis(*flexItem))
+        auto flexItemPosition = alignmentForFlexItem(*flexItem);
+        if ((flexItemPosition == ItemPosition::Baseline || flexItemPosition == ItemPosition::LastBaseline)
+            && mainAxisIsFlexItemInlineAxis(*flexItem) && !hasAutoMarginsInCrossAxis(*flexItem))
             return flexItem;
         if (!baselineFlexItem)
             baselineFlexItem = flexItem;
@@ -2801,17 +2815,17 @@ const RenderBox* RenderFlexibleBox::firstBaselineCandidateOnLine(OrderIterator f
     return nullptr;
 }
 
-const RenderBox* RenderFlexibleBox::lastBaselineCandidateOnLine(OrderIterator flexItemIterator, ItemPosition baselinePosition, size_t numberOfItemsOnLine) const
+const RenderBox* RenderFlexibleBox::lastBaselineCandidateOnLine(OrderIterator flexItemIterator, size_t numberOfItemsOnLine) const
 {
     // Note that "last" here means in iterator order and not logical flex order (caller can pass in reversed order).
-    ASSERT(baselinePosition == ItemPosition::Baseline || baselinePosition == ItemPosition::LastBaseline);
-
     size_t index = 0;
     RenderBox* baselineFlexItem = nullptr;
     for (auto* flexItem = flexItemIterator.first(); flexItem; flexItem = flexItemIterator.next()) {
         if (flexItemIterator.shouldSkipChild(*flexItem))
             continue;
-        if (alignmentForFlexItem(*flexItem) == baselinePosition && mainAxisIsFlexItemInlineAxis(*flexItem) && !hasAutoMarginsInCrossAxis(*flexItem))
+        auto flexItemPosition = alignmentForFlexItem(*flexItem);
+        if ((flexItemPosition == ItemPosition::Baseline || flexItemPosition == ItemPosition::LastBaseline)
+            && mainAxisIsFlexItemInlineAxis(*flexItem) && !hasAutoMarginsInCrossAxis(*flexItem))
             baselineFlexItem = flexItem;
         if (++index == numberOfItemsOnLine)
             return baselineFlexItem ? baselineFlexItem : flexItem;
@@ -2828,18 +2842,18 @@ const RenderBox* RenderFlexibleBox::flexItemForFirstBaseline() const
     if (!useLastLine) {
         if (!useLastItem) {
             // Logically (and visually) first item on logically (and visually) first line.
-            return firstBaselineCandidateOnLine(m_orderIterator, ItemPosition::Baseline, m_numberOfFlexItemsOnFirstLine);
+            return firstBaselineCandidateOnLine(m_orderIterator, m_numberOfFlexItemsOnFirstLine);
         }
         // Logically last (but visually first) item on logically (and visually) first line.
-        return lastBaselineCandidateOnLine(m_orderIterator, ItemPosition::Baseline, m_numberOfFlexItemsOnFirstLine);
+        return lastBaselineCandidateOnLine(m_orderIterator, m_numberOfFlexItemsOnFirstLine);
     }
 
     if (!useLastItem) {
         // Logically (and visually) first item on logically last (but visually first) line.
-        return lastBaselineCandidateOnLine(m_orderIterator.reverse(), ItemPosition::Baseline, m_numberOfFlexItemsOnLastLine);
+        return lastBaselineCandidateOnLine(m_orderIterator.reverse(), m_numberOfFlexItemsOnLastLine);
     }
     // Logically last (but visually first) item on logically last (but visually first) line.
-    return firstBaselineCandidateOnLine(m_orderIterator.reverse(), ItemPosition::Baseline, m_numberOfFlexItemsOnLastLine);
+    return firstBaselineCandidateOnLine(m_orderIterator.reverse(), m_numberOfFlexItemsOnLastLine);
 }
 
 const RenderBox* RenderFlexibleBox::flexItemForLastBaseline() const
@@ -2851,18 +2865,18 @@ const RenderBox* RenderFlexibleBox::flexItemForLastBaseline() const
     if (!useLastLine) {
         if (!useLastItem) {
             // Logically (and visually) last item on logically (and visually) last line.
-            return firstBaselineCandidateOnLine(m_orderIterator.reverse(), ItemPosition::LastBaseline, m_numberOfFlexItemsOnLastLine);
+            return firstBaselineCandidateOnLine(m_orderIterator.reverse(), m_numberOfFlexItemsOnLastLine);
         }
         // Logically first (but visually last) item  on logically (and visually) last line.
-        return lastBaselineCandidateOnLine(m_orderIterator.reverse(), ItemPosition::LastBaseline, m_numberOfFlexItemsOnLastLine);
+        return lastBaselineCandidateOnLine(m_orderIterator.reverse(), m_numberOfFlexItemsOnLastLine);
     }
 
     if (!useLastItem) {
         // Logically (and visually) last item on logically first (but visually last) line.
-        return lastBaselineCandidateOnLine(m_orderIterator, ItemPosition::LastBaseline, m_numberOfFlexItemsOnFirstLine);
+        return lastBaselineCandidateOnLine(m_orderIterator, m_numberOfFlexItemsOnFirstLine);
     }
     // Logically first (but visually last) item on logically last (but visually first) line.
-    return firstBaselineCandidateOnLine(m_orderIterator, ItemPosition::LastBaseline, m_numberOfFlexItemsOnFirstLine);
+    return firstBaselineCandidateOnLine(m_orderIterator, m_numberOfFlexItemsOnFirstLine);
 }
 
 }

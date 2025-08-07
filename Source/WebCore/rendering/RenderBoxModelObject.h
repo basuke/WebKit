@@ -31,7 +31,7 @@
 namespace WebCore {
 
 // Modes for some of the line-related functions.
-enum LineDirectionMode { HorizontalLine, VerticalLine };
+enum class LineDirection : bool { Horizontal, Vertical };
 
 enum class BleedAvoidance : uint8_t {
     None,
@@ -193,10 +193,6 @@ public:
 
     virtual LayoutUnit containingBlockLogicalWidthForContent() const;
 
-    // Overridden by subclasses to determine line height and baseline position.
-    virtual LayoutUnit lineHeight(bool firstLine, LineDirectionMode) const = 0;
-    virtual LayoutUnit baselinePosition() const = 0;
-
     void mapAbsoluteToLocalPoint(OptionSet<MapCoordinatesMode>, TransformState&) const override;
 
     void setSelectionState(HighlightState) override;
@@ -254,7 +250,7 @@ public:
     void removeOutOfFlowBoxesIfNeededOnStyleChange(RenderBlock& delegateBlock, const RenderStyle& oldStyle, const RenderStyle& newStyle);
 
     struct ContinuationChainNode {
-        WTF_MAKE_STRUCT_FAST_ALLOCATED;
+        WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(ContinuationChainNode);
 
         SingleThreadWeakPtr<RenderBoxModelObject> renderer;
         ContinuationChainNode* previous { nullptr };

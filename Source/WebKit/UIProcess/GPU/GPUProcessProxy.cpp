@@ -80,6 +80,7 @@
 
 #if ENABLE(EXTENSION_CAPABILITIES)
 #include "ExtensionCapabilityGrant.h"
+#include "ExtensionCapabilityGranter.h"
 #include "MediaCapability.h"
 #endif
 
@@ -122,7 +123,7 @@ void GPUProcessProxy::keepProcessAliveTemporarily()
         return;
 
     keptAliveGPUProcessProxy() = singleton().get();
-    static NeverDestroyed<RunLoop::Timer> releaseGPUProcessTimer(RunLoop::main(), [] {
+    static NeverDestroyed<RunLoop::Timer> releaseGPUProcessTimer(RunLoop::mainSingleton(), "GPUProcessProxy::KeepProcessAliveTemporarily::ReleaseGPUProcessTimer"_s, [] {
         keptAliveGPUProcessProxy() = nullptr;
     });
     releaseGPUProcessTimer.get().startOneShot(durationToKeepGPUProcessAliveAfterDestruction);
@@ -199,7 +200,7 @@ GPUProcessProxy::GPUProcessProxy()
 #endif
 
 #if USE(GBM)
-    parameters.renderDeviceFile = drmRenderNodeDevice();
+    parameters.renderDeviceFile = drmRenderNodeOrPrimaryDevice();
 #endif
 
 #if PLATFORM(COCOA)
@@ -577,12 +578,7 @@ void GPUProcessProxy::gpuProcessExited(ProcessTerminationReason reason)
     }
 
 #if ENABLE(EXTENSION_CAPABILITIES)
-    // FIXME: Any ExtensionCapabilityGranter can invalidate the GPUProcessProxy grants, so we pick the first one. In the future ExtensionCapabilityGranter should be made a singleton.
-    for (auto& processPool : WebProcessPool::allProcessPools()) {
-        processPool->extensionCapabilityGranter().invalidateGrants(moveToVector(std::exchange(extensionCapabilityGrants(), { }).values()));
-        break;
-    }
-
+    ExtensionCapabilityGranter::invalidateGrants(moveToVector(std::exchange(extensionCapabilityGrants(), { }).values()));
 #endif
 
     if (keptAliveGPUProcessProxy() == this)
@@ -623,7 +619,7 @@ void GPUProcessProxy::didClose(IPC::Connection&)
     gpuProcessExited(ProcessTerminationReason::Crash); // May cause |this| to get deleted.
 }
 
-void GPUProcessProxy::didReceiveInvalidMessage(IPC::Connection& connection, IPC::MessageName messageName, int32_t)
+void GPUProcessProxy::didReceiveInvalidMessage(IPC::Connection& connection, IPC::MessageName messageName, const Vector<uint32_t>&)
 {
     logInvalidMessage(connection, messageName);
 
@@ -664,7 +660,7 @@ void GPUProcessProxy::didFinishLaunching(ProcessLauncher* launcher, IPC::Connect
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), makeBlockPtr([weakThis = WeakPtr { *this }] () mutable {
         if (!isPowerLoggingInTaskMode())
             return;
-        RunLoop::protectedMain()->dispatch([weakThis = WTFMove(weakThis)] () {
+        RunLoop::mainSingleton().dispatch([weakThis = WTFMove(weakThis)] () {
             if (!weakThis)
                 return;
             weakThis->enablePowerLogging();

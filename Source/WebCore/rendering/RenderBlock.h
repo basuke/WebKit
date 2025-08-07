@@ -65,10 +65,6 @@ protected:
     RenderBlock(Type, Document&, RenderStyle&&, OptionSet<TypeFlag>, TypeSpecificFlags = { });
 
 public:
-    // These two functions are overridden for inline-block.
-    LayoutUnit lineHeight(bool firstLine, LineDirectionMode) const final;
-    LayoutUnit baselinePosition() const override;
-
     // FIXME-BLOCKFLOW: Remove virtualizaion when all callers have moved to RenderBlockFlow
     virtual void deleteLines();
 
@@ -125,7 +121,7 @@ public:
 
     LayoutUnit textIndentOffset() const;
 
-    VisiblePosition positionForPoint(const LayoutPoint&, HitTestSource, const RenderFragmentContainer*) override;
+    PositionWithAffinity positionForPoint(const LayoutPoint&, HitTestSource, const RenderFragmentContainer*) override;
 
     GapRects selectionGapRectsForRepaint(const RenderLayerModelObject* repaintContainer);
     LayoutRect logicalLeftSelectionGap(RenderBlock& rootBlock, const LayoutPoint& rootBlockPhysicalPosition, const LayoutSize& offsetFromRootBlock, RenderElement* selObj, LayoutUnit logicalLeft, LayoutUnit logicalTop, LayoutUnit logicalHeight, const LogicalSelectionOffsetCaches&, const PaintInfo*);
@@ -155,7 +151,7 @@ public:
         ExpansionBehavior = ExpansionBehavior::defaultBehavior());
     static TextRun constructTextRun(std::span<const LChar> characters, const RenderStyle&,
         ExpansionBehavior = ExpansionBehavior::defaultBehavior());
-    static TextRun constructTextRun(std::span<const UChar> characters, const RenderStyle&,
+    static TextRun constructTextRun(std::span<const char16_t> characters, const RenderStyle&,
         ExpansionBehavior = ExpansionBehavior::defaultBehavior());
 
     LayoutUnit paginationStrut() const;
@@ -289,7 +285,6 @@ protected:
     
     std::optional<LayoutUnit> firstLineBaseline() const override;
     std::optional<LayoutUnit> lastLineBaseline() const override;
-    std::optional<LayoutUnit> inlineBlockBaseline(LineDirectionMode) const override;
 
     // Delay updating scrollbars until endAndCommitUpdateScrollInfoAfterLayoutTransaction() is called. These functions are used
     // when a flexbox is laying out its descendants. If multiple calls are made to beginUpdateScrollInfoAfterLayoutTransaction()
@@ -398,7 +393,7 @@ private:
 
     void paintContinuationOutlines(PaintInfo&, const LayoutPoint&);
 
-    virtual VisiblePosition positionForPointWithInlineChildren(const LayoutPoint&, HitTestSource);
+    virtual PositionWithAffinity positionForPointWithInlineChildren(const LayoutPoint&, HitTestSource);
 
     RenderFragmentedFlow* updateCachedEnclosingFragmentedFlow(RenderFragmentedFlow*) const;
 
@@ -417,7 +412,7 @@ private:
 
 LayoutUnit blockDirectionOffset(RenderBlock& rootBlock, const LayoutSize& offsetFromRootBlock);
 LayoutUnit inlineDirectionOffset(RenderBlock& rootBlock, const LayoutSize& offsetFromRootBlock);
-VisiblePosition positionForPointRespectingEditingBoundaries(RenderBlock&, RenderBox&, const LayoutPoint&, HitTestSource);
+PositionWithAffinity positionForPointRespectingEditingBoundaries(RenderBlock&, RenderBox&, const LayoutPoint&, HitTestSource);
 
 } // namespace WebCore
 

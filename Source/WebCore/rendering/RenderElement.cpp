@@ -30,9 +30,7 @@
 #include "BorderShape.h"
 #include "CachedResourceLoader.h"
 #include "ContainerNodeInlines.h"
-#include "ContentData.h"
 #include "ContentVisibilityDocumentState.h"
-#include "CursorList.h"
 #include "DocumentInlines.h"
 #include "ElementChildIteratorInlines.h"
 #include "EventHandler.h"
@@ -180,23 +178,37 @@ const Layout::ElementBox* RenderElement::layoutBox() const
     return downcast<Layout::ElementBox>(RenderObject::layoutBox());
 }
 
-bool RenderElement::isContentDataSupported(const ContentData& contentData)
+static RefPtr<StyleImage> minimallySupportedContentDataImage(const Style::Content& content)
 {
     // Minimal support for content properties replacing an entire element.
     // Works only if we have exactly one piece of content and it's a URL.
     // Otherwise acts as if we didn't support this feature.
-    return is<ImageContentData>(contentData) && !contentData.next();
+    auto* data = content.tryData();
+    if (!data)
+        return nullptr;
+    if (data->list.size() != 1)
+        return nullptr;
+    auto* image = std::get_if<Style::Content::Image>(&data->list[0]);
+    if (!image)
+        return nullptr;
+    return image->image.value.ptr();
+}
+
+bool RenderElement::isContentDataSupported(const Style::Content& content)
+{
+    return minimallySupportedContentDataImage(content) != nullptr;
 }
 
 RenderPtr<RenderElement> RenderElement::createFor(Element& element, RenderStyle&& style, OptionSet<ConstructBlockLevelRendererFor> rendererTypeOverride)
 {
-    const ContentData* contentData = style.contentData();
-    if (!rendererTypeOverride && contentData && isContentDataSupported(*contentData) && !element.isPseudoElement()) {
-        Style::loadPendingResources(style, element.document(), &element);
-        Ref styleImage = downcast<ImageContentData>(*contentData).image();
-        auto image = createRenderer<RenderImage>(RenderObject::Type::Image, element, WTFMove(style), const_cast<StyleImage*>(styleImage.ptr()));
-        image->setIsGeneratedContent();
-        return image;
+    if (!rendererTypeOverride) {
+        if (RefPtr styleImage = minimallySupportedContentDataImage(style.content()); styleImage && !element.isPseudoElement()) {
+            Style::loadPendingResources(style, element.document(), &element);
+            auto image = createRenderer<RenderImage>(RenderObject::Type::Image, element, WTFMove(style), styleImage.get());
+            image->setIsGeneratedContent();
+            image->updateAltText();
+            return image;
+        }
     }
 
     switch (style.display()) {
@@ -434,10 +446,10 @@ void RenderElement::updateImage(StyleImage* oldImage, StyleImage* newImage)
         newImage->addClient(*this);
 }
 
-void RenderElement::updateShapeImage(const ShapeValue* oldShapeValue, const ShapeValue* newShapeValue)
+void RenderElement::updateShapeImage(const Style::ShapeOutside* oldShapeValue, const Style::ShapeOutside* newShapeValue)
 {
     if (oldShapeValue || newShapeValue)
-        updateImage(oldShapeValue ? oldShapeValue->image() : nullptr, newShapeValue ? newShapeValue->protectedImage().get() : nullptr);
+        updateImage(oldShapeValue ? oldShapeValue->image().get() : nullptr, newShapeValue ? newShapeValue->image().get() : nullptr);
 }
 
 bool RenderElement::repaintBeforeStyleChange(StyleDifference diff, const RenderStyle& oldStyle, const RenderStyle& newStyle)
@@ -1026,19 +1038,6 @@ inline void RenderCounter::rendererStyleChanged(RenderElement& renderer, const R
     rendererStyleChangedSlowCase(renderer, oldStyle, newStyle);
 }
 
-#if !PLATFORM(IOS_FAMILY)
-static bool areNonIdenticalCursorListsEqual(const RenderStyle* a, const RenderStyle* b)
-{
-    ASSERT(a->cursors() != b->cursors());
-    return a->cursors() && b->cursors() && *a->cursors() == *b->cursors();
-}
-
-static inline bool areCursorsEqual(const RenderStyle* a, const RenderStyle* b)
-{
-    return a->cursor() == b->cursor() && (a->cursors() == b->cursors() || areNonIdenticalCursorListsEqual(a, b));
-}
-#endif
-
 void RenderElement::styleDidChange(StyleDifference diff, const RenderStyle* oldStyle)
 {
     auto registerImages = [this](auto* style, auto* oldStyle) {
@@ -1048,9 +1047,9 @@ void RenderElement::styleDidChange(StyleDifference diff, const RenderStyle* oldS
             updateFillImages(oldStyle ? &oldStyle->protectedBackgroundLayers().get() : nullptr, style ? &style->protectedBackgroundLayers().get() : nullptr);
         if ((style && style->maskLayers().hasImage()) || (oldStyle && oldStyle->maskLayers().hasImage()))
             updateFillImages(oldStyle ? &oldStyle->protectedMaskLayers().get() : nullptr, style ? &style->protectedMaskLayers().get() : nullptr);
-        updateImage(oldStyle ? oldStyle->borderImage().protectedImage().get() : nullptr, style ? style->borderImage().protectedImage().get() : nullptr);
-        updateImage(oldStyle ? oldStyle->maskBorder().protectedImage().get() : nullptr, style ? style->maskBorder().protectedImage().get() : nullptr);
-        updateShapeImage(oldStyle ? oldStyle->protectedShapeOutside().get() : nullptr, style ? style->protectedShapeOutside().get() : nullptr);
+        updateImage(oldStyle ? oldStyle->borderImage().source().tryStyleImage().get() : nullptr, style ? style->borderImage().source().tryStyleImage().get() : nullptr);
+        updateImage(oldStyle ? oldStyle->maskBorder().source().tryStyleImage().get() : nullptr, style ? style->maskBorder().source().tryStyleImage().get() : nullptr);
+        updateShapeImage(oldStyle ? &oldStyle->shapeOutside() : nullptr, style ? &style->shapeOutside() : nullptr);
     };
 
     registerImages(&style(), oldStyle);
@@ -1094,7 +1093,7 @@ void RenderElement::styleDidChange(StyleDifference diff, const RenderStyle* oldS
     // updated by subclasses before we know if we have to repaint (in setStyle()).
 
 #if !PLATFORM(IOS_FAMILY)
-    if (oldStyle && !areCursorsEqual(oldStyle, &style()))
+    if (oldStyle && oldStyle->cursor() != style().cursor())
         protectedFrame()->eventHandler().scheduleCursorUpdate();
 #endif
 
@@ -1199,10 +1198,9 @@ void RenderElement::willBeDestroyed()
             unregisterImage(backgroundLayer->protectedImage().get());
         for (auto* maskLayer = &style.maskLayers(); maskLayer; maskLayer = maskLayer->next())
             unregisterImage(maskLayer->protectedImage().get());
-        unregisterImage(style.borderImage().protectedImage().get());
-        unregisterImage(style.maskBorder().protectedImage().get());
-        if (auto shapeValue = style.shapeOutside())
-            unregisterImage(shapeValue->protectedImage().get());
+        unregisterImage(style.borderImage().source().tryStyleImage().get());
+        unregisterImage(style.maskBorder().source().tryStyleImage().get());
+        unregisterImage(style.shapeOutside().image().get());
     };
 
     if (hasInitializedStyle()) {
@@ -1497,7 +1495,7 @@ bool RenderElement::repaintAfterLayoutIfNeeded(SingleThreadWeakPtr<const RenderL
                 });
             };
             auto outlineRightInsetExtent = [&]() -> LayoutUnit {
-                auto offset = LayoutUnit { outlineStyle.outlineOffset() };
+                auto offset = LayoutUnit { Style::evaluate(outlineStyle.outlineOffset()) };
                 return offset < 0 ? -offset : 0_lu;
             };
             auto boxShadowRightInsetExtent = [&] {
@@ -1541,7 +1539,7 @@ bool RenderElement::repaintAfterLayoutIfNeeded(SingleThreadWeakPtr<const RenderL
                 });
             };
             auto outlineBottomInsetExtent = [&]() -> LayoutUnit {
-                auto offset = LayoutUnit { outlineStyle.outlineOffset() };
+                auto offset = LayoutUnit { Style::evaluate(outlineStyle.outlineOffset()) };
                 return offset < 0 ? -offset : 0_lu;
             };
             auto boxShadowBottomInsetExtent = [&]() -> LayoutUnit {
@@ -1575,7 +1573,7 @@ bool RenderElement::borderImageIsLoadedAndCanBeRendered() const
 {
     ASSERT(style().hasBorder());
 
-    RefPtr borderImage = style().borderImage().image();
+    RefPtr borderImage = style().borderImage().source().tryStyleImage();
     return borderImage && borderImage->canRender(this, style().usedZoom()) && borderImage->isLoaded(this);
 }
 
@@ -2102,22 +2100,22 @@ static bool useShrinkWrappedFocusRingForOutlineStyleAuto()
 
 static void drawFocusRing(GraphicsContext& context, const Path& path, const RenderStyle& style, const Color& color)
 {
-    context.drawFocusRing(path, style.outlineWidth(), color);
+    context.drawFocusRing(path, Style::evaluate(style.outlineWidth()), color);
 }
 
 static void drawFocusRing(GraphicsContext& context, Vector<FloatRect> rects, const RenderStyle& style, const Color& color)
 {
 #if PLATFORM(MAC)
-    context.drawFocusRing(rects, 0, style.outlineWidth(), color);
+    context.drawFocusRing(rects, 0, Style::evaluate(style.outlineWidth()), color);
 #else
-    context.drawFocusRing(rects, style.outlineOffset(), style.outlineWidth(), color);
+    context.drawFocusRing(rects, Style::evaluate(style.outlineOffset()), Style::evaluate(style.outlineWidth()), color);
 #endif
 }
 
 void RenderElement::paintFocusRing(const PaintInfo& paintInfo, const RenderStyle& style, const Vector<LayoutRect>& focusRingRects) const
 {
     ASSERT(style.outlineStyle() == OutlineStyle::Auto);
-    float outlineOffset = style.outlineOffset();
+    float outlineOffset = Style::evaluate(style.outlineOffset());
     Vector<FloatRect> pixelSnappedFocusRingRects;
     float deviceScaleFactor = document().deviceScaleFactor();
     for (auto rect : focusRingRects) {

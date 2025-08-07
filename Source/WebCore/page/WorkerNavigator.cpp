@@ -37,6 +37,7 @@
 #include "WorkerGlobalScope.h"
 #include "WorkerThread.h"
 #include <wtf/TZoneMallocInlines.h>
+#include "NavigatorUAData.h"
 
 namespace WebCore {
 
@@ -108,5 +109,13 @@ void WorkerNavigator::clearAppBadge(Ref<DeferredPromise>&& promise)
 {
     setAppBadge(0, WTFMove(promise));
 }
+
+NavigatorUAData& WorkerNavigator::userAgentData() const
+{
+    if (!m_navigatorUAData)
+        m_navigatorUAData = NavigatorUAData::create();
+
+    return *m_navigatorUAData;
+};
 
 } // namespace WebCore

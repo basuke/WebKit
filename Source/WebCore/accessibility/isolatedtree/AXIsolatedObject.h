@@ -57,7 +57,7 @@ public:
 
     // FIXME: tree()->treeID() is never optional, so this shouldn't return an optional either.
     std::optional<AXID> treeID() const final { return tree()->treeID(); }
-    String dbgInternal(bool, OptionSet<AXDebugStringOption>) const final;
+    String debugDescriptionInternal(bool, std::optional<OptionSet<AXDebugStringOption>> = std::nullopt) const final;
 
     void attachPlatformWrapper(AccessibilityObjectWrapper*);
     bool isDetached() const final;
@@ -93,7 +93,7 @@ public:
         const auto* runs = textRuns();
         return runs && runs->size();
     }
-    TextEmissionBehavior textEmissionBehavior() const final { return propertyValue<TextEmissionBehavior>(AXProperty::TextEmissionBehavior); }
+    TextEmissionBehavior textEmissionBehavior() const final;
     AXTextRunLineID listMarkerLineID() const final { return propertyValue<AXTextRunLineID>(AXProperty::ListMarkerLineID); };
     String listMarkerText() const final { return stringAttributeValue(AXProperty::ListMarkerText); }
     FontOrientation fontOrientation() const final { return propertyValue<FontOrientation>(AXProperty::FontOrientation); }
@@ -154,6 +154,7 @@ private:
 
     void setPropertyFlag(AXPropertyFlag, bool);
     bool hasPropertyFlag(AXPropertyFlag) const;
+    bool hasPropertyFlag(AXProperty) const;
 
     // FIXME: consolidate all AttributeValue retrieval in a single template method.
     bool boolAttributeValue(AXProperty) const;
@@ -246,6 +247,8 @@ private:
     std::pair<unsigned, unsigned> columnIndexRange() const final { return indexRangePairAttributeValue(AXProperty::ColumnIndexRange); }
     std::optional<unsigned> axColumnIndex() const final { return optionalAttributeValue<unsigned>(AXProperty::AXColumnIndex); }
     std::optional<unsigned> axRowIndex() const final { return optionalAttributeValue<unsigned>(AXProperty::AXRowIndex); }
+    String axColumnIndexText() const final { return stringAttributeValueNullIfMissing(AXProperty::AXColumnIndexText); }
+    String axRowIndexText() const final { return stringAttributeValueNullIfMissing(AXProperty::AXRowIndexText); }
     bool isColumnHeader() const final { return boolAttributeValue(AXProperty::IsColumnHeader); }
     bool isRowHeader() const final { return boolAttributeValue(AXProperty::IsRowHeader); }
     String cellScope() const final { return stringAttributeValue(AXProperty::CellScope); }
@@ -284,7 +287,6 @@ private:
     FloatRect relativeFrameFromChildren() const;
     WallTime dateTimeValue() const final { return propertyValue<WallTime>(AXProperty::DateTimeValue); }
     DateComponentsType dateTimeComponentsType() const final { return propertyValue<DateComponentsType>(AXProperty::DateTimeComponentsType); }
-    bool supportsDatetimeAttribute() const final { return boolAttributeValue(AXProperty::SupportsDatetimeAttribute); }
     String datetimeAttributeValue() const final { return stringAttributeValue(AXProperty::DatetimeAttributeValue); }
     bool canSetValueAttribute() const final { return boolAttributeValue(AXProperty::CanSetValueAttribute); }
     bool canSetSelectedAttribute() const final { return boolAttributeValue(AXProperty::CanSetSelectedAttribute); }
@@ -492,7 +494,6 @@ private:
     // Functions that should never be called on an isolated tree object. ASSERT that these are not reached;
     bool isAccessibilityRenderObject() const final;
     bool isAccessibilityTableInstance() const final;
-    bool isAccessibilityARIAGridCellInstance() const final { return false; }
     bool isAXRemoteFrame() const final { return false; }
     bool isNativeTextControl() const final;
     bool isMockObject() const final;
@@ -513,7 +514,7 @@ private:
     bool hasSameFont(AXCoreObject&) final;
     bool hasSameFontColor(AXCoreObject&) final;
     bool hasSameStyle(AXCoreObject&) final;
-    bool hasUnderline() const final { return boolAttributeValue(AXProperty::HasUnderline); }
+    bool hasUnderline() const final { return colorAttributeValue(AXProperty::UnderlineColor) != Accessibility::defaultColor(); }
     AXTextMarkerRange textInputMarkedTextMarkerRange() const final;
     Element* element() const final;
     Node* node() const final;
@@ -540,7 +541,7 @@ private:
 #if PLATFORM(COCOA)
     RetainPtr<NSAttributedString> attributedStringForTextMarkerRange(AXTextMarkerRange&&, SpellCheck) const final;
 #endif
-    AXObjectCache* axObjectCache() const final;
+    AXObjectCache* axObjectCache() const;
     Element* actionElement() const final;
     Path elementPath() const final { return pathAttributeValue(AXProperty::Path); };
     bool supportsPath() const final { return boolAttributeValue(AXProperty::SupportsPath); }
@@ -578,7 +579,7 @@ private:
 #if PLATFORM(COCOA) && ENABLE(MODEL_ELEMENT)
     Vector<RetainPtr<id>> modelElementChildren() final;
 #endif
-    
+
     void updateBackingStore() final;
 
     String innerHTML() const final;
@@ -588,7 +589,8 @@ private:
     void verifyChildrenIndexInParent() const final { return AXCoreObject::verifyChildrenIndexInParent(m_children); }
 #endif
 
-    Vector<AXID> m_childrenIDs;
+    // IDs that haven't been resolved into actual objects in m_children.
+    FixedVector<AXID> m_unresolvedChildrenIDs;
     Vector<Ref<AXCoreObject>> m_children;
     AXPropertyVector m_properties;
 
@@ -597,9 +599,6 @@ private:
     Markable<AXID> m_parentID;
 
     OptionSet<AXPropertyFlag> m_propertyFlags;
-    // Some objects (e.g. display:contents) form their geometry through their children.
-    bool m_getsGeometryFromChildren { false };
-    bool m_childrenDirty { true };
 
 #if !PLATFORM(COCOA)
     PlatformWidget m_platformWidget;
@@ -635,6 +634,15 @@ inline bool AXIsolatedObject::hasPropertyFlag(AXPropertyFlag flag) const
 {
     return m_propertyFlags.contains(flag);
 }
+
+inline bool AXIsolatedObject::hasPropertyFlag(AXProperty property) const
+{
+    ASSERT(static_cast<uint16_t>(property) <= lastPropertyFlagIndex);
+    uint16_t propertyIndex = static_cast<uint16_t>(property);
+    return hasPropertyFlag(static_cast<AXPropertyFlag>(1 << propertyIndex));
+}
+
+bool isDefaultValue(AXProperty, AXPropertyValueVariant&);
 
 } // namespace WebCore
 

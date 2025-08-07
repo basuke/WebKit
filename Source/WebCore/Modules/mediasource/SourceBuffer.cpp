@@ -1056,7 +1056,9 @@ Ref<MediaPromise> SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegme
         // 5.6 Set first initialization segment flag to true.
         m_receivedFirstInitializationSegment = true;
 
+#if !PLATFORM(WPE)
         if (hasVideo())
+#endif
             m_private->setMaximumBufferSize(maximumBufferSize());
     }
 
@@ -1159,6 +1161,11 @@ bool SourceBuffer::hasAudio() const
 bool SourceBuffer::hasVideo() const
 {
     return m_videoTracks && m_videoTracks->length();
+}
+
+ScriptExecutionContext* SourceBuffer::scriptExecutionContext() const
+{
+    return ActiveDOMObject::scriptExecutionContext();
 }
 
 void SourceBuffer::videoTrackSelectedChanged(VideoTrack& track)

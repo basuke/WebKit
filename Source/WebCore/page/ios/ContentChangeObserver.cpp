@@ -30,6 +30,7 @@
 #include "Animation.h"
 #include "Chrome.h"
 #include "ChromeClient.h"
+#include "ContainerNodeInlines.h"
 #include "DOMTimer.h"
 #include "Document.h"
 #include "DocumentFullscreen.h"
@@ -40,9 +41,10 @@
 #include "Logging.h"
 #include "NodeRenderStyle.h"
 #include "Page.h"
-#include "RenderDescendantIterator.h"
-#include "RenderStyleInlines.h"
 #include "Quirks.h"
+#include "RenderDescendantIterator.h"
+#include "RenderElementInlines.h"
+#include "RenderStyleInlines.h"
 #include "Settings.h"
 #include <wtf/TZoneMallocInlines.h>
 
@@ -99,7 +101,7 @@ bool ContentChangeObserver::isVisuallyHidden(const Node& node)
     if (style.usedVisibility() == Visibility::Hidden)
         return true;
 
-    if (!style.opacity())
+    if (style.opacity().isTransparent())
         return true;
 
     auto fixedWidth = style.logicalWidth().tryFixed();
@@ -128,7 +130,7 @@ bool ContentChangeObserver::isVisuallyHidden(const Node& node)
     constexpr static unsigned numberOfAncestorsToCheckForOpacity = 4;
     unsigned i = 0;
     for (auto* parent = node.parentNode(); parent && i < numberOfAncestorsToCheckForOpacity; parent = parent->parentNode(), ++i) {
-        if (!parent->renderStyle() || !parent->renderStyle()->opacity())
+        if (!parent->renderStyle() || parent->renderStyle()->opacity().isTransparent())
             return true;
     }
 

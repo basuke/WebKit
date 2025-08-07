@@ -107,7 +107,7 @@ list(APPEND WebKit_UNIFIED_SOURCE_LIST_FILES
     "SourcesWPE.txt"
 )
 
-list(APPEND WebKit_SERIALIZATION_IN_FILES Shared/glib/DMABufRendererBufferFormat.serialization.in)
+list(APPEND WebKit_SERIALIZATION_IN_FILES Shared/glib/RendererBufferFormat.serialization.in)
 
 if (USE_GBM)
   list(APPEND WebKit_SERIALIZATION_IN_FILES Shared/gbm/DMABufBuffer.serialization.in)
@@ -415,7 +415,6 @@ list(APPEND WebKit_PRIVATE_INCLUDE_DIRECTORIES
     "${WEBKIT_DIR}/WebProcess/InjectedBundle/API/wpe"
     "${WEBKIT_DIR}/WebProcess/WebCoreSupport/soup"
     "${WEBKIT_DIR}/WebProcess/WebPage/CoordinatedGraphics"
-    "${WEBKIT_DIR}/WebProcess/WebPage/dmabuf"
     "${WEBKIT_DIR}/WebProcess/WebPage/glib"
     "${WEBKIT_DIR}/WebProcess/WebPage/libwpe"
     "${WEBKIT_DIR}/WebProcess/WebPage/soup"
@@ -505,9 +504,9 @@ if (ENABLE_WPE_PLATFORM)
     )
 
     list(APPEND WebKit_MESSAGES_IN_FILES
-        UIProcess/dmabuf/AcceleratedBackingStoreDMABuf
+        UIProcess/glib/AcceleratedBackingStore
 
-        WebProcess/WebPage/dmabuf/AcceleratedSurfaceDMABuf
+        WebProcess/WebPage/CoordinatedGraphics/AcceleratedSurface
     )
 endif ()
 

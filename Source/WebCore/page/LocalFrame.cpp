@@ -147,7 +147,7 @@ static const Seconds scrollFrequency { 1000_s / 60. };
 DEFINE_DEBUG_ONLY_GLOBAL(WTF::RefCountedLeakCounter, frameCounter, ("Frame"));
 
 struct OverrideScreenSize {
-    WTF_MAKE_STRUCT_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(OverrideScreenSize);
 
     FloatSize size;
 };
@@ -896,7 +896,7 @@ VisiblePosition LocalFrame::visiblePositionForPoint(const IntPoint& framePoint) 
     CheckedPtr renderer = node->renderer();
     if (!renderer)
         return VisiblePosition();
-    VisiblePosition visiblePos = renderer->positionForPoint(result.localPoint(), HitTestSource::User, nullptr);
+    auto visiblePos = renderer->visiblePositionForPoint(result.localPoint(), HitTestSource::User);
     if (visiblePos.isNull())
         visiblePos = firstPositionInOrBeforeNode(node.get());
     return visiblePos;

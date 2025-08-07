@@ -33,29 +33,29 @@
 #include "HTMLNames.h"
 
 namespace WebCore {
-    
+
 using namespace HTMLNames;
-    
-AccessibilityTreeItem::AccessibilityTreeItem(AXID axID, RenderObject& renderer)
-    : AccessibilityRenderObject(axID, renderer)
+
+AccessibilityTreeItem::AccessibilityTreeItem(AXID axID, RenderObject& renderer, AXObjectCache& cache)
+    : AccessibilityRenderObject(axID, renderer, cache)
 {
 }
 
-AccessibilityTreeItem::AccessibilityTreeItem(AXID axID, Node& node)
-    : AccessibilityRenderObject(axID, node)
+AccessibilityTreeItem::AccessibilityTreeItem(AXID axID, Node& node, AXObjectCache& cache)
+    : AccessibilityRenderObject(axID, node, cache)
 {
 }
 
 AccessibilityTreeItem::~AccessibilityTreeItem() = default;
-    
-Ref<AccessibilityTreeItem> AccessibilityTreeItem::create(AXID axID, RenderObject& renderer)
+
+Ref<AccessibilityTreeItem> AccessibilityTreeItem::create(AXID axID, RenderObject& renderer, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilityTreeItem(axID, renderer));
+    return adoptRef(*new AccessibilityTreeItem(axID, renderer, cache));
 }
 
-Ref<AccessibilityTreeItem> AccessibilityTreeItem::create(AXID axID, Node& node)
+Ref<AccessibilityTreeItem> AccessibilityTreeItem::create(AXID axID, Node& node, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilityTreeItem(axID, node));
+    return adoptRef(*new AccessibilityTreeItem(axID, node, cache));
 }
 
 bool AccessibilityTreeItem::supportsCheckedState() const
@@ -73,5 +73,5 @@ AccessibilityRole AccessibilityTreeItem::determineAccessibilityRole()
 
     return AccessibilityRenderObject::determineAccessibilityRole();
 }
-    
+
 } // namespace WebCore

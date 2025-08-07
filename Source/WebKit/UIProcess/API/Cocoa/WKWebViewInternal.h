@@ -24,17 +24,20 @@
  */
 
 #import <WebKit/WKWebView.h>
+#import <WebKit/_WKTextExtraction.h>
 
 #ifdef __cplusplus
 
 #import "PDFPluginIdentifier.h"
 #import <WebCore/CocoaView.h>
 #import <WebCore/CocoaWritingToolsTypes.h>
+#import <WebCore/ColorCocoa.h>
 #import <WebCore/FixedContainerEdges.h>
 #import <WebKit/WKShareSheet.h>
 #import <WebKit/WKWebViewConfiguration.h>
 #import <WebKit/WKWebViewPrivate.h>
 #import "_WKAttachmentInternal.h"
+#import "_WKTextExtractionInternal.h"
 #import "_WKWebViewPrintFormatterInternal.h"
 #import <pal/spi/cocoa/WritingToolsSPI.h>
 #import <wtf/BlockPtr.h>
@@ -150,7 +153,6 @@ enum class HideScrollPocketReason : uint8_t {
 @class WKPasswordView;
 @class WKScrollGeometry;
 @class WKScrollView;
-@class WKTextExtractionItem;
 @class WKWebViewContentProviderRegistry;
 @class _WKFrameHandle;
 @class _WKWarningView;
@@ -202,6 +204,8 @@ struct PerWebProcessState {
 
     WebKit::DynamicViewportUpdateMode dynamicViewportUpdateMode { WebKit::DynamicViewportUpdateMode::NotResizing };
 
+    WebCore::InteractiveWidget viewportMetaTagInteractiveWidget { WebCore::InteractiveWidget::ResizesVisual };
+
     BOOL waitingForEndAnimatedResize { NO };
     BOOL waitingForCommitAfterAnimatedResize { NO };
 
@@ -231,6 +235,7 @@ struct PerWebProcessState {
 
     BOOL viewportMetaTagWidthWasExplicit { NO };
     BOOL viewportMetaTagCameFromImageDocument { NO };
+    BOOL lastTransactionWasInStableState { NO };
 
     std::optional<WebCore::FloatSize> lastSentViewLayoutSize;
     std::optional<WebCore::IntDegrees> lastSentDeviceOrientation;
@@ -249,6 +254,8 @@ struct PerWebProcessState {
     Markable<WebCore::PlatformLayerIdentifier> committedFindLayerID;
 
     std::optional<LiveResizeParameters> liveResizeParameters;
+
+    std::optional<WebKit::TransactionID> firstTransactionIDAfterObscuredInsetChange;
 };
 
 #endif // PLATFORM(IOS_FAMILY)
@@ -541,6 +548,7 @@ struct PerWebProcessState {
 #if ENABLE(CONTENT_INSET_BACKGROUND_FILL)
 - (void)_updateFixedColorExtensionViews;
 - (void)_updateFixedColorExtensionViewFrames;
+- (void)_updatePrefersSolidColorHardPocket;
 - (BOOL)_hasVisibleColorExtensionView:(WebCore::BoxSide)side;
 - (void)_addReasonToHideTopScrollPocket:(WebKit::HideScrollPocketReason)reason;
 - (void)_removeReasonToHideTopScrollPocket:(WebKit::HideScrollPocketReason)reason;
@@ -614,6 +622,8 @@ RetainPtr<NSError> nsErrorFromExceptionDetails(const std::optional<WebCore::Exce
 @end
 #endif
 
+WebCore::CocoaColor *sampledFixedPositionContentColor(const WebCore::FixedContainerEdges&, WebCore::BoxSide);
+
 #endif // __cplusplus
 
 @interface WKWebView (NonCpp)
@@ -635,6 +645,6 @@ RetainPtr<NSError> nsErrorFromExceptionDetails(const std::optional<WebCore::Exce
 
 - (void)_scrollToEdge:(_WKRectEdge)edge animated:(BOOL)animated;
 
-- (void)_requestTextExtraction:(CGRect)rect completionHandler:(void(^)(WKTextExtractionItem *))completionHandler;
+- (void)_requestTextExtraction:(_WKTextExtractionConfiguration *)configuration completionHandler:(void (^)(WKTextExtractionResult *))completionHandler;
 
 @end

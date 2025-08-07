@@ -32,6 +32,7 @@
 #include "JavaScriptEvaluationResult.h"
 #include "NotificationService.h"
 #include "PageLoadState.h"
+#include "PlatformXRSystem.h"
 #include "ProcessTerminationReason.h"
 #include "ProvisionalPageProxy.h"
 #include "RunJavaScriptParameters.h"
@@ -316,7 +317,7 @@ private:
 #if PLATFORM(WPE)
 static unsigned frameDisplayCallbackID;
 struct FrameDisplayedCallback {
-    WTF_MAKE_STRUCT_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(FrameDisplayedCallback);
     FrameDisplayedCallback(WebKitFrameDisplayedCallback callback, gpointer userData = nullptr, GDestroyNotify destroyNotifyFunction = nullptr)
         : id(++frameDisplayCallbackID)
         , callback(callback)
@@ -343,7 +344,7 @@ struct FrameDisplayedCallback {
 #endif // PLATFORM(WPE)
 
 struct _WebKitWebViewPrivate {
-    WTF_MAKE_STRUCT_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(_WebKitWebViewPrivate);
     ~_WebKitWebViewPrivate()
     {
         // For modal dialogs, make sure the main loop is stopped when finalizing the webView.
@@ -713,7 +714,7 @@ static void gotFaviconCallback(GObject* object, GAsyncResult* result, gpointer u
 
     WebKitWebView* webView = WEBKIT_WEB_VIEW(userData);
     webkitWebViewUpdateFavicon(webView, favicon.get());
-    webView->priv->faviconCancellable = 0;
+    webView->priv->faviconCancellable = nullptr;
 }
 
 static WebKitFaviconDatabase* webkitWebViewGetFaviconDatabase(WebKitWebView* webView)
@@ -3096,20 +3097,21 @@ void webkitWebViewDidReceiveUserMessage(WebKitWebView* webView, UserMessage&& me
 }
 
 #if ENABLE(POINTER_LOCK)
-void webkitWebViewRequestPointerLock(WebKitWebView* webView)
+void webkitWebViewRequestPointerLock(WebKitWebView* webView, CompletionHandler<void(bool)>&& completionHandler)
 {
 #if PLATFORM(GTK)
-    webkitWebViewBaseRequestPointerLock(WEBKIT_WEB_VIEW_BASE(webView));
+    webkitWebViewBaseRequestPointerLock(WEBKIT_WEB_VIEW_BASE(webView), WTFMove(completionHandler));
 #endif
 
 #if PLATFORM(WPE)
     webView->priv->view->requestPointerLock();
+    completionHandler(true);
 #endif
 }
 
-void webkitWebViewDenyPointerLockRequest(WebKitWebView* webView)
+void webkitWebViewDenyPointerLockRequest(CompletionHandler<void(bool)>&& completionHandler)
 {
-    getPage(webView).didDenyPointerLock();
+    completionHandler(false);
 }
 
 void webkitWebViewDidLosePointerLock(WebKitWebView* webView)
@@ -3171,12 +3173,12 @@ void webkitWebViewPermissionStateQuery(WebKitWebView* webView, WebKitPermissionS
 }
 
 #if PLATFORM(GTK) || (PLATFORM(WPE) && ENABLE(WPE_PLATFORM))
-RendererBufferFormat webkitWebViewGetRendererBufferFormat(WebKitWebView* webView)
+RendererBufferDescription webkitWebViewGetRendererBufferDescription(WebKitWebView* webView)
 {
 #if PLATFORM(GTK)
-    return webkitWebViewBaseGetRendererBufferFormat(WEBKIT_WEB_VIEW_BASE(webView));
+    return webkitWebViewBaseGetRendererBufferDescription(WEBKIT_WEB_VIEW_BASE(webView));
 #elif PLATFORM(WPE) && ENABLE(WPE_PLATFORM)
-    return static_cast<WKWPE::ViewPlatform*>(webView->priv->view.get())->renderBufferFormat();
+    return static_cast<WKWPE::ViewPlatform*>(webView->priv->view.get())->renderBufferDescription();
 #endif
 }
 #endif
@@ -4207,7 +4209,7 @@ JSGlobalContextRef webkit_web_view_get_javascript_global_context(WebKitWebView* 
     // We keep a reference to the js context in the view only when this method is called
     // for backwards compatibility.
     if (!webView->priv->jsContext)
-        webView->priv->jsContext = API::SerializedScriptValue::sharedJSCContext();
+        webView->priv->jsContext = jscContextGetOrCreate(API::SerializedScriptValue::deserializationContext().get()).get();
     return jscContextGetJSContext(webView->priv->jsContext.get());
 }
 #endif
@@ -4230,15 +4232,15 @@ static void webkitWebViewRunJavaScriptWithParams(WebKitWebView* webView, WebKit:
         if (result) {
 #if ENABLE(2022_GLIB_API)
             ASSERT_UNUSED(returnType, returnType == RunJavascriptReturnType::JSCValue);
-            g_task_return_pointer(task.get(), API::SerializedScriptValue::deserialize(result->legacySerializedScriptValue()->internalRepresentation()).leakRef(),
+            g_task_return_pointer(task.get(), result->toJSC().leakRef(),
                 reinterpret_cast<GDestroyNotify>(g_object_unref));
 #else
             if (returnType == RunJavascriptReturnType::JSCValue) {
-                g_task_return_pointer(task.get(), API::SerializedScriptValue::deserialize(result->legacySerializedScriptValue()->internalRepresentation()).leakRef(),
+                g_task_return_pointer(task.get(), result->toJSC().leakRef(),
                     reinterpret_cast<GDestroyNotify>(g_object_unref));
             } else {
                 ASSERT(returnType == RunJavascriptReturnType::WebKitJavascriptResult);
-                g_task_return_pointer(task.get(), webkitJavascriptResultCreate(result->legacySerializedScriptValue()->internalRepresentation()),
+                g_task_return_pointer(task.get(), webkitJavascriptResultCreate(WTFMove(*result)),
                     reinterpret_cast<GDestroyNotify>(webkit_javascript_result_unref));
             }
 #endif
@@ -4395,13 +4397,12 @@ JSCValue* webkit_web_view_evaluate_javascript_finish(WebKitWebView* webView, GAs
     return static_cast<JSCValue*>(g_task_propagate_pointer(G_TASK(result), error));
 }
 
-static std::pair<Vector<Vector<uint8_t>>, Vector<std::pair<String, JavaScriptEvaluationResult>>> parseAsyncFunctionArguments(GVariant* arguments, GError** error)
+static Vector<std::pair<String, JavaScriptEvaluationResult>> parseAsyncFunctionArguments(GVariant* arguments, GError** error)
 {
-    Vector<std::pair<String, JavaScriptEvaluationResult>> argumentsVector;
-    Vector<Vector<uint8_t>> wireBytes;
-
     if (!arguments)
-        return { WTFMove(wireBytes), WTFMove(argumentsVector) };
+        return { };
+
+    Vector<std::pair<String, JavaScriptEvaluationResult>> argumentsVector;
 
     GVariantIter iter;
     g_variant_iter_init(&iter, arguments);
@@ -4411,16 +4412,15 @@ static std::pair<Vector<Vector<uint8_t>>, Vector<std::pair<String, JavaScriptEva
         if (!key)
             continue;
 
-        auto serializedValue = API::SerializedScriptValue::createFromGVariant(value);
-        if (!serializedValue) {
+        auto parameter = JavaScriptEvaluationResult::extract(value);
+        if (!parameter) {
             *error = g_error_new(WEBKIT_JAVASCRIPT_ERROR, WEBKIT_JAVASCRIPT_ERROR_INVALID_PARAMETER, "Invalid parameter %s passed as argument of async function call", key);
-            return { WTFMove(wireBytes), WTFMove(argumentsVector) };
+            return argumentsVector;
         }
-        wireBytes.append(serializedValue->internalRepresentation().wireBytes());
-        argumentsVector.append({ String::fromUTF8(key), JavaScriptEvaluationResult { wireBytes.last().span() } });
+        argumentsVector.append({ String::fromUTF8(key), WTFMove(*parameter) });
     }
 
-    return { WTFMove(wireBytes), WTFMove(argumentsVector) };
+    return argumentsVector;
 }
 
 static void webkitWebViewCallAsyncJavascriptFunctionInternal(WebKitWebView* webView, const char* body, gssize length, GVariant* arguments, const char* worldName, const char* sourceURI, RunJavascriptReturnType returnType, GCancellable* cancellable, GAsyncReadyCallback callback, gpointer userData)
@@ -4430,7 +4430,7 @@ static void webkitWebViewCallAsyncJavascriptFunctionInternal(WebKitWebView* webV
     g_return_if_fail(!arguments || g_variant_is_of_type(arguments, G_VARIANT_TYPE("a{sv}")));
 
     GError* error = nullptr;
-    auto [wireBytes, argumentsVector] = parseAsyncFunctionArguments(arguments, &error);
+    auto argumentsVector = parseAsyncFunctionArguments(arguments, &error);
     if (error) {
         g_task_report_error(webView, callback, userData, nullptr, error);
         return;
@@ -4836,7 +4836,7 @@ gboolean webkit_web_view_can_show_mime_type(WebKitWebView* webView, const char* 
 
 #if ENABLE(MHTML)
 struct ViewSaveAsyncData {
-    WTF_MAKE_STRUCT_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(ViewSaveAsyncData);
     RefPtr<API::Data> webData;
     GRefPtr<GFile> file;
 };
@@ -5843,4 +5843,27 @@ webkit_web_view_get_default_content_security_policy(WebKitWebView* webView)
         return nullptr;
 
     return webView->priv->defaultContentSecurityPolicy.data();
+}
+
+/**
+ * webkit_web_view_end_immersive_session:
+ * @web_view: a #WebKitWebView
+ *
+ * Requests the immersive session associated to this #WebKitWebView to end.
+ *
+ * Since: 2.50
+ */
+void
+webkit_web_view_end_immersive_session(WebKitWebView* webView)
+{
+    g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+
+#if ENABLE(WEBXR)
+    Ref page = getPage(webView);
+    if (auto xrSystem = page->xrSystem()) {
+        // This asks the xr coordinator to end the session for the page it's invoked on,
+        // going through the sessionDidEnd message
+        xrSystem->invalidate(PlatformXRSystem::InvalidationReason::Client);
+    }
+#endif
 }

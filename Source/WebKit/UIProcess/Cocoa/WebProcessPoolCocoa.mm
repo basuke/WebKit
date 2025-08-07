@@ -193,7 +193,7 @@ SOFT_LINK_CONSTANT_MAY_FAIL(libAccessibility, kAXSReduceMotionAutoplayAnimatedIm
 
 #if PLATFORM(MAC)
 SOFT_LINK_LIBRARY_WITH_PATH(libFontRegistry, "/System/Library/Frameworks/ApplicationServices.framework/Frameworks/ATS.framework/Versions/A/Resources/")
-SOFT_LINK(libFontRegistry, XTCopyPropertiesForAllFonts, CFArrayRef, (CFSetRef propertyKeys, XTScope scope), (propertyKeys, scope));
+SOFT_LINK(libFontRegistry, XTCopyPropertiesForAllFontsWithOptions, CFArrayRef, (CFSetRef propertyKeys, XTScope scope, XTOptions options), (propertyKeys, scope, options));
 #endif
 
 #define WEBPROCESSPOOL_RELEASE_LOG(channel, fmt, ...) RELEASE_LOG(channel, "%p - WebProcessPool::" fmt, this, ##__VA_ARGS__)
@@ -1301,7 +1301,7 @@ void WebProcessPool::displayPropertiesChanged(const WebCore::ScreenProperties& s
 
 static void displayReconfigurationCallBack(CGDirectDisplayID displayID, CGDisplayChangeSummaryFlags flags, void *userInfo)
 {
-    RunLoop::protectedMain()->dispatch([displayID, flags]() {
+    RunLoop::mainSingleton().dispatch([displayID, flags]() {
         auto screenProperties = WebCore::collectScreenProperties();
         for (auto& processPool : WebProcessPool::allProcessPools())
             processPool->displayPropertiesChanged(screenProperties, displayID, flags);
@@ -1320,7 +1320,7 @@ void WebProcessPool::registerDisplayConfigurationCallback()
 
 static void webProcessPoolHighDynamicRangeDidChangeCallback(CFNotificationCenterRef, void*, CFNotificationName, const void*, CFDictionaryRef)
 {
-    RunLoop::protectedMain()->dispatch([] {
+    RunLoop::mainSingleton().dispatch([] {
         auto properties = WebCore::collectScreenProperties();
         for (auto& pool : WebProcessPool::allProcessPools())
             pool->sendToAllProcesses(Messages::WebProcess::SetScreenProperties(properties));
@@ -1395,32 +1395,8 @@ void WebProcessPool::suppressEDR(bool suppressEDR)
 ExtensionCapabilityGranter& WebProcessPool::extensionCapabilityGranter()
 {
     if (!m_extensionCapabilityGranter)
-        m_extensionCapabilityGranter = ExtensionCapabilityGranter::create(*this);
+        m_extensionCapabilityGranter = ExtensionCapabilityGranter::create();
     return *m_extensionCapabilityGranter;
-}
-
-RefPtr<GPUProcessProxy> WebProcessPool::gpuProcessForCapabilityGranter(const ExtensionCapabilityGranter& extensionCapabilityGranter)
-{
-    ASSERT_UNUSED(extensionCapabilityGranter, m_extensionCapabilityGranter.get() == &extensionCapabilityGranter);
-    return gpuProcess();
-}
-
-RefPtr<WebProcessProxy> WebProcessPool::webProcessForCapabilityGranter(const ExtensionCapabilityGranter& extensionCapabilityGranter, const String& environmentIdentifier)
-{
-    ASSERT_UNUSED(extensionCapabilityGranter, m_extensionCapabilityGranter.get() == &extensionCapabilityGranter);
-
-    auto index = processes().findIf([&](auto& process) {
-        return process->pages().containsIf([&](auto& page) {
-            if (RefPtr mediaCapability = page->mediaCapability())
-                return mediaCapability->environmentIdentifier() == environmentIdentifier;
-            return false;
-        });
-    });
-
-    if (index == notFound)
-        return nullptr;
-
-    return processes()[index].ptr();
 }
 #endif
 
@@ -1494,8 +1470,8 @@ String WebProcessPool::platformResourceMonitorRuleListSourceForTesting()
 }
 #endif
 
-#if PLATFORM(MAC)
-static Vector<SandboxExtension::Handle> sandboxExtensionsForUserInstalledFonts(const Vector<URL>& fontPathURLs, std::optional<audit_token_t> auditToken)
+template <typename Collection>
+static Vector<SandboxExtension::Handle> sandboxExtensionsForFonts(const Collection& fontPathURLs, std::optional<audit_token_t> auditToken)
 {
     Vector<SandboxExtension::Handle> handles;
     for (auto& fontPathURL : fontPathURLs) {
@@ -1510,10 +1486,31 @@ static Vector<SandboxExtension::Handle> sandboxExtensionsForUserInstalledFonts(c
     return handles;
 }
 
+void WebProcessPool::registerFontsForGPUProcessIfNeeded()
+{
+    RefPtr gpuProcess = m_gpuProcess;
+    if (!gpuProcess)
+        return;
+
+    Vector<SandboxExtension::Handle> handles;
+    if (m_userInstalledFontURLs)
+        handles.appendVector(sandboxExtensionsForFonts(m_userInstalledFontURLs->values(), std::nullopt));
+
+    if (m_sandboxExtensionURLs)
+        handles.appendVector(sandboxExtensionsForFonts(*m_sandboxExtensionURLs, std::nullopt));
+
+    if (m_assetFontURLs)
+        handles.appendVector(sandboxExtensionsForFonts(*m_assetFontURLs, std::nullopt));
+
+    if (!handles.isEmpty())
+        gpuProcess->send(Messages::GPUProcess::RegisterFonts(WTFMove(handles)), 0);
+}
+
+#if PLATFORM(MAC)
 void WebProcessPool::registerUserInstalledFonts(WebProcessProxy& process)
 {
     if (m_userInstalledFontURLs) {
-        process.send(Messages::WebProcess::RegisterFontMap(*m_userInstalledFontURLs, *m_userInstalledFontFamilyMap,  sandboxExtensionsForUserInstalledFonts(*m_sandboxExtensionURLs, process.auditToken())), 0);
+        process.send(Messages::WebProcess::RegisterFontMap(*m_userInstalledFontURLs, *m_userInstalledFontFamilyMap,  sandboxExtensionsForFonts(*m_sandboxExtensionURLs, process.auditToken())), 0);
         return;
     }
 
@@ -1523,7 +1520,7 @@ void WebProcessPool::registerUserInstalledFonts(WebProcessProxy& process)
 
     RELEASE_LOG(Process, "WebProcessPool::registerUserInstalledFonts: start registering fonts");
     RetainPtr requestedProperties = [NSSet setWithArray:@[@"NSFontNameAttribute", @"NSFontFamilyAttribute", @"NSCTFontFileURLAttribute", @"NSCTFontUserInstalledAttribute"]];
-    RetainPtr fontProperties = adoptCF(XTCopyPropertiesForAllFonts(bridge_cast(requestedProperties.get()), kXTScopeAll));
+    RetainPtr fontProperties = adoptCF(XTCopyPropertiesForAllFontsWithOptions(bridge_cast(requestedProperties.get()), kXTScopeAll, kXTOptionsDoNotSortResults));
     if (!fontProperties)
         return;
     for (CFIndex i = 0; i < CFArrayGetCount(fontProperties.get()); ++i) {
@@ -1557,13 +1554,17 @@ void WebProcessPool::registerUserInstalledFonts(WebProcessProxy& process)
     }
     RELEASE_LOG(Process, "WebProcessPool::registerUserInstalledFonts: done registering fonts");
 
-    RetainPtr assetFontURL = adoptNS([[NSURL alloc] initFileURLWithPath:@"/System/Library/AssetsV2/com_apple_MobileAsset_Font7" isDirectory:YES]);
-    sandboxExtensionURLs.append(URL(assetFontURL.get()));
+    RetainPtr assetFontURL7 = adoptNS([[NSURL alloc] initFileURLWithPath:@"/System/Library/AssetsV2/com_apple_MobileAsset_Font7" isDirectory:YES]);
+    RetainPtr assetFontURL8 = adoptNS([[NSURL alloc] initFileURLWithPath:@"/System/Library/AssetsV2/com_apple_MobileAsset_Font8" isDirectory:YES]);
+    sandboxExtensionURLs.append(URL(assetFontURL7.get()));
+    sandboxExtensionURLs.append(URL(assetFontURL8.get()));
 
-    process.send(Messages::WebProcess::RegisterFontMap(fontURLs, fontFamilyMap, sandboxExtensionsForUserInstalledFonts(sandboxExtensionURLs, process.auditToken())), 0);
+    process.send(Messages::WebProcess::RegisterFontMap(fontURLs, fontFamilyMap, sandboxExtensionsForFonts(sandboxExtensionURLs, process.auditToken())), 0);
     m_userInstalledFontURLs = WTFMove(fontURLs);
     m_userInstalledFontFamilyMap = WTFMove(fontFamilyMap);
     m_sandboxExtensionURLs = WTFMove(sandboxExtensionURLs);
+
+    registerFontsForGPUProcessIfNeeded();
 }
 
 void WebProcessPool::registerAdditionalFonts(NSArray *fontNames)
@@ -1592,9 +1593,10 @@ void WebProcessPool::registerAdditionalFonts(NSArray *fontNames)
     for (Ref process : m_processes) {
         if (!process->canSendMessage())
             continue;
-        process->send(Messages::WebProcess::RegisterFontMap(*m_userInstalledFontURLs, *m_userInstalledFontFamilyMap, sandboxExtensionsForUserInstalledFonts(*m_sandboxExtensionURLs, process->auditToken())), 0);
+        process->send(Messages::WebProcess::RegisterFontMap(*m_userInstalledFontURLs, *m_userInstalledFontFamilyMap, sandboxExtensionsForFonts(*m_sandboxExtensionURLs, process->auditToken())), 0);
     }
 
+    registerFontsForGPUProcessIfNeeded();
 }
 #endif // PLATFORM(MAC)
 
@@ -1629,7 +1631,7 @@ void WebProcessPool::registerAssetFonts(WebProcessProxy& process)
         if (state != kCTFontDescriptorMatchingDidFinish)
             return true;
         RELEASE_LOG(Process, "Font matching finished, progress parameter = %@", (__bridge id)progressParameter);
-        RunLoop::protectedMain()->dispatch([assetFonts = WTFMove(assetFonts), weakProcess = WTFMove(weakProcess), weakThis = WTFMove(weakThis)] {
+        RunLoop::mainSingleton().dispatch([assetFonts = WTFMove(assetFonts), weakProcess = WTFMove(weakProcess), weakThis = WTFMove(weakThis)] {
             RefPtr protectedThis = weakThis.get();
             if (!protectedThis)
                 return;
@@ -1643,6 +1645,8 @@ void WebProcessPool::registerAssetFonts(WebProcessProxy& process)
             }
             if (weakProcess)
                 weakProcess->send(Messages::WebProcess::RegisterAdditionalFonts(AdditionalFonts::additionalFonts({ *protectedThis->m_assetFontURLs }, weakProcess->auditToken())), 0);
+
+            protectedThis->registerFontsForGPUProcessIfNeeded();
         });
         return true;
     });

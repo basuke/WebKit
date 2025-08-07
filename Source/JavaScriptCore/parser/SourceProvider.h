@@ -90,6 +90,7 @@ public:
 
     TextPosition startPosition() const { return m_startPosition; }
     SourceProviderSourceType sourceType() const { return m_sourceType; }
+    bool isModuleType() const { return m_sourceType == SourceProviderSourceType::Module || m_sourceType == SourceProviderSourceType::JSON; }
 
     SourceID asID()
     {
@@ -130,7 +131,7 @@ private:
 
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(StringSourceProvider);
 class StringSourceProvider : public SourceProvider {
-    WTF_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(StringSourceProvider);
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(StringSourceProvider, StringSourceProvider);
 public:
     static Ref<StringSourceProvider> create(const String& source, const SourceOrigin& sourceOrigin, String sourceURL, SourceTaintedOrigin taintedness, const TextPosition& startPosition = TextPosition(), SourceProviderSourceType sourceType = SourceProviderSourceType::Program)
     {

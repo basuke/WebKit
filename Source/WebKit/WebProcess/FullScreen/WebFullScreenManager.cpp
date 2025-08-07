@@ -55,6 +55,10 @@
 #include <WebCore/UserGestureIndicator.h>
 #include <wtf/LoggerHelper.h>
 
+#if PLATFORM(IOS_FAMILY)
+#include <pal/system/ios/UserInterfaceIdiom.h>
+#endif
+
 #if PLATFORM(IOS_FAMILY) || (PLATFORM(MAC) && ENABLE(VIDEO_PRESENTATION_MODE))
 #include "PlaybackSessionManager.h"
 #include "VideoPresentationManager.h"
@@ -65,13 +69,31 @@ using namespace WebCore;
 
 using WebCore::FloatSize;
 
-static WebCore::IntRect screenRectOfContents(WebCore::Element* element)
+static WebCore::IntRect screenRectOfContents(WebCore::Element& element)
 {
-    ASSERT(element);
-    if (!element)
+    CheckedPtr renderer = element.renderer();
+    if (!renderer)
         return { };
 
-    return element->screenRect();
+    IntRect contentsRect = renderer->absoluteBoundingBoxRect();
+    if (contentsRect.isEmpty()) {
+        // A zero-height element may contain visible overflow contents. If the element
+        // itself is empty, traverse its children to find its visual content area.
+        LayoutRect topLevelRect;
+        contentsRect = snappedIntRect(renderer->paintingRootRect(topLevelRect));
+    }
+
+    if (contentsRect.isEmpty())
+        return { };
+
+    Ref frameView = renderer->view().frameView();
+
+    // The element may have contents which are far outside the viewport of the page.
+    // Clip the contents rect by the current viewport.
+    auto viewportRect = snappedIntRect(frameView->layoutViewportRect());
+    contentsRect.intersect(viewportRect);
+
+    return frameView->contentsToScreen(contentsRect);
 }
 
 Ref<WebFullScreenManager> WebFullScreenManager::create(WebPage& page)
@@ -83,7 +105,7 @@ WebFullScreenManager::WebFullScreenManager(WebPage& page)
     : WebCore::EventListener(WebCore::EventListener::CPPEventListenerType)
     , m_page(page)
 #if ENABLE(VIDEO) && ENABLE(IMAGE_ANALYSIS)
-    , m_mainVideoElementTextRecognitionTimer(RunLoop::main(), this, &WebFullScreenManager::mainVideoElementTextRecognitionTimerFired)
+    , m_mainVideoElementTextRecognitionTimer(RunLoop::mainSingleton(), "WebFullScreenManager::MainVideoElementTextRecognitionTimer"_s, this, &WebFullScreenManager::mainVideoElementTextRecognitionTimerFired)
 #endif
 #if !RELEASE_LOG_DISABLED
     , m_logger(page.logger())
@@ -161,7 +183,7 @@ bool WebFullScreenManager::supportsFullScreenForElement(const WebCore::Element& 
         return false;
 
 #if PLATFORM(IOS_FAMILY)
-    return !withKeyboard;
+    return PAL::currentUserInterfaceIdiomIsDesktop() || !withKeyboard;
 #else
     return true;
 #endif
@@ -281,7 +303,7 @@ void WebFullScreenManager::enterFullScreenForElement(Element& element, HTMLMedia
     }
 #endif
 
-    m_initialFrame = screenRectOfContents(m_element.get());
+    m_initialFrame = screenRectOfContents(element);
 
 #if ENABLE(VIDEO)
     updateMainVideoElement();
@@ -388,7 +410,7 @@ void WebFullScreenManager::willEnterFullScreen(Element& element, CompletionHandl
     m_page->hidePageBanners();
 #endif
     element.protectedDocument()->updateLayout();
-    m_finalFrame = screenRectOfContents(&element);
+    m_finalFrame = screenRectOfContents(element);
 
     m_page->sendWithAsyncReply(Messages::WebFullScreenManagerProxy::BeganEnterFullScreen(m_initialFrame, m_finalFrame), [this, protectedThis = Ref { *this }, mode, completionHandler = WTFMove(didEnterFullscreenCallback)] (bool success) mutable {
         if (!success && mode != WebCore::HTMLMediaElementEnums::VideoFullscreenModeInWindow) {
@@ -449,7 +471,7 @@ void WebFullScreenManager::updateMainVideoElement()
                 continue;
 
             mainVideoBounds = bounds;
-            mainVideo = video.ptr();
+            mainVideo = WTFMove(video);
         }
         return mainVideo;
     }());
@@ -467,7 +489,7 @@ void WebFullScreenManager::willExitFullScreen(CompletionHandler<void()>&& comple
     setPIPStandbyElement(nullptr);
 #endif
 
-    m_finalFrame = screenRectOfContents(m_element.get());
+    m_finalFrame = screenRectOfContents(*m_element);
     if (!m_element->document().fullscreen().willExitFullscreen()) {
         close();
         return completionHandler();

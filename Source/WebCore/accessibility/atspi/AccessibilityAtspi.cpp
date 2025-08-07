@@ -44,8 +44,8 @@ AccessibilityAtspi& AccessibilityAtspi::singleton()
 }
 
 AccessibilityAtspi::AccessibilityAtspi()
-    : m_cacheUpdateTimer(RunLoop::main(), this, &AccessibilityAtspi::cacheUpdateTimerFired)
-    , m_cacheClearTimer(RunLoop::main(), this, &AccessibilityAtspi::cacheClearTimerFired)
+    : m_cacheUpdateTimer(RunLoop::mainSingleton(), "AccessibilityAtspi::CacheUpdateTimer"_s, this, &AccessibilityAtspi::cacheUpdateTimerFired)
+    , m_cacheClearTimer(RunLoop::mainSingleton(), "AccessibilityAtspi::CacheClearTimer"_s, this, &AccessibilityAtspi::cacheClearTimerFired)
 {
     m_cacheUpdateTimer.setPriority(RunLoopSourcePriority::RunLoopDispatcher);
     m_cacheClearTimer.setPriority(RunLoopSourcePriority::ReleaseUnusedResourcesTimer);
@@ -903,7 +903,7 @@ void AccessibilityAtspi::notifyStateChanged(AccessibilityObjectAtspi& atspiObjec
     const char* notification = notificationName(name);
     if (!notification)
         return;
-    
+
     notify(atspiObject, notification, value);
 }
 
@@ -913,7 +913,7 @@ void AccessibilityAtspi::notifyActiveDescendantChanged(AccessibilityObjectAtspi&
 }
 
 void AccessibilityAtspi::notifySelectionChanged(AccessibilityObjectAtspi& atspiObject) const
-{   
+{
     notify(atspiObject, "AXSelectedChildrenChanged", nullptr);
 }
 

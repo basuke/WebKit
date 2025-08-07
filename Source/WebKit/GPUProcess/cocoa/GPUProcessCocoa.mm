@@ -147,6 +147,8 @@ void GPUProcess::platformInitializeGPUProcess(GPUProcessCreationParameters& para
     if (WKProcessExtension.sharedInstance)
         [WKProcessExtension.sharedInstance lockdownSandbox:@"2.0"];
 #endif
+
+    increaseFileDescriptorLimit();
 }
 
 #if USE(EXTENSIONKIT)
@@ -214,6 +216,12 @@ void GPUProcess::postWillTakeSnapshotNotification(CompletionHandler<void()>&& co
 
     [CATransaction commit];
     completionHandler();
+}
+
+void GPUProcess::registerFonts(Vector<SandboxExtension::Handle>&& sandboxExtensions)
+{
+    for (auto& sandboxExtension : sandboxExtensions)
+        SandboxExtension::consumePermanently(sandboxExtension);
 }
 
 } // namespace WebKit

@@ -32,7 +32,6 @@
 #pragma once
 
 #include "CSSAppleColorFilterPropertyValue.h"
-#include "CSSBasicShapeValue.h"
 #include "CSSBorderImage.h"
 #include "CSSBorderImageSliceValue.h"
 #include "CSSCounterValue.h"
@@ -43,10 +42,6 @@
 #include "CSSFontValue.h"
 #include "CSSFontVariationValue.h"
 #include "CSSFunctionValue.h"
-#include "CSSGridAutoRepeatValue.h"
-#include "CSSGridIntegerRepeatValue.h"
-#include "CSSGridLineNamesValue.h"
-#include "CSSGridTemplateAreasValue.h"
 #include "CSSPathValue.h"
 #include "CSSPrimitiveValue.h"
 #include "CSSPrimitiveValueMappings.h"
@@ -67,17 +62,13 @@
 #include "CSSValuePool.h"
 #include "CSSViewValue.h"
 #include "ContainerNodeInlines.h"
-#include "ContentData.h"
-#include "CursorList.h"
 #include "DocumentInlines.h"
 #include "FontCascade.h"
 #include "FontSelectionValueInlines.h"
-#include "GridPositionsResolver.h"
 #include "HTMLFrameOwnerElement.h"
 #include "Length.h"
 #include "PathOperation.h"
 #include "PerspectiveTransformOperation.h"
-#include "QuotesData.h"
 #include "RenderBlock.h"
 #include "RenderBoxInlines.h"
 #include "RenderElementInlines.h"
@@ -152,12 +143,8 @@ public:
     template<typename T> static Ref<CSSPrimitiveValue> convertNumber(ExtractorState&, T);
     template<typename T> static Ref<CSSPrimitiveValue> convertNumberAsPixels(ExtractorState&, T);
     template<typename T> static Ref<CSSPrimitiveValue> convertComputedLength(ExtractorState&, T);
-    template<typename T, CSSValueID> static Ref<CSSValue> convertNumberOrKeyword(ExtractorState&, T);
     template<typename T> static Ref<CSSPrimitiveValue> convertLineWidth(ExtractorState&, T lineWidth);
 
-    template<CSSValueID> static Ref<CSSPrimitiveValue> convertStringOrKeyword(ExtractorState&, const String&);
-    template<CSSValueID> static Ref<CSSPrimitiveValue> convertCustomIdentOrKeyword(ExtractorState&, const String&);
-    template<CSSValueID> static Ref<CSSPrimitiveValue> convertStringAtomOrKeyword(ExtractorState&, const AtomString&);
     template<CSSValueID> static Ref<CSSPrimitiveValue> convertCustomIdentAtomOrKeyword(ExtractorState&, const AtomString&);
 
     // MARK: SVG conversions
@@ -173,41 +160,29 @@ public:
 
     // MARK: Shared conversions
 
-    static Ref<CSSValue> convertOpacity(ExtractorState&, float);
     static Ref<CSSValue> convertImageOrNone(ExtractorState&, const StyleImage*);
     static Ref<CSSValue> convertGlyphOrientation(ExtractorState&, GlyphOrientation);
     static Ref<CSSValue> convertGlyphOrientationOrAuto(ExtractorState&, GlyphOrientation);
-    static Ref<CSSValue> convertListStyleType(ExtractorState&, const ListStyleType&);
     static Ref<CSSValue> convertMarginTrim(ExtractorState&, OptionSet<MarginTrimType>);
-    static Ref<CSSValue> convertShapeValue(ExtractorState&, const ShapeValue*);
     static Ref<CSSValue> convertDPath(ExtractorState&, const StylePathData*);
     static Ref<CSSValue> convertStrokeDashArray(ExtractorState&, const FixedVector<WebCore::Length>&);
-    static Ref<CSSValue> convertTextStrokeWidth(ExtractorState&, float);
     static Ref<CSSValue> convertFilterOperations(ExtractorState&, const FilterOperations&);
     static Ref<CSSValue> convertAppleColorFilterOperations(ExtractorState&, const FilterOperations&);
     static Ref<CSSValue> convertWebkitTextCombine(ExtractorState&, TextCombine);
     static Ref<CSSValue> convertImageOrientation(ExtractorState&, ImageOrientation);
     static Ref<CSSValue> convertLineClamp(ExtractorState&, const LineClampValue&);
     static Ref<CSSValue> convertContain(ExtractorState&, OptionSet<Containment>);
-    static Ref<CSSValue> convertMaxLines(ExtractorState&, size_t);
-    static Ref<CSSValue> convertSmoothScrolling(ExtractorState&, bool);
     static Ref<CSSValue> convertInitialLetter(ExtractorState&, IntSize);
     static Ref<CSSValue> convertTextSpacingTrim(ExtractorState&, TextSpacingTrim);
     static Ref<CSSValue> convertTextAutospace(ExtractorState&, TextAutospace);
     static Ref<CSSValue> convertReflection(ExtractorState&, const StyleReflection*);
     static Ref<CSSValue> convertLineFitEdge(ExtractorState&, const TextEdge&);
     static Ref<CSSValue> convertTextBoxEdge(ExtractorState&, const TextEdge&);
-    static Ref<CSSValue> convertQuotes(ExtractorState&, const QuotesData*);
-    static Ref<CSSValue> convertViewTransitionName(ExtractorState&, const ViewTransitionName&);
     static Ref<CSSValue> convertPositionTryFallbacks(ExtractorState&, const FixedVector<PositionTryFallback>&);
     static Ref<CSSValue> convertWillChange(ExtractorState&, const WillChangeData*);
-    static Ref<CSSValue> convertBlockEllipsis(ExtractorState&, const BlockEllipsis&);
-    static Ref<CSSValue> convertBlockStepSize(ExtractorState&, std::optional<WebCore::Length>);
     static Ref<CSSValue> convertTabSize(ExtractorState&, const TabSize&);
     static Ref<CSSValue> convertScrollSnapType(ExtractorState&, const ScrollSnapType&);
     static Ref<CSSValue> convertScrollSnapAlign(ExtractorState&, const ScrollSnapAlign&);
-    static Ref<CSSValue> convertScrollbarColor(ExtractorState&, std::optional<ScrollbarColor>);
-    static Ref<CSSValue> convertScrollbarGutter(ExtractorState&, const ScrollbarGutter&);
     static Ref<CSSValue> convertLineBoxContain(ExtractorState&, OptionSet<Style::LineBoxContain>);
     static Ref<CSSValue> convertWebkitRubyPosition(ExtractorState&, RubyPosition);
     static Ref<CSSValue> convertPosition(ExtractorState&, const LengthPoint&);
@@ -215,7 +190,6 @@ public:
     static Ref<CSSValue> convertTextTransform(ExtractorState&, OptionSet<TextTransform>);
     static Ref<CSSValue> convertTextDecorationLine(ExtractorState&, OptionSet<TextDecorationLine>);
     static Ref<CSSValue> convertTextUnderlinePosition(ExtractorState&, OptionSet<TextUnderlinePosition>);
-    static Ref<CSSValue> convertTextDecorationThickness(ExtractorState&, const TextDecorationThickness&);
     static Ref<CSSValue> convertTextEmphasisPosition(ExtractorState&, OptionSet<TextEmphasisPosition>);
     static Ref<CSSValue> convertSpeakAs(ExtractorState&, OptionSet<SpeakAs>);
     static Ref<CSSValue> convertHangingPunctuation(ExtractorState&, OptionSet<HangingPunctuation>);
@@ -231,15 +205,6 @@ public:
     static Ref<CSSValue> convertPositionArea(ExtractorState&, const std::optional<PositionArea>&);
     static Ref<CSSValue> convertNameScope(ExtractorState&, const NameScope&);
     static Ref<CSSValue> convertPositionVisibility(ExtractorState&, OptionSet<PositionVisibility>);
-#if ENABLE(TEXT_AUTOSIZING)
-    static Ref<CSSValue> convertWebkitTextSizeAdjust(ExtractorState&, const TextSizeAdjustment&);
-#endif
-#if ENABLE(OVERFLOW_SCROLLING_TOUCH)
-    static Ref<CSSValue> convertOverflowScrolling(ExtractorState&, bool);
-#endif
-#if PLATFORM(IOS_FAMILY)
-    static Ref<CSSValue> convertTouchCallout(ExtractorState&, bool);
-#endif
 
     // MARK: FillLayer conversions
 
@@ -247,8 +212,6 @@ public:
     static Ref<CSSValue> convertFillLayerBlendMode(ExtractorState&, BlendMode);
     static Ref<CSSValue> convertFillLayerClip(ExtractorState&, FillBox);
     static Ref<CSSValue> convertFillLayerOrigin(ExtractorState&, FillBox);
-    static Ref<CSSValue> convertFillLayerXPosition(ExtractorState&, const WebCore::Length&);
-    static Ref<CSSValue> convertFillLayerYPosition(ExtractorState&, const WebCore::Length&);
     static Ref<CSSValue> convertFillLayerRepeat(ExtractorState&, FillRepeatXY);
     static Ref<CSSValue> convertFillLayerBackgroundSize(ExtractorState&, FillSize);
     static Ref<CSSValue> convertFillLayerMaskSize(ExtractorState&, FillSize);
@@ -267,13 +230,6 @@ public:
     static Ref<CSSValue> convertFontWidth(ExtractorState&, FontSelectionValue);
     static Ref<CSSValue> convertFontFeatureSettings(ExtractorState&, const FontFeatureSettings&);
     static Ref<CSSValue> convertFontVariationSettings(ExtractorState&, const FontVariationSettings&);
-
-    // MARK: NinePieceImage conversions
-
-    static Ref<CSSValue> convertNinePieceImageQuad(ExtractorState&, const LengthBox&);
-    static Ref<CSSValue> convertNinePieceImageSlices(ExtractorState&, const NinePieceImage&);
-    static Ref<CSSValue> convertNinePieceImageRepeat(ExtractorState&, const NinePieceImage&);
-    static Ref<CSSValue> convertNinePieceImage(ExtractorState&, const NinePieceImage&);
 
     // MARK: Animation/Transition conversions
 
@@ -300,7 +256,6 @@ public:
     // MARK: Grid conversions
 
     static Ref<CSSValue> convertGridAutoFlow(ExtractorState&, GridAutoFlow);
-    static Ref<CSSValue> convertGridPosition(ExtractorState&, const GridPosition&);
 };
 
 // MARK: - Strong value conversions
@@ -394,37 +349,9 @@ template<typename T> Ref<CSSPrimitiveValue> ExtractorConverter::convertComputedL
     return convertNumberAsPixels(state, number);
 }
 
-template<typename T, CSSValueID keyword> Ref<CSSValue> ExtractorConverter::convertNumberOrKeyword(ExtractorState&, T number)
-{
-    if (number < 0)
-        return CSSPrimitiveValue::create(keyword);
-    return CSSPrimitiveValue::create(number);
-}
-
 template<typename T> Ref<CSSPrimitiveValue> ExtractorConverter::convertLineWidth(ExtractorState& state, T lineWidth)
 {
     return convertNumberAsPixels(state, lineWidth);
-}
-
-template<CSSValueID keyword> Ref<CSSPrimitiveValue> ExtractorConverter::convertStringOrKeyword(ExtractorState&, const String& string)
-{
-    if (string.isNull())
-        return CSSPrimitiveValue::create(keyword);
-    return CSSPrimitiveValue::create(string);
-}
-
-template<CSSValueID keyword> Ref<CSSPrimitiveValue> ExtractorConverter::convertCustomIdentOrKeyword(ExtractorState&, const String& string)
-{
-    if (string.isNull())
-        return CSSPrimitiveValue::create(keyword);
-    return CSSPrimitiveValue::createCustomIdent(string);
-}
-
-template<CSSValueID keyword> Ref<CSSPrimitiveValue> ExtractorConverter::convertStringAtomOrKeyword(ExtractorState&, const AtomString& string)
-{
-    if (string.isNull())
-        return CSSPrimitiveValue::create(keyword);
-    return CSSPrimitiveValue::create(string);
 }
 
 template<CSSValueID keyword> Ref<CSSPrimitiveValue> ExtractorConverter::convertCustomIdentAtomOrKeyword(ExtractorState&, const AtomString& string)
@@ -575,11 +502,6 @@ inline Ref<CSSValue> ExtractorConverter::convertTransformOperation(const RenderS
 
 // MARK: - Shared conversions
 
-inline Ref<CSSValue> ExtractorConverter::convertOpacity(ExtractorState& state, float opacity)
-{
-    return convert(state, opacity);
-}
-
 inline Ref<CSSValue> ExtractorConverter::convertImageOrNone(ExtractorState& state, const StyleImage* image)
 {
     if (image)
@@ -624,15 +546,6 @@ inline Ref<CSSValue> ExtractorConverter::convertGlyphOrientationOrAuto(Extractor
     RELEASE_ASSERT_NOT_REACHED();
 }
 
-inline Ref<CSSValue> ExtractorConverter::convertListStyleType(ExtractorState& state, const ListStyleType& listStyleType)
-{
-    if (listStyleType.type == ListStyleType::Type::String)
-        return CSSPrimitiveValue::create(listStyleType.identifier);
-    if (listStyleType.type == ListStyleType::Type::CounterStyle)
-        return CSSPrimitiveValue::createCustomIdent(listStyleType.identifier);
-    return convert(state, listStyleType.type);
-}
-
 inline Ref<CSSValue> ExtractorConverter::convertMarginTrim(ExtractorState&, OptionSet<MarginTrimType> marginTrim)
 {
     if (marginTrim.isEmpty())
@@ -658,22 +571,6 @@ inline Ref<CSSValue> ExtractorConverter::convertMarginTrim(ExtractorState&, Opti
     return CSSValueList::createSpaceSeparated(WTFMove(list));
 }
 
-inline Ref<CSSValue> ExtractorConverter::convertShapeValue(ExtractorState& state, const ShapeValue* shapeValue)
-{
-    if (!shapeValue)
-        return CSSPrimitiveValue::create(CSSValueNone);
-
-    if (shapeValue->type() == ShapeValue::Type::Box)
-        return convert(state, shapeValue->cssBox());
-
-    if (shapeValue->type() == ShapeValue::Type::Image)
-        return convertImageOrNone(state, shapeValue->image());
-
-    ASSERT(shapeValue->type() == ShapeValue::Type::Shape);
-    if (shapeValue->cssBox() == CSSBoxType::BoxMissing)
-        return CSSValueList::createSpaceSeparated(convertStyleType(state, *shapeValue->shape()));
-    return CSSValueList::createSpaceSeparated(convertStyleType(state, *shapeValue->shape()), convert(state, shapeValue->cssBox()));
-}
 
 inline Ref<CSSValue> ExtractorConverter::convertDPath(ExtractorState& state, const StylePathData* path)
 {
@@ -690,11 +587,6 @@ inline Ref<CSSValue> ExtractorConverter::convertStrokeDashArray(ExtractorState& 
     for (auto& dash : dashes)
         list.append(convertLength(state, dash));
     return CSSValueList::createCommaSeparated(WTFMove(list));
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertTextStrokeWidth(ExtractorState& state, float textStrokeWidth)
-{
-    return convertNumberAsPixels(state, textStrokeWidth);
 }
 
 inline Ref<CSSValue> ExtractorConverter::convertFilterOperations(ExtractorState& state, const FilterOperations& filterOperations)
@@ -750,20 +642,6 @@ inline Ref<CSSValue> ExtractorConverter::convertContain(ExtractorState&, OptionS
     if (containment & Containment::Paint)
         list.append(CSSPrimitiveValue::create(CSSValuePaint));
     return CSSValueList::createSpaceSeparated(WTFMove(list));
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertMaxLines(ExtractorState&, size_t maxLines)
-{
-    if (!maxLines)
-        return CSSPrimitiveValue::create(CSSValueNone);
-    return CSSPrimitiveValue::create(maxLines);
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertSmoothScrolling(ExtractorState&, bool useSmoothScrolling)
-{
-    if (useSmoothScrolling)
-        return CSSPrimitiveValue::create(CSSValueSmooth);
-    return CSSPrimitiveValue::create(CSSValueAuto);
 }
 
 inline Ref<CSSValue> ExtractorConverter::convertInitialLetter(ExtractorState&, IntSize initialLetter)
@@ -824,12 +702,9 @@ inline Ref<CSSValue> ExtractorConverter::convertReflection(ExtractorState& state
 
     auto mask = [&] -> RefPtr<CSSValue> {
         auto& reflectionMask = reflection->mask();
-        RefPtr reflectionMaskImageSource = reflectionMask.image();
-        if (!reflectionMaskImageSource)
+        if (reflectionMask.source().isNone())
             return CSSPrimitiveValue::create(CSSValueNone);
-        if (reflectionMask.overridesBorderWidths())
-            return nullptr;
-        return convertNinePieceImage(state, reflectionMask);
+        return createCSSValue(state.pool, state.style, reflectionMask);
     }();
 
     return CSSReflectValue::create(
@@ -876,31 +751,6 @@ inline Ref<CSSValue> ExtractorConverter::convertTextBoxEdge(ExtractorState& stat
 
     return CSSValuePair::create(convert(state, textEdge.over), convert(state, textEdge.under));
 }
-
-inline Ref<CSSValue> ExtractorConverter::convertQuotes(ExtractorState&, const QuotesData* quotes)
-{
-    if (!quotes)
-        return CSSPrimitiveValue::create(CSSValueAuto);
-    unsigned size = quotes->size();
-    if (!size)
-        return CSSPrimitiveValue::create(CSSValueNone);
-    CSSValueListBuilder list;
-    for (unsigned i = 0; i < size; ++i) {
-        list.append(CSSPrimitiveValue::create(quotes->openQuote(i)));
-        list.append(CSSPrimitiveValue::create(quotes->closeQuote(i)));
-    }
-    return CSSValueList::createSpaceSeparated(WTFMove(list));
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertViewTransitionName(ExtractorState&, const ViewTransitionName& viewTransitionName)
-{
-    if (viewTransitionName.isNone())
-        return CSSPrimitiveValue::create(CSSValueNone);
-    if (viewTransitionName.isAuto())
-        return CSSPrimitiveValue::create(CSSValueAuto);
-    return CSSPrimitiveValue::createCustomIdent(viewTransitionName.customIdent());
-}
-
 
 inline Ref<CSSValue> ExtractorConverter::convertPositionTryFallbacks(ExtractorState& state, const FixedVector<PositionTryFallback>& fallbacks)
 {
@@ -953,28 +803,6 @@ inline Ref<CSSValue> ExtractorConverter::convertWillChange(ExtractorState&, cons
     return CSSValueList::createCommaSeparated(WTFMove(list));
 }
 
-inline Ref<CSSValue> ExtractorConverter::convertBlockEllipsis(ExtractorState&, const BlockEllipsis& blockEllipsis)
-{
-    switch (blockEllipsis.type) {
-    case BlockEllipsis::Type::None:
-        return CSSPrimitiveValue::create(CSSValueNone);
-    case BlockEllipsis::Type::Auto:
-        return CSSPrimitiveValue::create(CSSValueAuto);
-    case BlockEllipsis::Type::String:
-        return CSSPrimitiveValue::create(blockEllipsis.string);
-    default:
-        ASSERT_NOT_REACHED();
-    }
-    return CSSPrimitiveValue::create(CSSValueNone);
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertBlockStepSize(ExtractorState& state, std::optional<WebCore::Length> blockStepSize)
-{
-    if (blockStepSize)
-        return convertLength(state, *blockStepSize);
-    return CSSPrimitiveValue::create(CSSValueNone);
-}
-
 inline Ref<CSSValue> ExtractorConverter::convertTabSize(ExtractorState&, const TabSize& tabSize)
 {
     return CSSPrimitiveValue::create(tabSize.widthInPixels(1.0), tabSize.isSpaces() ? CSSUnitType::CSS_NUMBER : CSSUnitType::CSS_PX);
@@ -994,26 +822,6 @@ inline Ref<CSSValue> ExtractorConverter::convertScrollSnapAlign(ExtractorState& 
     return CSSValuePair::create(
         convert(state, alignment.blockAlign),
         convert(state, alignment.inlineAlign)
-    );
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertScrollbarColor(ExtractorState& state, std::optional<ScrollbarColor> scrollbarColor)
-{
-    if (!scrollbarColor)
-        return CSSPrimitiveValue::create(CSSValueAuto);
-    return CSSValuePair::createNoncoalescing(
-        convertStyleType(state, scrollbarColor->thumbColor),
-        convertStyleType(state, scrollbarColor->trackColor)
-    );
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertScrollbarGutter(ExtractorState&, const ScrollbarGutter& gutter)
-{
-    if (!gutter.bothEdges)
-        return CSSPrimitiveValue::create(gutter.isAuto ? CSSValueAuto : CSSValueStable);
-    return CSSValuePair::create(
-        CSSPrimitiveValue::create(CSSValueStable),
-        CSSPrimitiveValue::create(CSSValueBothEdges)
     );
 }
 
@@ -1116,6 +924,8 @@ inline Ref<CSSValue> ExtractorConverter::convertTextDecorationLine(ExtractorStat
         list.append(CSSPrimitiveValue::create(CSSValueOverline));
     if (textDecorationLine & TextDecorationLine::LineThrough)
         list.append(CSSPrimitiveValue::create(CSSValueLineThrough));
+    if (textDecorationLine & TextDecorationLine::Blink)
+        list.append(CSSPrimitiveValue::create(CSSValueBlink));
     if (list.isEmpty())
         return CSSPrimitiveValue::create(CSSValueNone);
     return CSSValueList::createSpaceSeparated(WTFMove(list));
@@ -1140,20 +950,6 @@ inline Ref<CSSValue> ExtractorConverter::convertTextUnderlinePosition(ExtractorS
     if (!isLeft && !isRight)
         return CSSPrimitiveValue::create(metric);
     return CSSValuePair::create(CSSPrimitiveValue::create(metric), CSSPrimitiveValue::create(side));
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertTextDecorationThickness(ExtractorState& state, const TextDecorationThickness& textDecorationThickness)
-{
-    if (textDecorationThickness.isAuto())
-        return CSSPrimitiveValue::create(CSSValueAuto);
-    if (textDecorationThickness.isFromFont())
-        return CSSPrimitiveValue::create(CSSValueFromFont);
-
-    ASSERT(textDecorationThickness.isLength());
-    auto& length = textDecorationThickness.length();
-    if (length.isPercent())
-        return CSSPrimitiveValue::create(length.percent(), CSSUnitType::CSS_PERCENTAGE);
-    return CSSPrimitiveValue::create(length, state.style);
 }
 
 inline Ref<CSSValue> ExtractorConverter::convertTextEmphasisPosition(ExtractorState&, OptionSet<TextEmphasisPosition> textEmphasisPosition)
@@ -1463,7 +1259,7 @@ inline Ref<CSSValue> ExtractorConverter::convertPositionArea(ExtractorState&, co
     auto blockOrXAxisKeyword = keywordForPositionAreaSpan(positionArea.blockOrXAxis());
     auto inlineOrYAxisKeyword = keywordForPositionAreaSpan(positionArea.inlineOrYAxis());
 
-    return CSSPropertyParserHelpers::valueForPositionArea(blockOrXAxisKeyword, inlineOrYAxisKeyword).releaseNonNull();
+    return CSSPropertyParserHelpers::valueForPositionArea(blockOrXAxisKeyword, inlineOrYAxisKeyword, CSSPropertyParserHelpers::ValueType::Computed).releaseNonNull();
 }
 
 inline Ref<CSSValue> ExtractorConverter::convertPositionArea(ExtractorState& state, const std::optional<PositionArea>& positionArea)
@@ -1515,31 +1311,6 @@ inline Ref<CSSValue> ExtractorConverter::convertPositionVisibility(ExtractorStat
     return CSSValueList::createSpaceSeparated(WTFMove(list));
 }
 
-#if ENABLE(TEXT_AUTOSIZING)
-inline Ref<CSSValue> ExtractorConverter::convertWebkitTextSizeAdjust(ExtractorState&, const TextSizeAdjustment& textSizeAdjust)
-{
-    if (textSizeAdjust.isAuto())
-        return CSSPrimitiveValue::create(CSSValueAuto);
-    if (textSizeAdjust.isNone())
-        return CSSPrimitiveValue::create(CSSValueNone);
-    return CSSPrimitiveValue::create(textSizeAdjust.percentage(), CSSUnitType::CSS_PERCENTAGE);
-}
-#endif
-
-#if ENABLE(OVERFLOW_SCROLLING_TOUCH)
-inline Ref<CSSValue> ExtractorConverter::convertOverflowScrolling(ExtractorState&, bool useTouchOverflowScrolling)
-{
-    return CSSPrimitiveValue::create(useTouchOverflowScrolling ? CSSValueTouch : CSSValueAuto);
-}
-#endif
-
-#if PLATFORM(IOS_FAMILY)
-inline Ref<CSSValue> ExtractorConverter::convertTouchCallout(ExtractorState&, bool touchCalloutEnabled)
-{
-    return CSSPrimitiveValue::create(touchCalloutEnabled ? CSSValueDefault : CSSValueNone);
-}
-#endif
-
 // MARK: - FillLayer conversions
 
 inline Ref<CSSValue> ExtractorConverter::convertFillLayerAttachment(ExtractorState& state, FillAttachment attachment)
@@ -1560,16 +1331,6 @@ inline Ref<CSSValue> ExtractorConverter::convertFillLayerClip(ExtractorState& st
 inline Ref<CSSValue> ExtractorConverter::convertFillLayerOrigin(ExtractorState& state, FillBox origin)
 {
     return convert(state, origin);
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertFillLayerXPosition(ExtractorState& state, const WebCore::Length& xPosition)
-{
-    return convertLength(state, xPosition);
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertFillLayerYPosition(ExtractorState& state, const WebCore::Length& yPosition)
-{
-    return convertLength(state, yPosition);
 }
 
 inline Ref<CSSValue> ExtractorConverter::convertFillLayerRepeat(ExtractorState& state, FillRepeatXY repeat)
@@ -1753,135 +1514,6 @@ inline Ref<CSSValue> ExtractorConverter::convertFontVariationSettings(ExtractorS
     for (auto& feature : fontVariationSettings)
         list.append(CSSFontVariationValue::create(feature.tag(), convert(state, feature.value())));
     return CSSValueList::createCommaSeparated(WTFMove(list));
-}
-
-// MARK: - NinePieceImage conversions
-
-inline Ref<CSSValue> ExtractorConverter::convertNinePieceImageQuad(ExtractorState& state, const LengthBox& box)
-{
-    RefPtr<CSSPrimitiveValue> top;
-    RefPtr<CSSPrimitiveValue> right;
-    RefPtr<CSSPrimitiveValue> bottom;
-    RefPtr<CSSPrimitiveValue> left;
-
-    if (box.top().isRelative())
-        top = CSSPrimitiveValue::create(box.top().value());
-    else
-        top = CSSPrimitiveValue::create(box.top(), state.style);
-
-    if (box.right() == box.top() && box.bottom() == box.top() && box.left() == box.top()) {
-        right = top;
-        bottom = top;
-        left = top;
-    } else {
-        if (box.right().isRelative())
-            right = CSSPrimitiveValue::create(box.right().value());
-        else
-            right = CSSPrimitiveValue::create(box.right(), state.style);
-
-        if (box.bottom() == box.top() && box.right() == box.left()) {
-            bottom = top;
-            left = right;
-        } else {
-            if (box.bottom().isRelative())
-                bottom = CSSPrimitiveValue::create(box.bottom().value());
-            else
-                bottom = CSSPrimitiveValue::create(box.bottom(), state.style);
-
-            if (box.left() == box.right())
-                left = right;
-            else {
-                if (box.left().isRelative())
-                    left = CSSPrimitiveValue::create(box.left().value());
-                else
-                    left = CSSPrimitiveValue::create(box.left(), state.style);
-            }
-        }
-    }
-
-    return CSSQuadValue::create({
-        top.releaseNonNull(),
-        right.releaseNonNull(),
-        bottom.releaseNonNull(),
-        left.releaseNonNull()
-    });
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertNinePieceImageSlices(ExtractorState&, const NinePieceImage& image)
-{
-    auto sliceSide = [](const WebCore::Length& length) -> Ref<CSSPrimitiveValue> {
-        // These values can be percentages or numbers.
-        if (length.isPercent())
-            return CSSPrimitiveValue::create(length.percent(), CSSUnitType::CSS_PERCENTAGE);
-        ASSERT(length.isFixed());
-        return CSSPrimitiveValue::create(length.value());
-    };
-
-    auto& slices = image.imageSlices();
-
-    RefPtr<CSSPrimitiveValue> top = sliceSide(slices.top());
-    RefPtr<CSSPrimitiveValue> right;
-    RefPtr<CSSPrimitiveValue> bottom;
-    RefPtr<CSSPrimitiveValue> left;
-    if (slices.right() == slices.top() && slices.bottom() == slices.top() && slices.left() == slices.top()) {
-        right = top;
-        bottom = top;
-        left = top;
-    } else {
-        right = sliceSide(slices.right());
-        if (slices.bottom() == slices.top() && slices.right() == slices.left()) {
-            bottom = top;
-            left = right;
-        } else {
-            bottom = sliceSide(slices.bottom());
-            if (slices.left() == slices.right())
-                left = right;
-            else
-                left = sliceSide(slices.left());
-        }
-    }
-
-    return CSSBorderImageSliceValue::create({
-        top.releaseNonNull(),
-        right.releaseNonNull(),
-        bottom.releaseNonNull(),
-        left.releaseNonNull()
-    }, image.fill());
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertNinePieceImageRepeat(ExtractorState&, const NinePieceImage& image)
-{
-    auto valueID = [](NinePieceImageRule rule) -> CSSValueID {
-        switch (rule) {
-        case NinePieceImageRule::Repeat:
-            return CSSValueRepeat;
-        case NinePieceImageRule::Round:
-            return CSSValueRound;
-        case NinePieceImageRule::Space:
-            return CSSValueSpace;
-        default:
-            return CSSValueStretch;
-        }
-    };
-
-    auto horizontalRepeat = CSSPrimitiveValue::create(valueID(image.horizontalRule()));
-    RefPtr<CSSPrimitiveValue> verticalRepeat;
-    if (image.horizontalRule() == image.verticalRule())
-        verticalRepeat = horizontalRepeat.copyRef();
-    else
-        verticalRepeat = CSSPrimitiveValue::create(valueID(image.verticalRule()));
-    return CSSValuePair::create(WTFMove(horizontalRepeat), verticalRepeat.releaseNonNull());
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertNinePieceImage(ExtractorState& state, const NinePieceImage& image)
-{
-    return createBorderImageValue({
-        .source = image.image()->computedStyleValue(state.style),
-        .slice = convertNinePieceImageSlices(state, image),
-        .width = convertNinePieceImageQuad(state, image.borderSlices()),
-        .outset = convertNinePieceImageQuad(state, image.outset()),
-        .repeat = convertNinePieceImageRepeat(state, image),
-    });
 }
 
 // MARK: - Animation/Transition conversions
@@ -2240,28 +1872,6 @@ inline Ref<CSSValue> ExtractorConverter::convertGridAutoFlow(ExtractorState&, Gr
     if (gridAutoFlow & static_cast<GridAutoFlow>(InternalAutoFlowAlgorithmDense))
         list.append(CSSPrimitiveValue::create(CSSValueDense));
 
-    return CSSValueList::createSpaceSeparated(WTFMove(list));
-}
-
-inline Ref<CSSValue> ExtractorConverter::convertGridPosition(ExtractorState&, const GridPosition& position)
-{
-    if (position.isAuto())
-        return CSSPrimitiveValue::create(CSSValueAuto);
-
-    if (position.isNamedGridArea())
-        return CSSPrimitiveValue::createCustomIdent(position.namedGridLine());
-
-    bool hasNamedGridLine = !position.namedGridLine().isNull();
-    CSSValueListBuilder list;
-    if (position.isSpan()) {
-        list.append(CSSPrimitiveValue::create(CSSValueSpan));
-        if (!hasNamedGridLine || position.spanPosition() != 1)
-            list.append(CSSPrimitiveValue::createInteger(position.spanPosition()));
-    } else
-        list.append(CSSPrimitiveValue::createInteger(position.integerPosition()));
-
-    if (hasNamedGridLine)
-        list.append(CSSPrimitiveValue::createCustomIdent(position.namedGridLine()));
     return CSSValueList::createSpaceSeparated(WTFMove(list));
 }
 

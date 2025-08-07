@@ -31,6 +31,7 @@
 #include <wtf/CompactPtr.h>
 #include <wtf/DebugHeap.h>
 #include <wtf/Expected.h>
+#include <wtf/FlipBytes.h>
 #include <wtf/MathExtras.h>
 #include <wtf/NoVirtualDestructorBase.h>
 #include <wtf/Packed.h>
@@ -90,7 +91,7 @@ template<bool isSpecialCharacter(char16_t), typename CharacterType, std::size_t 
 #if STRING_STATS
 
 struct StringStats {
-    WTF_MAKE_STRUCT_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(StringStats);
     void add8BitString(unsigned length, bool isSubString = false)
     {
         ++m_totalNumberStrings;
@@ -179,7 +180,7 @@ protected:
 DECLARE_COMPACT_ALLOCATOR_WITH_HEAP_IDENTIFIER(StringImpl);
 class StringImpl : private StringImplShape, public NoVirtualDestructorBase {
     WTF_MAKE_NONCOPYABLE(StringImpl);
-    WTF_MAKE_FAST_COMPACT_ALLOCATED_WITH_HEAP_IDENTIFIER(StringImpl);
+    WTF_DEPRECATED_MAKE_FAST_COMPACT_ALLOCATED_WITH_HEAP_IDENTIFIER(StringImpl, StringImpl);
 
     friend class AtomStringImpl;
     friend class JSC::LLInt::Data;
@@ -778,6 +779,39 @@ template<typename CharacterType1, typename CharacterType2> inline std::strong_or
     auto* characters1Ptr = characters1.data();
     auto* characters2Ptr = characters2.data();
     size_t position = 0;
+
+#if CPU(REGISTER64) && !CPU(NEEDS_ALIGNED_ACCESS) && CPU(LITTLE_ENDIAN)
+    if constexpr (sizeof(CharacterType1) == sizeof(CharacterType2) && (sizeof(CharacterType1) == 1 || sizeof(CharacterType1) == 2)) {
+        using ChunkType = std::conditional_t<sizeof(CharacterType1) == 1, uint32_t, uint64_t>;
+        constexpr size_t stride = sizeof(ChunkType) / sizeof(CharacterType1);
+        for (; position + (stride - 1) < commonLength;) {
+            auto lhs = *std::bit_cast<const ChunkType*>(characters1Ptr);
+            auto rhs = *std::bit_cast<const ChunkType*>(characters2Ptr);
+            if (lhs != rhs) {
+                if constexpr (sizeof(CharacterType1) == 1)
+                    return (flipBytes(lhs) > flipBytes(rhs)) ? std::strong_ordering::greater : std::strong_ordering::less;
+
+#if CPU(ARM64)
+                if constexpr (sizeof(CharacterType1) == 2) {
+                    auto rev16 = [](uint64_t value) ALWAYS_INLINE_LAMBDA {
+                        uint64_t result;
+                        asm ("rev16 %x0, %x1" : "=r"(result) : "r"(value));
+                        return result;
+                    };
+                    return (rev16(flipBytes(lhs)) > rev16(flipBytes(rhs))) ? std::strong_ordering::greater : std::strong_ordering::less;
+                }
+#endif
+
+                break;
+            }
+
+            characters1Ptr += stride;
+            characters2Ptr += stride;
+            position += stride;
+        }
+    }
+#endif
+
     while (position < commonLength && *characters1Ptr == *characters2Ptr) {
         ++characters1Ptr;
         ++characters2Ptr;

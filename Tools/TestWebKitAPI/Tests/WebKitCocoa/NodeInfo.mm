@@ -29,12 +29,27 @@
 #import "PlatformUtilities.h"
 #import "TestNavigationDelegate.h"
 #import "TestScriptMessageHandler.h"
+#import "TestWKWebView.h"
 #import <WebKit/WKContentWorldPrivate.h>
 #import <WebKit/_WKContentWorldConfiguration.h>
 #import <WebKit/_WKFeature.h>
 #import <WebKit/_WKNodeInfo.h>
+#import <WebKit/_WKSerializedNode.h>
 
 namespace TestWebKitAPI {
+
+static WKFrameInfo *getContentFrameInfo(RetainPtr<_WKNodeInfo> node)
+{
+    EXPECT_TRUE([node isKindOfClass:_WKNodeInfo.class]);
+    __block RetainPtr<WKFrameInfo> frame;
+    __block bool done { false };
+    [node contentFrameInfo:^(WKFrameInfo *info) {
+        frame = info;
+        done = true;
+    }];
+    Util::run(&done);
+    return frame.autorelease();
+}
 
 TEST(NodeInfo, Basic)
 {
@@ -45,7 +60,7 @@ TEST(NodeInfo, Basic)
 
     RetainPtr configuration = server.httpsProxyConfiguration();
 
-    RetainPtr webView = adoptNS([[WKWebView alloc] initWithFrame:CGRectZero configuration:configuration.get()]);
+    RetainPtr webView = adoptNS([[TestWKWebView alloc] initWithFrame:CGRectZero configuration:configuration.get()]);
     RetainPtr navigationDelegate = adoptNS([TestNavigationDelegate new]);
     [navigationDelegate allowAnyTLSCertificate];
     webView.get().navigationDelegate = navigationDelegate.get();
@@ -56,54 +71,76 @@ TEST(NodeInfo, Basic)
     worldConfiguration.get().allowNodeInfo = YES;
     RetainPtr world = [WKContentWorld _worldWithConfiguration:worldConfiguration.get()];
 
-    __block bool done { false };
-    [webView evaluateJavaScript:@"window.webkit.createNodeInfo(onlyframe)" inFrame:nil inContentWorld:world.get() completionHandler:^(id result, NSError *error) {
-        EXPECT_NULL(error);
-        EXPECT_TRUE([result isKindOfClass:_WKNodeInfo.class]);
-        [result contentFrameInfo:^(WKFrameInfo *info) {
-            EXPECT_WK_STREQ(info.request.URL.absoluteString, "https://webkit.org/webkit");
+    RetainPtr<id> result = [webView objectByEvaluatingJavaScript:@"window.webkit.createNodeInfo(onlyframe)" inFrame:nil inContentWorld:world.get()];
+    RetainPtr<_WKNodeInfo> iframeElement = result;
+    EXPECT_WK_STREQ(getContentFrameInfo(iframeElement).request.URL.absoluteString, "https://webkit.org/webkit");
+
+    result = [webView objectByEvaluatingJavaScript:@"window.webkit.createNodeInfo(onlydiv)" inFrame:nil inContentWorld:world.get()];
+    EXPECT_NULL(getContentFrameInfo(result));
+
+    {
+        __block bool done { false };
+        [webView evaluateJavaScript:@"window.webkit.createNodeInfo(5)" inFrame:nil inContentWorld:world.get() completionHandler:^(id result, NSError *error) {
+            EXPECT_NULL(result);
+            EXPECT_NOT_NULL(error);
             done = true;
         }];
-    }];
-    Util::run(&done);
+        Util::run(&done);
+    }
 
-    done = false;
-    [webView evaluateJavaScript:@"window.webkit.createNodeInfo(onlydiv)" inFrame:nil inContentWorld:world.get() completionHandler:^(id result, NSError *error) {
-        EXPECT_TRUE([result isKindOfClass:_WKNodeInfo.class]);
-        EXPECT_NULL(error);
-        [result contentFrameInfo:^(WKFrameInfo *info) {
-            EXPECT_NULL(info);
-            done = true;
-        }];
-    }];
-    Util::run(&done);
+    result = [webView objectByEvaluatingJavaScript:@"window.webkit.createNodeInfo(document.createTextNode('hi'))" inFrame:nil inContentWorld:world.get()];
+    EXPECT_NULL(getContentFrameInfo(result));
 
-    done = false;
-    [webView evaluateJavaScript:@"window.webkit.createNodeInfo(5)" inFrame:nil inContentWorld:world.get() completionHandler:^(id result, NSError *error) {
-        EXPECT_NULL(result);
-        EXPECT_NOT_NULL(error);
-        done = true;
-    }];
-    Util::run(&done);
+    result = [webView objectByEvaluatingJavaScript:@"window.WebKitNodeInfo"];
+    EXPECT_NULL(result);
 
-    done = false;
-    [webView evaluateJavaScript:@"window.webkit.createNodeInfo(document.createTextNode('hi'))" inFrame:nil inContentWorld:world.get() completionHandler:^(id result, NSError *error) {
-        EXPECT_TRUE([result isKindOfClass:_WKNodeInfo.class]);
-        EXPECT_NULL(error);
-        [result contentFrameInfo:^(WKFrameInfo *info) {
-            EXPECT_NULL(info);
-            done = true;
-        }];
-    }];
-    Util::run(&done);
+    result = [webView objectByCallingAsyncFunction:@"return n === undefined" withArguments:@{ @"n" : iframeElement.get() } inFrame:getContentFrameInfo(iframeElement) inContentWorld:WKContentWorld.pageWorld];
+    EXPECT_EQ(result.get(), @YES);
 
-    done = false;
-    [webView evaluateJavaScript:@"window.WebKitNodeInfo" completionHandler:^(id result, NSError *error) {
-        EXPECT_NULL(result);
-        EXPECT_NULL(error);
-        done = true;
-    }];
-    Util::run(&done);
+    result = [webView objectByCallingAsyncFunction:@"return n.id" withArguments:@{ @"n" : iframeElement.get() }];
+    EXPECT_WK_STREQ(result.get(), "onlyframe");
+}
+
+TEST(SerializedNode, Basic)
+{
+    RetainPtr webView = adoptNS([WKWebView new]);
+    [webView loadHTMLString:@"<div id='testid'><div>test</div></div><template id='outerTemplate'><template id='innerTemplate'><span>Contents</span></template></template>" baseURL:[NSURL URLWithString:@"https://webkit.org/"]];
+
+    RetainPtr worldConfiguration = adoptNS([_WKContentWorldConfiguration new]);
+    worldConfiguration.get().allowNodeInfo = YES;
+    RetainPtr world = [WKContentWorld _worldWithConfiguration:worldConfiguration.get()];
+
+    auto verifyNodeSerialization = [world, webView] (const char* constructor, const char* accessor, const char* expected, const char* className, const char* init = "deep:true") {
+        RetainPtr serializedNode = [webView objectByEvaluatingJavaScript:[NSString stringWithFormat:@"window.webkit.serializeNode(%s, { %s })", constructor, init] inFrame:nil inContentWorld:world.get()];
+        EXPECT_TRUE([serializedNode isKindOfClass:_WKSerializedNode.class]);
+        RetainPtr other = adoptNS([TestWKWebView new]);
+
+        id instanceof = [other objectByCallingAsyncFunction:@"return Object.getPrototypeOf(n).toString()" withArguments:@{ @"n" : serializedNode.get() }];
+        NSString *expectedClass = [NSString stringWithFormat:@"[object %s]", className];
+        EXPECT_WK_STREQ(instanceof, expectedClass);
+
+        id result = [other objectByCallingAsyncFunction:[NSString stringWithFormat:@"return %s", accessor] withArguments:@{ @"n" : serializedNode.get() }];
+        EXPECT_WK_STREQ(result, expected);
+    };
+
+    auto textAccessor = "n.wholeText";
+    verifyNodeSerialization("document.createTextNode('text content')", textAccessor, "text content", "Text");
+
+    auto attrAccessor = "n.namespaceURI + ',' + n.prefix + ',' + n.localName + ',' + n.name + ',' + n.value";
+    verifyNodeSerialization("document.createAttributeNS('a', 'b')", attrAccessor, "a,null,b,b,", "Attr");
+    verifyNodeSerialization("document.createAttribute('c')", attrAccessor, "null,null,c,c,", "Attr");
+
+    verifyNodeSerialization("new Document().createCDATASection('test')", textAccessor, "test", "CDATASection");
+
+    verifyNodeSerialization("document.implementation.createDocumentType('a', 'b', 'c')", "n.name + ',' + n.publicId + ',' + n.systemId", "a,b,c", "DocumentType");
+
+    verifyNodeSerialization("document.createProcessingInstruction('a', 'b')", "n.target + ',' + n.data", "a,b", "ProcessingInstruction");
+
+    auto documentAccessor = "n.URL + ',' + n.documentURI + ',' + new XMLSerializer().serializeToString(n)";
+    verifyNodeSerialization("document.implementation.createDocument('http://www.w3.org/2000/svg', 'svg', null)", documentAccessor, "about:blank,about:blank,<svg xmlns=\"http://www.w3.org/2000/svg\"/>", "XMLDocument");
+    verifyNodeSerialization("document.implementation.createHTMLDocument('test title')", documentAccessor, "about:blank,about:blank,<!DOCTYPE html><html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>test title</title></head><body></body></html>", "HTMLDocument");
+    verifyNodeSerialization("document", documentAccessor, "https://webkit.org/,https://webkit.org/,<html xmlns=\"http://www.w3.org/1999/xhtml\"><head></head><body><div id=\"testid\"><div>test</div></div><template id=\"outerTemplate\"></template></body></html>", "HTMLDocument");
+    verifyNodeSerialization("document.getElementById('testid')", documentAccessor, "undefined,undefined,<div xmlns=\"http://www.w3.org/1999/xhtml\" id=\"testid\"></div>", "HTMLDivElement", "");
 }
 
 }

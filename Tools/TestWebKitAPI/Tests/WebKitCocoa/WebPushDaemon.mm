@@ -893,7 +893,7 @@ static void enableFeatureForPreferences(NSString *featureName, WKPreferences *pr
 }
 
 class WebPushDTestWebView {
-    WTF_MAKE_FAST_ALLOCATED;
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED(WebPushDTestWebView);
 public:
     WebPushDTestWebView(const String& pushPartition, const std::optional<WTF::UUID>& dataStoreIdentifier, WKProcessPool *processPool, TestNotificationProvider& notificationProvider, ASCIILiteral html, InstallDataStoreDelegate installDataStoreDelegate, BuiltInNotificationsEnabled builtInNotificationsEnabled)
         : m_pushPartition(pushPartition)
@@ -3105,7 +3105,7 @@ TEST_F(WebPushDPushNotificationEventTest, Basic)
     runTest(json46);
     checkLastNotificationTitle(@"Test a missing default action URL override");
     checkLastNotificationDefaultActionURL(@"https://example.com/");
-    waitForMessageAndVerify(@"showNotification failed: TypeError: Call to showNotification() while handling a `pushnotification` event did not include NotificationOptions that specify a valid defaultAction url");
+    waitForMessageAndVerify(@"showNotification failed: TypeError: Call to showNotification() while handling a `push` event did not include NotificationOptions that specify a valid defaultAction url");
 
     // After the slew of above messages that were handled by service workers, silent push tracking should *not* have
     // kicked in, and therefore there should still be a push subscription.

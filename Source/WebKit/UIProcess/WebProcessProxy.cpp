@@ -1138,24 +1138,18 @@ void WebProcessProxy::gpuProcessExited(ProcessTerminationReason reason)
 #endif
 
 #if ENABLE(MODEL_PROCESS)
-void WebProcessProxy::createModelProcessConnection(IPC::Connection::Handle&& connectionIdentifier, WebKit::ModelProcessConnectionParameters&& parameters)
+void WebProcessProxy::createModelProcessConnection(IPC::Connection::Handle&& connectionIdentifier)
 {
     bool anyPageHasModelProcessEnabled = false;
     for (auto& page : m_pageMap.values())
         anyPageHasModelProcessEnabled |= page->preferences().modelElementEnabled() && page->preferences().modelProcessEnabled();
     MESSAGE_CHECK(anyPageHasModelProcessEnabled);
 
+    WebKit::ModelProcessConnectionParameters parameters;
+    parameters.webProcessIdentity = m_processIdentity;
     parameters.sharedPreferencesForWebProcess = m_sharedPreferencesForWebProcess;
     MESSAGE_CHECK(parameters.sharedPreferencesForWebProcess.modelElementEnabled);
     MESSAGE_CHECK(parameters.sharedPreferencesForWebProcess.modelProcessEnabled);
-
-#if ENABLE(IPC_TESTING_API)
-    parameters.ignoreInvalidMessageForTesting = ignoreInvalidMessageForTesting();
-#endif
-
-#if HAVE(AUDIT_TOKEN)
-    parameters.presentingApplicationAuditToken = m_processPool->configuration().presentingApplicationProcessToken();
-#endif
 
     protectedProcessPool()->createModelProcessConnection(*this, WTFMove(connectionIdentifier), WTFMove(parameters));
 }
@@ -1333,7 +1327,7 @@ void WebProcessProxy::processDidTerminateOrFailedToLaunch(ProcessTerminationReas
         remotePage->processDidTerminate(*this, reason);
 }
 
-void WebProcessProxy::didReceiveInvalidMessage(IPC::Connection& connection, IPC::MessageName messageName, int32_t indexOfObjectFailingDecoding)
+void WebProcessProxy::didReceiveInvalidMessage(IPC::Connection& connection, IPC::MessageName messageName, const Vector<uint32_t>& indexOfObjectFailingDecoding)
 {
     logInvalidMessage(connection, messageName);
 
@@ -1993,7 +1987,7 @@ void WebProcessProxy::isResponsive(CompletionHandler<void(bool isWebProcessRespo
 {
     if (m_isResponsive == NoOrMaybe::No) {
         if (callback) {
-            RunLoop::protectedMain()->dispatch([callback = WTFMove(callback)]() mutable {
+            RunLoop::mainSingleton().dispatch([callback = WTFMove(callback)]() mutable {
                 bool isWebProcessResponsive = false;
                 callback(isWebProcessResponsive);
             });
@@ -2198,7 +2192,7 @@ void WebProcessProxy::didStartProvisionalLoadForMainFrame(const URL& url)
     WEBPROCESSPROXY_RELEASE_LOG(Loading, "didStartProvisionalLoadForMainFrame:");
 
     // This process has been used for several registrable domains already.
-    if (m_site && m_site->isEmpty())
+    if (!m_site && m_site.error() == SiteState::MultipleSites)
         return;
 
     if (url.protocolIsAbout())
@@ -2207,7 +2201,7 @@ void WebProcessProxy::didStartProvisionalLoadForMainFrame(const URL& url)
     if (!url.protocolIsInHTTPFamily() && !processPool().configuration().processSwapsOnNavigationWithinSameNonHTTPFamilyProtocol()) {
         // Unless the processSwapsOnNavigationWithinSameNonHTTPFamilyProtocol flag is set, we don't process swap on navigations withing the same
         // non HTTP(s) protocol. For this reason, we ignore the registrable domain and processes are not eligible for the process cache.
-        m_site = Site { { }, { } };
+        m_site = makeUnexpected(SiteState::MultipleSites);
         return;
     }
 
@@ -2219,23 +2213,27 @@ void WebProcessProxy::didStartProvisionalLoadForMainFrame(const URL& url)
         if (isRunningSharedWorkers())
             dataStore->protectedNetworkProcess()->terminateRemoteWorkerContextConnectionWhenPossible(RemoteWorkerType::SharedWorker, dataStore->sessionID(), m_site->domain(), coreProcessIdentifier());
 
-        // Null out registrable domain since this process has now been used for several domains.
-        m_site = Site { { }, { } };
+        m_site = makeUnexpected(SiteState::MultipleSites);
         return;
     }
 
     if (m_sharedPreferencesForWebProcess.siteIsolationEnabled)
-        ASSERT(m_site == site);
+        ASSERT((m_site && *m_site == site) || m_site.error() == SiteState::SharedProcess);
     else {
         // Associate the process with this site.
         m_site = WTFMove(site);
     }
 }
 
-void WebProcessProxy::didStartUsingProcessForSiteIsolation(const WebCore::Site& site)
+void WebProcessProxy::didStartUsingProcessForSiteIsolation(const std::optional<WebCore::Site>& site)
 {
-    ASSERT(!m_site || m_site == site);
-    m_site = site;
+    if (!site) {
+        ASSERT(m_site.error() == SiteState::NotYetSpecified || m_site.error() == SiteState::SharedProcess);
+        m_site = makeUnexpected(SiteState::SharedProcess);
+        return;
+    }
+    ASSERT(m_site ? (m_site.value().isEmpty() || m_site.value() == *site) : m_site.error() == SiteState::NotYetSpecified);
+    m_site = *site;
 }
 
 void WebProcessProxy::addSuspendedPageProxy(SuspendedPageProxy& suspendedPage)

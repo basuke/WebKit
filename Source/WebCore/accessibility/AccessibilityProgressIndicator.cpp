@@ -32,25 +32,25 @@
 #include "RenderProgress.h"
 
 namespace WebCore {
-    
+
 using namespace HTMLNames;
 
-AccessibilityProgressIndicator::AccessibilityProgressIndicator(AXID axID, RenderObject& renderer)
-    : AccessibilityRenderObject(axID, renderer)
+AccessibilityProgressIndicator::AccessibilityProgressIndicator(AXID axID, RenderObject& renderer, AXObjectCache& cache)
+    : AccessibilityRenderObject(axID, renderer, cache)
 {
     ASSERT(is<RenderProgress>(renderer) || is<RenderMeter>(renderer) || is<HTMLProgressElement>(renderer.node()) || is<HTMLMeterElement>(renderer.node()));
 }
 
-Ref<AccessibilityProgressIndicator> AccessibilityProgressIndicator::create(AXID axID, RenderObject& renderer)
+Ref<AccessibilityProgressIndicator> AccessibilityProgressIndicator::create(AXID axID, RenderObject& renderer, AXObjectCache& cache)
 {
-    return adoptRef(*new AccessibilityProgressIndicator(axID, renderer));
+    return adoptRef(*new AccessibilityProgressIndicator(axID, renderer, cache));
 }
 
 bool AccessibilityProgressIndicator::computeIsIgnored() const
 {
     return isIgnoredByDefault();
 }
-    
+
 String AccessibilityProgressIndicator::valueDescription() const
 {
     // If the author has explicitly provided a value through aria-valuetext, use it.
@@ -145,7 +145,7 @@ String AccessibilityProgressIndicator::gaugeRegionValueDescription() const
     // Only expose this when the author has explicitly specified the following attributes.
     if (!hasAttribute(lowAttr) && !hasAttribute(highAttr) && !hasAttribute(optimumAttr))
         return String();
-    
+
     switch (meterElement->gaugeRegion()) {
     case HTMLMeterElement::GaugeRegionOptimum:
         return AXMeterGaugeRegionOptimumText();

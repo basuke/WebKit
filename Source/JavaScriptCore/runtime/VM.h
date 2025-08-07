@@ -225,7 +225,7 @@ enum VMIdentifierType { };
 using VMIdentifier = AtomicObjectIdentifier<VMIdentifierType>;
 
 class VM : public ThreadSafeRefCountedWithSuppressingSaferCPPChecking<VM>, public DoublyLinkedListNode<VM> {
-    WTF_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(VM);
+    WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(VM, VM);
 public:
     // WebCore has a one-to-one mapping of threads to VMs;
     // create() should only be called once
@@ -1009,7 +1009,7 @@ private:
         m_throwingThread = nullptr;
 #endif
         m_exception = nullptr;
-        traps().clearTrapBit(VMTraps::NeedExceptionHandling);
+        traps().clearTrap(VMTraps::NeedExceptionHandling);
     }
 
     JS_EXPORT_PRIVATE void setException(Exception*);

@@ -170,7 +170,9 @@ enum class ModalContainerControlType : uint8_t;
 enum class ModalContainerDecision : uint8_t;
 enum class PlatformEventModifier : uint8_t;
 enum class PluginUnavailabilityReason : uint8_t;
+enum class PointerLockRequestResult : uint8_t;
 enum class RouteSharingPolicy : uint8_t;
+enum class ScriptTrackingPrivacyCategory : uint8_t;
 enum class TextAnimationRunMode : uint8_t;
 
 enum class MediaProducerMediaState : uint32_t;
@@ -429,7 +431,7 @@ public:
 
     virtual DisplayRefreshMonitorFactory* displayRefreshMonitorFactory() const { return nullptr; }
 
-    virtual RefPtr<ImageBuffer> createImageBuffer(const FloatSize&, RenderingMode, RenderingPurpose, float, const DestinationColorSpace&, ImageBufferPixelFormat) const { return nullptr; }
+    virtual RefPtr<ImageBuffer> createImageBuffer(const FloatSize&, RenderingMode, RenderingPurpose, float, const DestinationColorSpace&, ImageBufferFormat) const { return nullptr; }
     WEBCORE_EXPORT virtual RefPtr<WebCore::ImageBuffer> sinkIntoImageBuffer(std::unique_ptr<WebCore::SerializedImageBuffer>);
 
 #if ENABLE(WEBGL)
@@ -580,8 +582,8 @@ public:
     virtual bool isSVGImageChromeClient() const { return false; }
 
 #if ENABLE(POINTER_LOCK)
-    virtual bool requestPointerLock() { return false; }
-    virtual void requestPointerUnlock() { }
+    virtual void requestPointerLock(CompletionHandler<void(PointerLockRequestResult)>&&);
+    virtual void requestPointerUnlock(CompletionHandler<void(bool)>&& completionHandler) { completionHandler(false); }
 #endif
 
     virtual FloatSize minimumWindowSize() const { return FloatSize(100, 100); };
@@ -651,7 +653,7 @@ public:
     virtual RefPtr<Icon> createIconForFiles(const Vector<String>& /* filenames */) = 0;
 
     virtual void hasStorageAccess(RegistrableDomain&& /*subFrameDomain*/, RegistrableDomain&& /*topFrameDomain*/, LocalFrame&, CompletionHandler<void(bool)>&& completionHandler) { completionHandler(false); }
-    virtual void requestStorageAccess(RegistrableDomain&& subFrameDomain, RegistrableDomain&& topFrameDomain, LocalFrame&, StorageAccessScope scope, CompletionHandler<void(RequestStorageAccessResult)>&& completionHandler) { completionHandler({ StorageAccessWasGranted::No, StorageAccessPromptWasShown::No, scope, WTFMove(topFrameDomain), WTFMove(subFrameDomain) }); }
+    virtual void requestStorageAccess(RegistrableDomain&& subFrameDomain, RegistrableDomain&& topFrameDomain, LocalFrame&, StorageAccessScope scope, HasOrShouldIgnoreUserGesture, CompletionHandler<void(RequestStorageAccessResult)>&& completionHandler) { completionHandler({ StorageAccessWasGranted::No, StorageAccessPromptWasShown::No, scope, WTFMove(topFrameDomain), WTFMove(subFrameDomain) }); }
     virtual bool hasPageLevelStorageAccess(const RegistrableDomain& /*topLevelDomain*/, const RegistrableDomain& /*resourceDomain*/) const { return false; }
 
     virtual void setLoginStatus(RegistrableDomain&&, IsLoggedIn, CompletionHandler<void()>&&) { }
@@ -671,6 +673,7 @@ public:
 #endif
 
     virtual bool requiresScriptTrackingPrivacyProtections(const URL&, const SecurityOrigin& /* topOrigin */) const { return false; }
+    virtual bool shouldAllowScriptAccess(const URL&, const WebCore::SecurityOrigin&, ScriptTrackingPrivacyCategory) const { return true; }
 
     virtual void animationDidFinishForElement(const Element&) { }
 

@@ -108,6 +108,7 @@ struct SelectorChecker::LocalContext {
     bool hasViewTransitionPseudo { false };
     bool mustMatchHostPseudoClass { false };
     bool matchedHostPseudoClass { false };
+    bool isNegation { false };
 };
 
 static inline void addStyleRelation(SelectorChecker::CheckingContext& checkingContext, const Element& element, Style::Relation::Type type, unsigned value = 1)
@@ -541,7 +542,7 @@ static bool attributeValueMatches(const Attribute& attribute, CSSSelector::Match
     case CSSSelector::Match::List:
         {
             // Ignore empty selectors or selectors containing spaces.
-            if (selectorValue.isEmpty() || selectorValue.find(isASCIIWhitespace<UChar>) != notFound)
+            if (selectorValue.isEmpty() || selectorValue.find(isASCIIWhitespace<char16_t>) != notFound)
                 return false;
 
             unsigned startSearchAt = 0;
@@ -732,14 +733,13 @@ bool SelectorChecker::checkOne(CheckingContext& checkingContext, LocalContext& c
 
     if (context.mustMatchHostPseudoClass) {
         // :host doesn't combine with anything except pseudo elements.
-        bool isHostPseudoClass = selector.match() == CSSSelector::Match::PseudoClass && selector.pseudoClass() == CSSSelector::PseudoClass::Host;
         bool isPseudoElement = selector.match() == CSSSelector::Match::PseudoElement;
         // FIXME: We do not support combining :host with :not() functional pseudoclass. Combination with functional pseudoclass has been allowed for the useful :is(:host) ; but combining with :not() doesn't sound useful like :host():not(:not(:host))
         // https://bugs.webkit.org/show_bug.cgi?id=283062
         bool isNotPseudoClass = selector.match() == CSSSelector::Match::PseudoClass && selector.pseudoClass() == CSSSelector::PseudoClass::Not;
 
-        // We can early return when we know it's neither :host, a compound :is(:host) , a pseudo-element.
-        if (!isHostPseudoClass && !isPseudoElement && (!selector.selectorList() || isNotPseudoClass))
+        // We can early return when we know it's neither :host, :scope (which can match when the scoping root is the shadow host), a compound :is(:host) , a pseudo-element.
+        if (!selector.isHostPseudoClass() && !isPseudoElement && !selector.isScopePseudoClass() && (!selector.selectorList() || isNotPseudoClass))
             return false;
     }
 
@@ -787,6 +787,7 @@ bool SelectorChecker::checkOne(CheckingContext& checkingContext, LocalContext& c
 
             for (auto& subselector : *selectorList) {
                 LocalContext subcontext(context);
+                subcontext.isNegation = !context.isNegation;
                 subcontext.inFunctionalPseudoClass = true;
                 subcontext.pseudoElementEffective = false;
                 subcontext.selector = &subselector;
@@ -1138,8 +1139,15 @@ bool SelectorChecker::checkOne(CheckingContext& checkingContext, LocalContext& c
 #endif
 
         case CSSSelector::PseudoClass::Scope: {
+            // During style invalidation, we don't collect the @scope rules.
+            if (checkingContext.resolvingMode == SelectorChecker::Mode::CollectingRulesIgnoringVirtualPseudoElements)
+                return !context.isNegation;
+
             const Node* contextualReferenceNode = !checkingContext.scope ? element.document().documentElement() : checkingContext.scope.get();
-            return &element == contextualReferenceNode;
+            auto match = &element == contextualReferenceNode;
+            if (match && element.shadowRoot())
+                context.matchedHostPseudoClass = true;
+            return match;
         }
         case CSSSelector::PseudoClass::State:
             return element.hasCustomState(selector.argument());

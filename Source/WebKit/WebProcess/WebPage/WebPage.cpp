@@ -253,6 +253,7 @@
 #include <WebCore/LoginStatus.h>
 #include <WebCore/MIMETypeRegistry.h>
 #include <WebCore/MediaDocument.h>
+#include <WebCore/MediaPlayer.h>
 #include <WebCore/MouseEvent.h>
 #include <WebCore/NavigationScheduler.h>
 #include <WebCore/NotImplemented.h>
@@ -620,7 +621,7 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
 #if USE(GRAPHICS_LAYER_TEXTURE_MAPPER) || USE(GRAPHICS_LAYER_WC)
     , m_nativeWindowHandle(parameters.nativeWindowHandle)
 #endif
-    , m_setCanStartMediaTimer(RunLoop::main(), this, &WebPage::setCanStartMediaTimerFired)
+    , m_setCanStartMediaTimer(RunLoop::mainSingleton(), "WebPage::SetCanStartMediaTimer"_s, this, &WebPage::setCanStartMediaTimerFired)
 #if ENABLE(CONTEXT_MENUS)
     , m_contextMenuClient(makeUnique<API::InjectedBundle::PageContextMenuClient>())
 #endif
@@ -722,6 +723,9 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
     if (unifiedPDFEnabled)
         sandbox_enable_state_flag("UnifiedPDFEnabled", *auditToken);
 #if PLATFORM(MAC)
+    auto shouldAllowInstalledFonts = parameters.store.getBoolValueForKey(WebPreferencesKey::shouldAllowUserInstalledFontsKey());
+    if (!shouldAllowInstalledFonts || !WTF::MacApplication::isAppleMail())
+        sandbox_enable_state_flag("BlockUserInstalledFonts", *auditToken);
     auto shouldBlockFontService = parameters.store.getBoolValueForKey(WebPreferencesKey::blockFontServiceInWebContentSandboxKey());
     if (shouldBlockFontService)
         sandbox_enable_state_flag("BlockFontServiceInWebContentSandbox", *auditToken);
@@ -1127,7 +1131,8 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
 #endif
 
 #if USE(AUDIO_SESSION)
-    PlatformMediaSessionManager::setShouldDeactivateAudioSession(true);
+    if (RefPtr manager = mediaSessionManager())
+        manager->setShouldDeactivateAudioSession(true);
 #endif
 
 #if HAVE(VISIBILITY_PROPAGATION_VIEW) && !HAVE(NON_HOSTING_VISIBILITY_PROPAGATION_VIEW)
@@ -1411,7 +1416,7 @@ void WebPage::updateThrottleState()
         m_internals->userActivity.start();
 
     if (m_page && m_page->settings().serviceWorkersEnabled()) {
-        RunLoop::protectedMain()->dispatch([isThrottleable] {
+        RunLoop::mainSingleton().dispatch([isThrottleable] {
             WebServiceWorkerProvider::singleton().updateThrottleState(isThrottleable);
         });
     }
@@ -2012,7 +2017,7 @@ void WebPage::close()
     WebProcess::singleton().updateActivePages(processDisplayName);
 
     if (isRunningModal)
-        RunLoop::protectedMain()->stop();
+        RunLoop::mainSingleton().stop();
 }
 
 void WebPage::tryClose(CompletionHandler<void(bool)>&& completionHandler)
@@ -2735,31 +2740,6 @@ void WebPage::enableAccessibility()
     if (!WebCore::AXObjectCache::accessibilityEnabled())
         WebCore::AXObjectCache::enableAccessibility();
 }
-
-void WebPage::getAccessibilityWebProcessDebugInfo(CompletionHandler<void(WebCore::AXDebugInfo)>&& completionHandler)
-{
-    if (auto treeData = protectedCorePage()->accessibilityTreeData(IncludeDOMInfo::No)) {
-#if ENABLE(ACCESSIBILITY_ISOLATED_TREE)
-        completionHandler({ WebCore::AXObjectCache::accessibilityEnabled(), WebCore::AXObjectCache::isAXThreadInitialized(), treeData->liveTree, treeData->isolatedTree });
-#else
-        completionHandler({ WebCore::AXObjectCache::accessibilityEnabled(), false, treeData->liveTree, treeData->isolatedTree });
-#endif
-        return;
-    }
-#if ENABLE(ACCESSIBILITY_ISOLATED_TREE)
-    completionHandler({ WebCore::AXObjectCache::accessibilityEnabled(), WebCore::AXObjectCache::isAXThreadInitialized(), { }, { } });
-#else
-    completionHandler({ WebCore::AXObjectCache::accessibilityEnabled(), false, { }, { } });
-#endif
-}
-
-#if ENABLE(ACCESSIBILITY_ISOLATED_TREE)
-void WebPage::clearAccessibilityIsolatedTree()
-{
-    if (RefPtr page = m_page)
-        page->clearAccessibilityIsolatedTree();
-}
-#endif
 
 void WebPage::screenPropertiesDidChange()
 {
@@ -4475,15 +4455,8 @@ void WebPage::runJavaScript(WebFrame* frame, RunJavaScriptParameters&& parameter
 
         JSGlobalContextRef context = frame->jsContextForWorld(world.ptr());
         JSValueRef jsValue = toRef(coreFrame->script().globalObject(Ref { world->coreWorld() }), result.value());
-#if PLATFORM(COCOA)
         if (auto result = JavaScriptEvaluationResult::extract(context, jsValue))
             return completionHandler(WTFMove(*result));
-#else
-        if (RefPtr serializedResultValue = SerializedScriptValue::create(context, jsValue, nullptr)) {
-            if (auto wireBytes = serializedResultValue->wireBytes(); !wireBytes.isEmpty())
-                return completionHandler(JavaScriptEvaluationResult { wireBytes });
-        }
-#endif
         return completionHandler(makeUnexpected(std::nullopt));
     };
 
@@ -4940,6 +4913,8 @@ void WebPage::updatePreferences(const WebPreferencesStore& store)
         pluginView->didChangeSettings();
 #endif
 
+    WebProcess::singleton().updateSharedPreferencesForWebProcess(WebKit::sharedPreferencesForWebProcess(store));
+
     protectedCorePage()->settingsDidChange();
 }
 
@@ -5053,6 +5028,7 @@ void WebPage::willCommitLayerTree(RemoteLayerTreeTransaction& layerTransaction, 
     layerTransaction.setMinimumScaleFactor(m_viewportConfiguration.minimumScale());
     layerTransaction.setMaximumScaleFactor(m_viewportConfiguration.maximumScale());
     layerTransaction.setInitialScaleFactor(m_viewportConfiguration.initialScale());
+    layerTransaction.setViewportMetaTagInteractiveWidget(m_viewportConfiguration.viewportArguments().interactiveWidget);
     layerTransaction.setViewportMetaTagWidth(m_viewportConfiguration.viewportArguments().width);
     layerTransaction.setViewportMetaTagWidthWasExplicit(m_viewportConfiguration.viewportArguments().widthWasExplicit);
     layerTransaction.setViewportMetaTagCameFromImageDocument(m_viewportConfiguration.viewportArguments().type == ViewportArguments::Type::ImageDocument);
@@ -5399,7 +5375,7 @@ void WebPage::startPlayingPredominantVideo(CompletionHandler<void(bool)>&& compl
 #if PLATFORM(IOS_FAMILY)
 void WebPage::setSceneIdentifier(String&& sceneIdentifier)
 {
-    AudioSession::sharedSession().setSceneIdentifier(sceneIdentifier);
+    AudioSession::singleton().setSceneIdentifier(sceneIdentifier);
     m_page->setSceneIdentifier(WTFMove(sceneIdentifier));
 }
 
@@ -6875,6 +6851,24 @@ void WebPage::stopMediaCapture(MediaProducerMediaCaptureKind kind, CompletionHan
     completionHandler();
 }
 
+void WebPage::processWillSuspend()
+{
+    if (RefPtr manager = mediaSessionManagerIfExists())
+        manager->processWillSuspend();
+}
+
+void WebPage::processDidResume()
+{
+    if (RefPtr manager = mediaSessionManagerIfExists())
+        manager->processDidResume();
+}
+
+void WebPage::didReceiveRemoteCommand(PlatformMediaSession::RemoteControlCommandType type, const PlatformMediaSession::RemoteCommandArgument& argument)
+{
+    if (RefPtr manager = mediaSessionManagerIfExists())
+        manager->processDidReceiveRemoteControlCommand(type, argument);
+}
+
 void WebPage::setMayStartMediaWhenInWindow(bool mayStartMedia)
 {
     if (mayStartMedia == m_mayStartMediaWhenInWindow)
@@ -7735,6 +7729,11 @@ void WebPage::setViewportSizeForCSSViewportUnits(std::optional<WebCore::FloatSiz
         if (RefPtr localMainFrame = dynamicDowncast<WebCore::LocalFrame>(corePage()->mainFrame()))
             localMainFrame->protectedView()->setSizeForCSSDefaultViewportUnits(*m_viewportSizeForCSSViewportUnits);
     }
+}
+
+bool WebPage::isIOSurfaceLosslessCompressionEnabled() const
+{
+    return m_page->settings().iOSurfaceLosslessCompressionEnabled();
 }
 
 bool WebPage::isSmartInsertDeleteEnabled()
@@ -8660,9 +8659,9 @@ void WebPage::hasStorageAccess(RegistrableDomain&& subFrameDomain, RegistrableDo
     WebProcess::singleton().ensureNetworkProcessConnection().connection().sendWithAsyncReply(Messages::NetworkConnectionToWebProcess::HasStorageAccess(WTFMove(subFrameDomain), WTFMove(topFrameDomain), frame.frameID(), m_identifier), WTFMove(completionHandler));
 }
 
-void WebPage::requestStorageAccess(RegistrableDomain&& subFrameDomain, RegistrableDomain&& topFrameDomain, WebFrame& frame, StorageAccessScope scope, CompletionHandler<void(WebCore::RequestStorageAccessResult)>&& completionHandler)
+void WebPage::requestStorageAccess(RegistrableDomain&& subFrameDomain, RegistrableDomain&& topFrameDomain, WebFrame& frame, StorageAccessScope scope, HasOrShouldIgnoreUserGesture hasOrShouldIgnoreUserGesture, CompletionHandler<void(WebCore::RequestStorageAccessResult)>&& completionHandler)
 {
-    WebProcess::singleton().ensureNetworkProcessConnection().connection().sendWithAsyncReply(Messages::NetworkConnectionToWebProcess::RequestStorageAccess(WTFMove(subFrameDomain), WTFMove(topFrameDomain), frame.frameID(), m_identifier, m_webPageProxyIdentifier, scope), [this, protectedThis = Ref { *this }, completionHandler = WTFMove(completionHandler), frame = Ref { frame }, pageID = m_identifier, frameID = frame.frameID()](RequestStorageAccessResult result) mutable {
+    WebProcess::singleton().ensureNetworkProcessConnection().connection().sendWithAsyncReply(Messages::NetworkConnectionToWebProcess::RequestStorageAccess(WTFMove(subFrameDomain), WTFMove(topFrameDomain), frame.frameID(), m_identifier, m_webPageProxyIdentifier, scope, hasOrShouldIgnoreUserGesture), [this, protectedThis = Ref { *this }, completionHandler = WTFMove(completionHandler), frame = Ref { frame }, pageID = m_identifier, frameID = frame.frameID()](RequestStorageAccessResult result) mutable {
         if (result.wasGranted == StorageAccessWasGranted::Yes) {
             switch (result.scope) {
             case StorageAccessScope::PerFrame:
@@ -10145,7 +10144,8 @@ void WebPage::setDefaultSpatialTrackingLabel(const String& label)
 void WebPage::startObservingNowPlayingMetadata()
 {
 #if ENABLE(VIDEO) || ENABLE(WEB_AUDIO)
-    if (m_nowPlayingMetadataObserver)
+    RefPtr sessionManager = mediaSessionManager();
+    if (!sessionManager || m_nowPlayingMetadataObserver)
         return;
 
     m_nowPlayingMetadataObserver = makeUnique<NowPlayingMetadataObserver>([weakThis = WeakPtr { *this }](auto& metadata) {
@@ -10153,7 +10153,7 @@ void WebPage::startObservingNowPlayingMetadata()
             protectedThis->send(Messages::WebPageProxy::NowPlayingMetadataChanged { metadata });
     });
 
-    WebCore::PlatformMediaSessionManager::singleton().addNowPlayingMetadataObserver(*m_nowPlayingMetadataObserver);
+    sessionManager->addNowPlayingMetadataObserver(*m_nowPlayingMetadataObserver);
 #endif
 }
 
@@ -10164,7 +10164,8 @@ void WebPage::stopObservingNowPlayingMetadata()
     if (!nowPlayingMetadataObserver)
         return;
 
-    WebCore::PlatformMediaSessionManager::singleton().removeNowPlayingMetadataObserver(*nowPlayingMetadataObserver);
+    if (RefPtr sessionManager = mediaSessionManager())
+        sessionManager->removeNowPlayingMetadataObserver(*nowPlayingMetadataObserver);
 #endif
 }
 
@@ -10476,6 +10477,20 @@ void WebPage::frameViewLayoutOrVisualViewportChanged(const LocalFrameView& frame
 #else
     UNUSED_PARAM(frameView);
 #endif
+}
+
+RefPtr<MediaSessionManagerInterface> WebPage::mediaSessionManager() const
+{
+    RefPtr page { corePage() };
+    return page ? &page->mediaSessionManager() : nullptr;
+
+}
+
+MediaSessionManagerInterface* WebPage::mediaSessionManagerIfExists() const
+{
+    RefPtr page { corePage() };
+    return page ? page->mediaSessionManagerIfExists() : nullptr;
+
 }
 
 #if ENABLE(MODEL_ELEMENT)

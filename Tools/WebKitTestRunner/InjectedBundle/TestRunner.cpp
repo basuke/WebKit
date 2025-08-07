@@ -605,6 +605,7 @@ enum {
     TextDidChangeInTextFieldCallbackID,
     TextFieldDidBeginEditingCallbackID,
     TextFieldDidEndEditingCallbackID,
+    ToolTipDidChangeCallbackID,
     FirstUIScriptCallbackID = 100
 };
 
@@ -1164,6 +1165,16 @@ void TestRunner::callDidRemoveSwipeSnapshotCallback()
     callTestRunnerCallback(DidRemoveSwipeSnapshotCallbackID);
 }
 
+void TestRunner::installTooltipDidChangeCallback(JSContextRef context, JSValueRef callback)
+{
+    cacheTestRunnerCallback(context, ToolTipDidChangeCallbackID, callback);
+}
+
+void TestRunner::callTooltipDidChangeCallback(JSStringRef tooltip)
+{
+    callTestRunnerCallback(ToolTipDidChangeCallbackID, tooltip);
+}
+
 void TestRunner::clearStatisticsDataForDomain(JSStringRef domain)
 {
     postSynchronousMessage("ClearStatisticsDataForDomain", toWK(domain));
@@ -1564,6 +1575,14 @@ void TestRunner::getAllStorageAccessEntries(JSContextRef context, JSValueRef cal
 void TestRunner::setRequestStorageAccessThrowsExceptionUntilReload(bool enabled)
 {
     postSynchronousPageMessage("SetRequestStorageAccessThrowsExceptionUntilReload", enabled);
+}
+
+void TestRunner::setStorageAccessPermission(JSContextRef context, bool granted, JSStringRef subFrameURL, JSValueRef callback)
+{
+    postMessageWithAsyncReply(context, "SetStorageAccessPermission", createWKDictionary({
+        { "Value", adoptWK(WKBooleanCreate(granted)) },
+        { "SubFrameURL", toWK(subFrameURL) },
+    }), callback);
 }
 
 void TestRunner::loadedSubresourceDomains(JSContextRef context, JSValueRef callback)

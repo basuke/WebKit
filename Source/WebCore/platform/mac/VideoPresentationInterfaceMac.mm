@@ -45,8 +45,7 @@
 
 #import <pal/cf/CoreMediaSoftLink.h>
 
-SOFTLINK_AVKIT_FRAMEWORK()
-SOFT_LINK_CLASS_OPTIONAL(AVKit, AVValueTiming)
+SOFT_LINK_FRAMEWORK_FOR_SOURCE(AVKit, AVValueTiming)
 
 SOFT_LINK_PRIVATE_FRAMEWORK_OPTIONAL(PIP)
 SOFT_LINK_CLASS_OPTIONAL(PIP, PIPViewController)
@@ -673,17 +672,9 @@ WebVideoPresentationInterfaceMacObjC *VideoPresentationInterfaceMac::videoPresen
 
         auto model = m_playbackSessionInterface->playbackSessionModel();
 
-        AVPlayerTimeControlStatus timeControlStatus = AVPlayerTimeControlStatusPaused;
-        if (model->isStalled() && model->isPlaying())
-            timeControlStatus = AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate;
-        else if (model->isPlaying())
-            timeControlStatus = AVPlayerTimeControlStatusPlaying;
-
-        [videoPresentationInterfaceObjC() updateRate:model->playbackRate() andTimeControlStatus:timeControlStatus];
-
         durationChanged(model->duration());
         currentTimeChanged(model->currentTime(), [[NSProcessInfo processInfo] systemUptime]);
-        rateChanged({ }, model->playbackRate(), model->defaultPlaybackRate());
+        rateChanged(model->playbackState(), model->playbackRate(), model->defaultPlaybackRate());
     }
 
     return m_webVideoPresentationInterfaceObjC.get();
@@ -700,7 +691,7 @@ void VideoPresentationInterfaceMac::setupFullscreen(const IntRect& initialRect, 
 
     [videoPresentationInterfaceObjC() setUpPIPForVideoView:layerHostView() withFrame:(NSRect)initialRect inWindow:parentWindow];
 
-    RunLoop::protectedMain()->dispatch([protectedThis = Ref { *this }, this] {
+    RunLoop::mainSingleton().dispatch([protectedThis = Ref { *this }, this] {
         if (RefPtr model = videoPresentationModel()) {
             model->didSetupFullscreen();
             model->setRequiresTextTrackRepresentation(true);

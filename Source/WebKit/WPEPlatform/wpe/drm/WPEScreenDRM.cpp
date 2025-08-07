@@ -26,6 +26,7 @@
 #include "config.h"
 #include "WPEScreenDRM.h"
 
+#include "WPEDisplayDRMPrivate.h"
 #include "WPEScreenDRMPrivate.h"
 #include "WPEScreenSyncObserverDRM.h"
 #include <fcntl.h>
@@ -45,6 +46,8 @@ WEBKIT_DEFINE_FINAL_TYPE(WPEScreenDRM, wpe_screen_drm, WPE_TYPE_SCREEN, WPEScree
 
 static void wpeScreenDRMInvalidate(WPEScreen* screen)
 {
+    WPE_SCREEN_CLASS(wpe_screen_drm_parent_class)->invalidate(screen);
+
     auto* priv = WPE_SCREEN_DRM(screen)->priv;
     priv->crtc = nullptr;
     priv->syncObserver = nullptr;
@@ -54,9 +57,15 @@ static WPEScreenSyncObserver* wpeScreenDRMGetSyncObserver(WPEScreen* screen)
 {
     auto* priv = WPE_SCREEN_DRM(screen)->priv;
     if (!priv->syncObserver && priv->crtc) {
-        if (const char* device = wpe_display_get_drm_device(wpe_display_get_primary())) {
-            if (auto fd = UnixFileDescriptor(open(device, O_RDWR | O_CLOEXEC), UnixFileDescriptor::Adopt))
+        if (auto* device = wpeDisplayDRMGetDisplayDevice(WPE_DISPLAY_DRM(wpe_display_get_primary()))) {
+            const char* filename = wpe_drm_device_get_primary_node(device);
+            if (auto fd = UnixFileDescriptor(open(filename, O_RDWR | O_CLOEXEC), UnixFileDescriptor::Adopt)) {
                 priv->syncObserver = adoptGRef(wpeScreenSyncObserverDRMCreate(WTFMove(fd), priv->crtc->index()));
+                if (priv->syncObserver)
+                    g_debug("WPEScreenDRM: Created WPEScreenSyncObserverDRM for device %s with CRTC index %u", filename, priv->crtc->index());
+                else
+                    g_debug("WPEScreenDRM: Failed to create a WPEScreenSyncObserverDRM for device %s with CRTC index %u", filename, priv->crtc->index());
+            }
         }
     }
     return priv->syncObserver.get();
