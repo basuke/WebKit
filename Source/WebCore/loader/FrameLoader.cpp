@@ -601,8 +601,14 @@ void FrameLoader::stopLoading(UnloadEventPolicy unloadEventPolicy)
         DatabaseManager::singleton().stopDatabases(*document, nullptr);
 
         if (document->settings().navigationAPIEnabled() && !m_doNotAbortNavigationAPI && unloadEventPolicy != UnloadEventPolicy::UnloadAndPageHide) {
+            RELEASE_LOG(Navigation, "FrameLoader::stopLoading - calling abortOngoingNavigationIfNeeded (doNotAbortNavigationAPI=%s) - ABORT SOURCE 1", m_doNotAbortNavigationAPI ? "YES" : "NO");
             RefPtr window = frame->document()->window();
             window->protectedNavigation()->abortOngoingNavigationIfNeeded();
+        } else {
+            RELEASE_LOG(Navigation, "FrameLoader::stopLoading - NOT aborting Navigation API (enabled=%s, doNotAbort=%s, unloadPolicy=%d)", 
+                document->settings().navigationAPIEnabled() ? "YES" : "NO",
+                m_doNotAbortNavigationAPI ? "YES" : "NO", 
+                static_cast<int>(unloadEventPolicy));
         }
     }
 
@@ -1484,7 +1490,25 @@ void FrameLoader::loadFrameRequest(FrameLoadRequest&& request, Event* event, Ref
                 RefPtr<SerializedScriptValue> stateObject;
                 if (RefPtr currentItem = history().currentItem())
                     stateObject = currentItem->navigationAPIStateObject();
-                if (!dispatchNavigateEvent(loadType, request, false, formState.get(), event, stateObject.get()))
+                
+                // For Navigation API reloads with fragments, treat as same-document navigation
+                bool isSameDocument = request.resourceRequest().url().hasFragmentIdentifier() && request.isFromNavigationAPI();
+                RELEASE_LOG(Navigation, "FrameLoader::loadFrameRequest - reload with hasFragment=%s, isFromNavigationAPI=%s, treating as isSameDocument=%s", 
+                    request.resourceRequest().url().hasFragmentIdentifier() ? "YES" : "NO",
+                    request.isFromNavigationAPI() ? "YES" : "NO",
+                    isSameDocument ? "YES" : "NO");
+                
+                bool navigateEventResult = dispatchNavigateEvent(loadType, request, isSameDocument, formState.get(), event, stateObject.get());
+                RELEASE_LOG(Navigation, "FrameLoader::loadFrameRequest - dispatchNavigateEvent returned %s", navigateEventResult ? "true" : "false");
+                
+                // For same-document Navigation API reloads, if the navigate event was dispatched (regardless of interception),
+                // let the Navigation API handle everything and don't continue with frame loader processing
+                if (isSameDocument) {
+                    RELEASE_LOG(Navigation, "FrameLoader::loadFrameRequest - same-document Navigation API reload, stopping frame loader processing");
+                    return;
+                }
+                
+                if (!navigateEventResult)
                     return;
                 if (!frame->page())
                     return;
@@ -2171,9 +2195,14 @@ void FrameLoader::stopForUserCancel(bool deferCheckLoadComplete)
 
     stopAllLoaders();
 
-    if (m_frame->document()->settings().navigationAPIEnabled()) {
+    if (m_frame->document()->settings().navigationAPIEnabled() && !m_doNotAbortNavigationAPI) {
+        RELEASE_LOG(Navigation, "FrameLoader::continueLoadAfterNavigationPolicy - calling abortOngoingNavigationIfNeeded - ABORT SOURCE 2 (doNotAbort=%s)", m_doNotAbortNavigationAPI ? "YES" : "NO");
         RefPtr window = m_frame->document()->window();
         window->protectedNavigation()->abortOngoingNavigationIfNeeded();
+    } else {
+        RELEASE_LOG(Navigation, "FrameLoader::continueLoadAfterNavigationPolicy - NOT aborting Navigation API (enabled=%s, doNotAbort=%s)", 
+            m_frame->document()->settings().navigationAPIEnabled() ? "YES" : "NO",
+            m_doNotAbortNavigationAPI ? "YES" : "NO");
     }
 
 #if PLATFORM(IOS_FAMILY)
@@ -4091,7 +4120,10 @@ void FrameLoader::continueLoadAfterNavigationPolicy(const ResourceRequest& reque
     FrameLoadType type = policyChecker().loadType();
 
     {
-        SetForScope<bool> doNotAbortNavigationAPI { m_doNotAbortNavigationAPI, m_policyDocumentLoader && m_policyDocumentLoader->triggeringAction().isFromNavigationAPI() };
+        bool isFromNavigationAPI = m_policyDocumentLoader && m_policyDocumentLoader->triggeringAction().isFromNavigationAPI();
+        RELEASE_LOG(Navigation, "FrameLoader::receivedFirstData - isFromNavigationAPI=%s, setting doNotAbortNavigationAPI=%s", 
+            isFromNavigationAPI ? "YES" : "NO", isFromNavigationAPI ? "YES" : "NO");
+        SetForScope<bool> doNotAbortNavigationAPI { m_doNotAbortNavigationAPI, isFromNavigationAPI };
 
         // A new navigation is in progress, so don't clear the history's provisional item.
         stopAllLoaders(ClearProvisionalItem::No);

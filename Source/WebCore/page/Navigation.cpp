@@ -389,6 +389,7 @@ Navigation::Result Navigation::apiMethodTrackerDerivedResult(const NavigationAPI
 // https://html.spec.whatwg.org/multipage/nav-history-apis.html#dom-navigation-reload
 Navigation::Result Navigation::reload(ReloadOptions&& options, Ref<DeferredPromise>&& committed, Ref<DeferredPromise>&& finished)
 {
+    RELEASE_LOG(Navigation, "Navigation::reload called");
     auto serializedState = serializeState(options.state);
     if (serializedState.hasException())
         return createErrorResult(WTFMove(committed), WTFMove(finished), serializedState.releaseException());
@@ -406,12 +407,36 @@ Navigation::Result Navigation::reload(ReloadOptions&& options, Ref<DeferredPromi
     auto initiatedByMainFrame = lexicalFrame && lexicalFrame->isMainFrame() ? InitiatedByMainFrame::Yes : InitiatedByMainFrame::Unknown;
     RefPtr frame = this->frame();
     RefPtr document = frame->document();
+    
+    RELEASE_LOG(Navigation, "Navigation::reload for URL: %s (hasFragment=%s)", document->url().string().utf8().data(), document->url().hasFragmentIdentifier() ? "YES" : "NO");
+    
+    // For same-document reloads with fragments, handle directly via Navigation API to avoid frame loader conflicts
+    if (document->url().hasFragmentIdentifier()) {
+        RELEASE_LOG(Navigation, "Navigation::reload - handling same-document reload with fragment directly via Navigation API");
+        
+        // Set the flag to prevent frame loader from aborting our intercepted navigation
+        frame->loader().setDoNotAbortNavigationAPI(true);
+        RELEASE_LOG(Navigation, "Navigation::reload - set doNotAbortNavigationAPI=true to prevent frame loader abort");
+        
+        bool wasIntercepted = !dispatchPushReplaceReloadNavigateEvent(document->url(), NavigationNavigationType::Reload, true, nullptr);
+        if (wasIntercepted) {
+            RELEASE_LOG(Navigation, "Navigation::reload - navigate event was intercepted, Navigation API handling everything (keeping doNotAbort=true)");
+        } else {
+            // If not intercepted, reset the flag since frame loader might need to handle the navigation
+            frame->loader().setDoNotAbortNavigationAPI(false);
+            RELEASE_LOG(Navigation, "Navigation::reload - navigate event was NOT intercepted, reset doNotAbortNavigationAPI=false");
+        }
+        return apiMethodTrackerDerivedResult(*apiMethodTracker);
+    }
+    
     ResourceRequest resourceRequest { URL { document->url() }, frame->loader().outgoingReferrer(), ResourceRequestCachePolicy::ReloadIgnoringCacheData };
     FrameLoadRequest frameLoadRequest { *document, document->securityOrigin(), WTFMove(resourceRequest), selfTargetFrameName(), initiatedByMainFrame };
     frameLoadRequest.setLockHistory(LockHistory::Yes);
     frameLoadRequest.setLockBackForwardList(LockBackForwardList::Yes);
     frameLoadRequest.setShouldOpenExternalURLsPolicy(document->shouldOpenExternalURLsPolicyToPropagate());
+    frameLoadRequest.setIsFromNavigationAPI(true);
 
+    RELEASE_LOG(Navigation, "Navigation::reload calling changeLocation for URL: %s with isFromNavigationAPI=true", document->url().string().utf8().data());
     frame->loader().changeLocation(WTFMove(frameLoadRequest));
 
     return apiMethodTrackerDerivedResult(*apiMethodTracker);
@@ -817,6 +842,7 @@ auto Navigation::registerAbortHandler() -> Ref<AbortHandler>
 // https://html.spec.whatwg.org/multipage/nav-history-apis.html#abort-the-ongoing-navigation
 void Navigation::abortOngoingNavigation(NavigateEvent& event)
 {
+    RELEASE_LOG(Navigation, "Navigation::abortOngoingNavigation called for event %p", &event);
     m_abortHandlers.forEach([](auto& abortHandler) {
         abortHandler.markAsAborted();
     });
@@ -862,6 +888,12 @@ void Navigation::abortOngoingNavigation(NavigateEvent& event)
     if (RefPtr transition = m_transition) {
         transition->rejectPromise(exception, domException);
         m_transition = nullptr;
+    }
+
+    // Reset the doNotAbortNavigationAPI flag when navigation is aborted
+    if (RefPtr frame = window()->protectedFrame()) {
+        frame->loader().setDoNotAbortNavigationAPI(false);
+        RELEASE_LOG(Navigation, "Navigation::abortOngoingNavigation - reset doNotAbortNavigationAPI=false");
     }
 }
 
@@ -928,6 +960,7 @@ Navigation::DispatchResult Navigation::innerDispatchNavigateEvent(NavigationNavi
 
     bool wasBeingDispatched = m_ongoingNavigateEvent ? m_ongoingNavigateEvent->isBeingDispatched() : false;
 
+    RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - about to abort ongoing navigation before dispatching new event (type=%d) - ABORT SOURCE 3", static_cast<int>(navigationType));
     abortOngoingNavigationIfNeeded();
 
     // Prevent recursion on synchronous history navigation steps issued
@@ -935,6 +968,7 @@ Navigation::DispatchResult Navigation::innerDispatchNavigateEvent(NavigationNavi
     if (wasBeingDispatched && classicHistoryAPIState)
         return DispatchResult::Completed;
 
+    RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - promoting API method tracker for destination key: %s", destination->key().utf8().data());
     promoteUpcomingAPIMethodTracker(destination->key());
 
     RefPtr document = protectedWindow()->document();
@@ -989,14 +1023,24 @@ Navigation::DispatchResult Navigation::innerDispatchNavigateEvent(NavigationNavi
         apiMethodTracker->info = JSC::jsUndefined();
 
     Ref event = NavigateEvent::create(eventNames().navigateEvent, init, abortController.get());
+    
+    if (m_ongoingNavigateEvent) {
+        RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - replacing ongoing event %p with new event %p, navigationType=%d, destination URL=%s", m_ongoingNavigateEvent.get(), event.ptr(), static_cast<int>(navigationType), destination->url().string().utf8().data());
+    } else {
+        RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - setting ongoing event to %p, navigationType=%d, destination URL=%s", event.ptr(), static_cast<int>(navigationType), destination->url().string().utf8().data());
+    }
+    
     m_ongoingNavigateEvent = event.ptr();
     m_focusChangedDuringOngoingNavigation = FocusDidChange::No;
     m_suppressNormalScrollRestorationDuringOngoingNavigation = false;
 
+    RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - dispatching event %p", event.ptr());
     dispatchEvent(event);
+    RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - after dispatch, event %p wasIntercepted=%s", event.ptr(), event->wasIntercepted() ? "YES" : "NO");
 
     // If the frame was detached in our event.
     if (!frame()) {
+        RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - frame detached, aborting event %p", event.ptr());
         abortOngoingNavigation(event);
         return DispatchResult::Aborted;
     }
@@ -1013,7 +1057,9 @@ Navigation::DispatchResult Navigation::innerDispatchNavigateEvent(NavigationNavi
     // FIXME: Prepare to run script given navigation's relevant settings object.
 
     // Step 32:
+    RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - checking if event %p was intercepted: %s", event.ptr(), event->wasIntercepted() ? "YES" : "NO");
     if (event->wasIntercepted()) {
+        RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - setting event %p to Committed", event.ptr());
         event->setInterceptionState(InterceptionState::Committed);
 
         RefPtr fromNavigationHistoryEntry = currentEntry();
@@ -1039,7 +1085,9 @@ Navigation::DispatchResult Navigation::innerDispatchNavigateEvent(NavigationNavi
         }
     }
 
+    RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - endResultIsSameDocument=%s, wasIntercepted=%s for event %p", endResultIsSameDocument ? "YES" : "NO", event->wasIntercepted() ? "YES" : "NO", event.ptr());
     if (endResultIsSameDocument) {
+        RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - setting up promises for event %p with %zu handlers", event.ptr(), event->handlers().size());
         Vector<RefPtr<DOMPromise>> promiseList;
 
         for (auto& handler : event->handlers()) {
@@ -1053,22 +1101,38 @@ Navigation::DispatchResult Navigation::innerDispatchNavigateEvent(NavigationNavi
         }
 
         if (promiseList.isEmpty()) {
-            auto promiseAndWrapper = createPromiseAndWrapper(*document);
-            Ref { promiseAndWrapper.second }->resolveWithCallback([](JSDOMGlobalObject&) {
-                return JSC::jsUndefined();
-            });
-            promiseList.append(WTFMove(promiseAndWrapper.first));
+            if (event->wasIntercepted()) {
+                RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - creating empty promise for intercepted event %p with no handlers", event.ptr());
+                auto promiseAndWrapper = createPromiseAndWrapper(*document);
+                Ref { promiseAndWrapper.second }->resolveWithCallback([](JSDOMGlobalObject&) {
+                    return JSC::jsUndefined();
+                });
+                promiseList.append(WTFMove(promiseAndWrapper.first));
+            } else {
+                RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - skipping promise creation for non-intercepted event %p", event.ptr());
+            }
         }
 
-        // FIXME: this emulates the behavior of a Promise wrapped around waitForAll, but we may want the real
-        // thing if the ordering-and-transition tests show timing related issues related to this.
-        scriptExecutionContext->checkedEventLoop()->queueTask(TaskSource::DOMManipulation, [weakThis = WeakPtr { this }, promiseList, abortController, document, apiMethodTracker]() {
-            waitForAllPromises(promiseList, [abortController, document, apiMethodTracker, weakThis]() mutable {
+        // Only set up promise handling if we have promises to wait for
+        if (!promiseList.isEmpty()) {
+            RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - setting up promise task for event %p with %zu promises", event.ptr(), promiseList.size());
+            // FIXME: this emulates the behavior of a Promise wrapped around waitForAll, but we may want the real
+            // thing if the ordering-and-transition tests show timing related issues related to this.
+            scriptExecutionContext->checkedEventLoop()->queueTask(TaskSource::DOMManipulation, [weakThis = WeakPtr { this }, promiseList, abortController, document, apiMethodTracker, expectedEvent = WeakPtr { event.get() }]() {
+            waitForAllPromises(promiseList, [abortController, document, apiMethodTracker, weakThis, expectedEvent]() mutable {
                 RefPtr protectedThis = weakThis.get();
-                if (!protectedThis || abortController->signal().aborted() || !document->isFullyActive() || !protectedThis->m_ongoingNavigateEvent)
+                RefPtr currentEvent = expectedEvent.get();
+                if (!protectedThis || !currentEvent || abortController->signal().aborted() || !document->isFullyActive() || !protectedThis->m_ongoingNavigateEvent)
                     return;
 
+                // Verify this is still the same ongoing event
+                if (protectedThis->m_ongoingNavigateEvent.get() != currentEvent.get()) {
+                    RELEASE_LOG(Navigation, "Navigation promise success handler - expected event %p but ongoing is %p, skipping finish()", currentEvent.get(), protectedThis->m_ongoingNavigateEvent.get());
+                    return;
+                }
+
                 auto focusChanged = std::exchange(protectedThis->m_focusChangedDuringOngoingNavigation, FocusDidChange::No);
+                RELEASE_LOG(Navigation, "Navigation promise success handler - calling finish() on ongoing event %p", protectedThis->m_ongoingNavigateEvent.get());
                 protectedThis->protectedOngoingNavigateEvent()->finish(*document, InterceptionHandlersDidFulfill::Yes, focusChanged);
                 protectedThis->m_ongoingNavigateEvent = nullptr;
 
@@ -1082,12 +1146,20 @@ Navigation::DispatchResult Navigation::innerDispatchNavigateEvent(NavigationNavi
 
                 protectedThis->m_ongoingNavigateEvent = nullptr;
 
-            }, [abortController, document, apiMethodTracker, weakThis](JSC::JSValue result) mutable {
+            }, [abortController, document, apiMethodTracker, weakThis, expectedEvent](JSC::JSValue result) mutable {
                 RefPtr protectedThis = weakThis.get();
-                if (!protectedThis || abortController->signal().aborted() || !document->isFullyActive() || !protectedThis->m_ongoingNavigateEvent)
+                RefPtr currentEvent = expectedEvent.get();
+                if (!protectedThis || !currentEvent || abortController->signal().aborted() || !document->isFullyActive() || !protectedThis->m_ongoingNavigateEvent)
                     return;
 
+                // Verify this is still the same ongoing event
+                if (protectedThis->m_ongoingNavigateEvent.get() != currentEvent.get()) {
+                    RELEASE_LOG(Navigation, "Navigation promise failure handler - expected event %p but ongoing is %p, skipping finish()", currentEvent.get(), protectedThis->m_ongoingNavigateEvent.get());
+                    return;
+                }
+
                 auto focusChanged = std::exchange(protectedThis->m_focusChangedDuringOngoingNavigation, FocusDidChange::No);
+                RELEASE_LOG(Navigation, "Navigation promise failure handler - calling finish() on ongoing event %p", protectedThis->m_ongoingNavigateEvent.get());
                 protectedThis->protectedOngoingNavigateEvent()->finish(*document, InterceptionHandlersDidFulfill::No, focusChanged);
                 protectedThis->m_ongoingNavigateEvent = nullptr;
 
@@ -1109,24 +1181,39 @@ Navigation::DispatchResult Navigation::innerDispatchNavigateEvent(NavigationNavi
                     transition->rejectPromise(result);
             });
         });
+        } else {
+            RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - no promises to wait for, skipping promise setup for event %p", event.ptr());
+            // For non-intercepted same-document navigations, we still need to resolve API method tracker promises
+            if (apiMethodTracker) {
+                RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - resolving API method tracker %p for non-intercepted same-document navigation", apiMethodTracker.get());
+                resolveFinishedPromise(apiMethodTracker.get());
+                if (RefPtr transition = std::exchange(m_transition, nullptr))
+                    transition->resolvePromise();
+            }
+        }
 
         // If a new event has been dispatched in our event handler then we were aborted above.
-        if (m_ongoingNavigateEvent != event.ptr())
+        if (m_ongoingNavigateEvent != event.ptr()) {
+            RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - event %p was replaced by %p, returning Aborted", event.ptr(), m_ongoingNavigateEvent.get());
             return DispatchResult::Aborted;
+        }
     } else if (apiMethodTracker) {
         // For cross-document navigations, don't cleanup the tracker immediately.
         // It should remain ongoing until the navigation completes, fails, or gets interrupted.
-        RELEASE_LOG(Navigation, "innerDispatchNavigateEvent: cross-document navigation, keeping tracker=%p alive", apiMethodTracker.get());
+        RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - cross-document navigation for event %p, keeping tracker=%p alive", event.ptr(), apiMethodTracker.get());
     } else {
         // FIXME: This situation isn't clear, we've made it through the event doing nothing so
         // to avoid incorrectly being aborted we clear this.
         // To reproduce see `inspector/runtime/execution-context-in-scriptless-page.html`.
+        RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - clearing ongoing event %p (no promises, no tracker)", event.ptr());
         m_ongoingNavigateEvent = nullptr;
     }
 
     // FIXME: Step 35 Clean up after running script
 
-    return event->wasIntercepted() ? DispatchResult::Intercepted : DispatchResult::Completed;
+    auto result = event->wasIntercepted() ? DispatchResult::Intercepted : DispatchResult::Completed;
+    RELEASE_LOG(Navigation, "Navigation::innerDispatchNavigateEvent - returning %s for event %p", result == DispatchResult::Intercepted ? "Intercepted" : "Completed", event.ptr());
+    return result;
 }
 
 // https://html.spec.whatwg.org/multipage/nav-history-apis.html#fire-a-traverse-navigate-event
@@ -1151,6 +1238,8 @@ Navigation::DispatchResult Navigation::dispatchTraversalNavigateEvent(HistoryIte
 // https://html.spec.whatwg.org/multipage/nav-history-apis.html#fire-a-push/replace/reload-navigate-event
 bool Navigation::dispatchPushReplaceReloadNavigateEvent(const URL& url, NavigationNavigationType navigationType, bool isSameDocument, FormState* formState, SerializedScriptValue* classicHistoryAPIState, Element* sourceElement)
 {
+    RELEASE_LOG(Navigation, "Navigation::dispatchPushReplaceReloadNavigateEvent - url=%s, type=%d, isSameDocument=%s", url.string().utf8().data(), static_cast<int>(navigationType), isSameDocument ? "YES" : "NO");
+    
     Ref destination = NavigationDestination::create(url, nullptr, isSameDocument);
     if (classicHistoryAPIState)
         destination->setStateObject(classicHistoryAPIState);
@@ -1160,7 +1249,9 @@ bool Navigation::dispatchPushReplaceReloadNavigateEvent(const URL& url, Navigati
         sourceElement = nullptr;
     }
 
-    return innerDispatchNavigateEvent(navigationType, WTFMove(destination), { }, formState, classicHistoryAPIState, sourceElement) == DispatchResult::Completed;
+    auto result = innerDispatchNavigateEvent(navigationType, WTFMove(destination), { }, formState, classicHistoryAPIState, sourceElement);
+    RELEASE_LOG(Navigation, "Navigation::dispatchPushReplaceReloadNavigateEvent - result=%s", result == DispatchResult::Completed ? "Completed" : (result == DispatchResult::Intercepted ? "Intercepted" : "Aborted"));
+    return result == DispatchResult::Completed;
 }
 
 // https://html.spec.whatwg.org/multipage/nav-history-apis.html#fire-a-download-request-navigate-event
@@ -1173,8 +1264,15 @@ bool Navigation::dispatchDownloadNavigateEvent(const URL& url, const String& dow
 // https://html.spec.whatwg.org/multipage/nav-history-apis.html#inform-the-navigation-api-about-aborting-navigation
 void Navigation::abortOngoingNavigationIfNeeded()
 {
-    if (RefPtr ongoingNavigateEvent = m_ongoingNavigateEvent)
+    if (RefPtr ongoingNavigateEvent = m_ongoingNavigateEvent) {
+        RELEASE_LOG(Navigation, "Navigation::abortOngoingNavigationIfNeeded aborting ongoing event %p (type=%d, wasIntercepted=%s)", 
+            ongoingNavigateEvent.get(), 
+            static_cast<int>(ongoingNavigateEvent->navigationType()),
+            ongoingNavigateEvent->wasIntercepted() ? "YES" : "NO");
         abortOngoingNavigation(*ongoingNavigateEvent);
+    } else {
+        RELEASE_LOG(Navigation, "Navigation::abortOngoingNavigationIfNeeded called but no ongoing event");
+    }
 }
 
 } // namespace WebCore
