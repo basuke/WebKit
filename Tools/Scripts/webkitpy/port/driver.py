@@ -595,6 +595,11 @@ class Driver(object):
             cmd.append('--localhost-alias')
             cmd.append(alias)
 
+        # Add .localhost wildcard support for WPT tests when localhost_aliases is not supported
+        if not self._port.localhost_aliases():
+            cmd.append('--allowed-host')
+            cmd.append('.localhost')
+
         if not self._port.get_option('enable_all_experimental_features'):
             cmd.append('--no-enable-all-experimental-features')
 

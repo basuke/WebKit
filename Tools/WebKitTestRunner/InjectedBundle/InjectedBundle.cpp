@@ -640,7 +640,19 @@ bool InjectedBundle::isAllowedHost(WKStringRef host)
 {
     if (m_allowedHosts.isEmpty())
         return false;
-    return m_allowedHosts.contains(toWTFString(host));
+
+    auto hostString = toWTFString(host);
+
+    return m_allowedHosts.containsIf([&hostString](const String& pattern) {
+        if (pattern == hostString)
+            return true;
+
+        // Suffix match: ".localhost" matches "www1.localhost", "www2.localhost", etc.
+        if (pattern.startsWith('.') && hostString.endsWith(pattern))
+            return true;
+
+        return false;
+    });
 }
 
 void InjectedBundle::setAllowsAnySSLCertificate(bool allowsAnySSLCertificate)
