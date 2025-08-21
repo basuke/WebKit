@@ -213,12 +213,19 @@ static bool shouldEnableAsyncOverflowScrolling(const std::string& pathOrURL)
     return isWebPlatformTestURL({ { }, String::fromUTF8(pathOrURL.c_str()) });
 }
 
+static bool shouldEnableAsyncDocumentLifecycleEvents(const std::string& pathOrURL)
+{
+    return isWebPlatformTestURL({ { }, String::fromUTF8(pathOrURL.c_str()) });
+}
+
 TestFeatures TestController::platformSpecificFeatureDefaultsForTest(const TestCommand& command) const
 {
     TestFeatures features;
     features.boolTestRunnerFeatures.insert({ "useThreadedScrolling", true });
     if (shouldEnableAsyncOverflowScrolling(command.pathOrURL))
         features.boolWebPreferenceFeatures.insert({ "AsyncOverflowScrollingEnabled", true });
+    if (shouldEnableAsyncDocumentLifecycleEvents(command.pathOrURL))
+        features.boolWebPreferenceFeatures.insert({ "AsyncDocumentLifecycleEventsEnabled", true });
     return features;
 }
 

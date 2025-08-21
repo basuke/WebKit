@@ -554,6 +554,20 @@ AsyncClipboardAPIEnabled:
     WebCore:
       default: false
 
+AsyncDocumentLifecycleEventsEnabled:
+  type: bool
+  status: testable
+  category: dom
+  humanReadableName: "Async Document Lifecycle Events"
+  humanReadableDescription: "Fire DOMContentLoaded, load, and pageshow events asynchronously"
+  defaultValue:
+    WebKitLegacy:
+      default: false
+    WebKit:
+      default: false
+    WebCore:
+      default: false
+
 AsyncFrameScrollingEnabled:
   type: bool
   status: internal

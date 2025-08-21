@@ -1,0 +1,12 @@
+<!-- webkit-test-runner [ AsyncDocumentLifecycleEventsEnabled=false ] -->
+<!doctype html>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+
+<script type="module">
+
+promise_test(async t => {
+  assert_equals(document.readyState, 'complete', 'document.readyState should be complete');
+  t.done();
+}, "in microtask execution in module, window.onload should be fired first for sync events");
+</script>

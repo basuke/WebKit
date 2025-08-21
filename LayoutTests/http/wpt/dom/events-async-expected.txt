@@ -1,0 +1,3 @@
+
+PASS microtask should run before window.onload when events are async
+

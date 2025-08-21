@@ -1,0 +1,3 @@
+
+PASS in microtask execution in module, window.onload should be fired first for sync events
+

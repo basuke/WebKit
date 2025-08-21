@@ -6831,9 +6831,24 @@ void Document::dispatchWindowLoadEvent()
     ASSERT_WITH_SECURITY_IMPLICATION(ScriptDisallowedScope::InMainThread::isScriptAllowed());
     if (!m_domWindow)
         return;
-    protectedWindow()->dispatchLoadEvent();
-    m_loadEventFinished = true;
-    protectedCachedResourceLoader()->documentDidFinishLoadEvent();
+
+    if (settings().asyncDocumentLifecycleEventsEnabled()) {
+        // Queue the load event to fire asynchronously
+        incrementLoadEventDelayCount();
+        eventLoop().queueTask(TaskSource::DOMManipulation, [this, protectedThis = Ref { *this }] {
+            if (RefPtr window = m_domWindow) {
+                window->dispatchLoadEvent();
+                m_loadEventFinished = true;
+                protectedCachedResourceLoader()->documentDidFinishLoadEvent();
+            }
+            decrementLoadEventDelayCount();
+        });
+    } else {
+        // Legacy synchronous behavior
+        protectedWindow()->dispatchLoadEvent();
+        m_loadEventFinished = true;
+        protectedCachedResourceLoader()->documentDidFinishLoadEvent();
+    }
 }
 
 void Document::whenWindowLoadEventOrDestroyed(CompletionHandler<void()>&& completionHandler)
@@ -8112,20 +8127,38 @@ void Document::finishedParsing()
         WTFEmitSignpost(this, NavigationAndPaintTiming, "domContentLoadedEventBegin");
     }
 
-    // FIXME: Schedule a task to fire DOMContentLoaded event instead. See webkit.org/b/82931
     RefPtr documentLoader = loader();
     bool isInMiddleOfInitializingIframe = documentLoader && documentLoader->isInFinishedLoadingOfEmptyDocument();
     if (!isInMiddleOfInitializingIframe)
         eventLoop().performMicrotaskCheckpoint();
 
-    dispatchEvent(Event::create(eventNames().DOMContentLoadedEvent, Event::CanBubble::Yes, Event::IsCancelable::No));
+    if (settings().asyncDocumentLifecycleEventsEnabled()) {
+        // Schedule a task to fire DOMContentLoaded event. See webkit.org/b/82931
+        incrementLoadEventDelayCount();
+        eventLoop().queueTask(TaskSource::DOMManipulation, [this, protectedThis = Ref { *this }] {
+            dispatchEvent(Event::create(eventNames().DOMContentLoadedEvent, Event::CanBubble::Yes, Event::IsCancelable::No));
 
-    if (!m_eventTiming.domContentLoadedEventEnd) {
-        auto now = MonotonicTime::now();
-        m_eventTiming.domContentLoadedEventEnd = now;
-        if (auto* eventTiming = documentEventTimingFromNavigationTiming())
-            eventTiming->domContentLoadedEventEnd = now;
-        WTFEmitSignpost(this, NavigationAndPaintTiming, "domContentLoadedEventEnd");
+            if (!m_eventTiming.domContentLoadedEventEnd) {
+                auto now = MonotonicTime::now();
+                m_eventTiming.domContentLoadedEventEnd = now;
+                if (auto* eventTiming = documentEventTimingFromNavigationTiming())
+                    eventTiming->domContentLoadedEventEnd = now;
+                WTFEmitSignpost(this, NavigationAndPaintTiming, "domContentLoadedEventEnd");
+            }
+
+            decrementLoadEventDelayCount();
+        });
+    } else {
+        // Legacy synchronous behavior
+        dispatchEvent(Event::create(eventNames().DOMContentLoadedEvent, Event::CanBubble::Yes, Event::IsCancelable::No));
+
+        if (!m_eventTiming.domContentLoadedEventEnd) {
+            auto now = MonotonicTime::now();
+            m_eventTiming.domContentLoadedEventEnd = now;
+            if (auto* eventTiming = documentEventTimingFromNavigationTiming())
+                eventTiming->domContentLoadedEventEnd = now;
+            WTFEmitSignpost(this, NavigationAndPaintTiming, "domContentLoadedEventEnd");
+        }
     }
 
     if (RefPtr frame = this->frame()) {
@@ -8765,8 +8798,19 @@ void Document::dispatchPageshowEvent(PageshowEventPersistence persisted)
     if (m_lastPageStatus == PageStatus::Shown)
         return;
     m_lastPageStatus = PageStatus::Shown;
-    // FIXME: https://bugs.webkit.org/show_bug.cgi?id=36334 Pageshow event needs to fire asynchronously.
-    dispatchWindowEvent(PageTransitionEvent::create(eventNames().pageshowEvent, persisted == PageshowEventPersistence::Persisted), this);
+
+    if (settings().asyncDocumentLifecycleEventsEnabled()) {
+        // Fire pageshow event asynchronously. See https://bugs.webkit.org/show_bug.cgi?id=36334
+        incrementLoadEventDelayCount();
+        eventLoop().queueTask(TaskSource::DOMManipulation, [this, protectedThis = Ref { *this }, persisted] {
+            if (RefPtr window = m_domWindow)
+                dispatchWindowEvent(PageTransitionEvent::create(eventNames().pageshowEvent, persisted == PageshowEventPersistence::Persisted), this);
+            decrementLoadEventDelayCount();
+        });
+    } else {
+        // Legacy synchronous behavior
+        dispatchWindowEvent(PageTransitionEvent::create(eventNames().pageshowEvent, persisted == PageshowEventPersistence::Persisted), this);
+    }
 }
 
 void Document::dispatchPagehideEvent(PageshowEventPersistence persisted)

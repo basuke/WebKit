@@ -1,0 +1,11 @@
+<!-- webkit-test-runner [ AsyncDocumentLifecycleEventsEnabled=true ] -->
+<!doctype html>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+
+<script type="module">
+
+promise_test(async t => {
+  await new Promise(resolve => window.onload = () => t.step_timeout(resolve, 0));
+}, "microtask should run before window.onload when events are async");
+</script>
