@@ -7083,6 +7083,15 @@ imported/w3c/web-platform-tests/navigation-api/navigate-event/cross-window/open-
 imported/w3c/web-platform-tests/navigation-api/navigate-event/cross-window/submit-crossdocument-crossorigin-sameorigindomain.sub.html [ Skip ]
 imported/w3c/web-platform-tests/navigation-api/navigate-event/cross-window/submit-samedocument-crossorigin-sameorigindomain.sub.html [ Skip ]
 
+# Flakey test result. Skipping for now.
+imported/w3c/web-platform-tests/navigation-api/precommit-handler/precommitHandler-push.html [ Skip ]
+imported/w3c/web-platform-tests/navigation-api/precommit-handler/precommitHandler-reload.html [ Skip ]
+imported/w3c/web-platform-tests/navigation-api/precommit-handler/precommitHandler-replace.html [ Skip ]
+
+# webkit.org/b/277948 WebKit can fire the load event before JS module starts executing
+imported/w3c/web-platform-tests/navigation-api/ordering-and-transition/navigate-double-intercept.html?currententrychange [ Skip ]
+imported/w3c/web-platform-tests/navigation-api/ordering-and-transition/navigate-double-intercept.html?no-currententrychange [ Skip ]
+
 # General flakes, almost exclusively on mac-wk2-stress.
 imported/w3c/web-platform-tests/navigation-api/navigation-methods/return-value/back-204-205-download.html [ Failure Pass ]
 imported/w3c/web-platform-tests/navigation-api/navigation-methods/return-value/navigate-intercept-rejected.html [ Crash Pass ]

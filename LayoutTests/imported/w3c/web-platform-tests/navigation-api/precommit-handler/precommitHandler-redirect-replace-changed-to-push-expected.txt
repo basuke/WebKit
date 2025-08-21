@@ -1,3 +1,0 @@
-
-FAIL precommitHandler redirect() replace changed to push assert_equals: expected "#redirect1" but got "#replace"
-
