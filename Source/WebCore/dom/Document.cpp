@@ -8146,6 +8146,8 @@ void Document::finishedParsing()
                 WTFEmitSignpost(this, NavigationAndPaintTiming, "domContentLoadedEventEnd");
             }
 
+            flushDeferredZeroDelayTimers();
+
             decrementLoadEventDelayCount();
         });
     } else {
@@ -8159,6 +8161,8 @@ void Document::finishedParsing()
                 eventTiming->domContentLoadedEventEnd = now;
             WTFEmitSignpost(this, NavigationAndPaintTiming, "domContentLoadedEventEnd");
         }
+
+        flushDeferredZeroDelayTimers();
     }
 
     if (RefPtr frame = this->frame()) {
@@ -9055,6 +9059,31 @@ void Document::loadEventDelayTimerFired()
     checkCompleted();
     if (RefPtr frame = this->frame())
         frame->loader().checkLoadComplete();
+}
+
+bool Document::shouldDeferZeroDelayTimers() const
+{
+    // Only defer if async events are enabled and DOMContentLoaded hasn't fired yet
+    return settings().asyncDocumentLifecycleEventsEnabled() && !m_domContentLoadedEventWasDispatched;
+}
+
+void Document::deferZeroDelayTimer(Function<void()>&& action)
+{
+    ASSERT(!m_domContentLoadedEventWasDispatched);
+
+    m_deferredZeroDelayTimers.append(WTFMove(action));
+}
+
+void Document::flushDeferredZeroDelayTimers()
+{
+    ASSERT(!m_domContentLoadedEventWasDispatched);
+
+    // Mark that DOMContentLoaded has been dispatched.
+    m_domContentLoadedEventWasDispatched = true;
+
+    auto timers = WTFMove(m_deferredZeroDelayTimers);
+    for (auto& action : timers)
+        action();
 }
 
 void Document::checkCompleted()

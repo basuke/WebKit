@@ -1455,6 +1455,11 @@ public:
     bool isDelayingLoadEvent() const { return m_loadEventDelayCount; }
     WEBCORE_EXPORT void checkCompleted();
 
+    // Support for deferring setTimeout(0) until after DOMContentLoaded with async events
+    bool shouldDeferZeroDelayTimers() const;
+    void deferZeroDelayTimer(Function<void()>&&);
+    void flushDeferredZeroDelayTimers();
+
 #if ENABLE(IOS_TOUCH_EVENTS)
 #include <WebKitAdditions/DocumentIOS.h>
 #endif
@@ -2379,6 +2384,10 @@ private:
     Timer m_loadEventDelayTimer;
 
     CompletionHandler<void()> m_whenWindowLoadEventOrDestroyed;
+
+    // For deferring setTimeout(0) until after DOMContentLoaded with async events
+    Vector<Function<void()>> m_deferredZeroDelayTimers;
+    bool m_domContentLoadedEventWasDispatched { false };
 
     WeakHashMap<Node, std::unique_ptr<QuerySelectorAllResults>, WeakPtrImplWithEventTargetData> m_querySelectorAllResults;
 

@@ -199,6 +199,23 @@ int DOMTimer::install(ScriptExecutionContext& context, std::unique_ptr<Scheduled
 
 int DOMTimer::install(ScriptExecutionContext& context, Function<void(ScriptExecutionContext&)>&& action, Seconds timeout, Type type)
 {
+    // Check if we should defer zero-delay timers until after DOMContentLoaded
+    if (timeout == 0_s && type == Type::SingleShot) {
+        if (RefPtr document = dynamicDowncast<Document>(context)) {
+            if (document->shouldDeferZeroDelayTimers()) {
+                // Defer this timer by wrapping it in a lambda that will be called later
+                // Use a WeakPtr to avoid holding a strong reference to the document
+                document->deferZeroDelayTimer([weakDocument = WeakPtr { *document }, action = WTFMove(action)]() mutable {
+                    // Install the timer with the original action when flushed
+                    if (RefPtr document = weakDocument.get())
+                        DOMTimer::install(*document, WTFMove(action), 0_s, Type::SingleShot);
+                });
+                // Return a dummy ID (0 means the timer was blocked/cancelled)
+                return 0;
+            }
+        }
+    }
+
     Ref timer = adoptRef(*new DOMTimer(context, WTFMove(action), timeout, type));
     timer->suspendIfNeeded();
     timer->makeImminentlyScheduledWorkScopeIfPossible(context);

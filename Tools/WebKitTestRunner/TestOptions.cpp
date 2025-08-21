@@ -84,7 +84,7 @@ const TestFeatures& TestOptions::defaults()
             { "AllowUniversalAccessFromFileURLs", true },
             { "AllowsInlineMediaPlayback", true },
             { "AppBadgeEnabled", true },
-            { "AsyncDocumentLifecycleEventsEnabled", false },
+            { "AsyncDocumentLifecycleEventsEnabled", true },
             { "AsyncFrameScrollingEnabled", false },
             { "AsyncOverflowScrollingEnabled", false },
             { "BuiltInNotificationsEnabled", false },
