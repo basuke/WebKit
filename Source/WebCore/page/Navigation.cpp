@@ -360,7 +360,7 @@ RefPtr<NavigationAPIMethodTracker> Navigation::maybeSetUpcomingNonTraversalTrack
 
     Ref { apiMethodTracker->finishedPromise }->markAsHandled();
 
-    // FIXME: We should be able to assert m_upcomingNonTraverseMethodTracker is empty.
+    ASSERT(!m_upcomingNonTraverseMethodTracker);
     if (!hasEntriesAndEventsDisabled())
         m_upcomingNonTraverseMethodTracker = apiMethodTracker;
 
@@ -790,7 +790,7 @@ static bool documentCanHaveURLRewritten(const Document& document, const URL& tar
 // https://html.spec.whatwg.org/multipage/nav-history-apis.html#promote-an-upcoming-api-method-tracker-to-ongoing
 void Navigation::promoteUpcomingAPIMethodTracker(const String& destinationKey)
 {
-    // FIXME: We should be able to assert m_ongoingAPIMethodTracker is unset.
+    ASSERT(!m_ongoingAPIMethodTracker);
 
     if (!destinationKey.isEmpty())
         m_ongoingAPIMethodTracker = m_upcomingTraverseMethodTrackers.take(destinationKey);
@@ -868,8 +868,6 @@ void Navigation::abortOngoingNavigation(NavigateEvent& event)
 
     m_ongoingNavigateEvent = nullptr;
 
-    dispatchEvent(ErrorEvent::create(eventNames().navigateerrorEvent, exception.message(), errorInformation.sourceURL, errorInformation.line, errorInformation.column, { globalObject->vm(), domException }));
-
     if (m_ongoingAPIMethodTracker)
         rejectFinishedPromise(m_ongoingAPIMethodTracker.get(), exception, domException);
 
@@ -877,6 +875,8 @@ void Navigation::abortOngoingNavigation(NavigateEvent& event)
         transition->rejectPromise(exception, domException);
         m_transition = nullptr;
     }
+
+    dispatchEvent(ErrorEvent::create(eventNames().navigateerrorEvent, exception.message(), errorInformation.sourceURL, errorInformation.line, errorInformation.column, { globalObject->vm(), domException }));
 }
 
 struct AwaitingPromiseData : public RefCounted<AwaitingPromiseData> {
