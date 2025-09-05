@@ -49,7 +49,13 @@ WTF_MAKE_TZONE_ALLOCATED_IMPL(ScrollAnchoringController);
 
 ScrollAnchoringController::ScrollAnchoringController(ScrollableArea& owningScroller)
     : m_owningScrollableArea(owningScroller)
-{ }
+{
+    // Initialize owning document for scope tracking
+    if (auto* renderLayerScrollableArea = dynamicDowncast<RenderLayerScrollableArea>(owningScroller))
+        m_owningDocument = &renderLayerScrollableArea->layer().renderer().document();
+    else if (auto* frameView = dynamicDowncast<LocalFrameView>(owningScroller))
+        m_owningDocument = frameView->frame().document();
+}
 
 ScrollAnchoringController::~ScrollAnchoringController()
 {
@@ -86,8 +92,11 @@ void ScrollAnchoringController::invalidateAnchorElement()
         if (auto* element = elementForScrollableArea(m_owningScrollableArea)) {
             if (auto* renderer = element->renderer()) {
                 auto* scrollAnchoringControllerForScrollableArea = RenderObject::searchParentChainForScrollAnchoringController(*renderer);
-                if (scrollAnchoringControllerForScrollableArea && scrollAnchoringControllerForScrollableArea->isInScrollAnchoringAncestorChain(*renderer))
-                    scrollAnchoringControllerForScrollableArea->invalidateAnchorElement();
+                if (scrollAnchoringControllerForScrollableArea && scrollAnchoringControllerForScrollableArea->isInScrollAnchoringAncestorChain(*renderer)) {
+                    // Prevent cross-scope invalidation: only invalidate if in same document scope
+                    if (scrollAnchoringControllerForScrollableArea->owningDocument() == m_owningDocument.get())
+                        scrollAnchoringControllerForScrollableArea->invalidateAnchorElement();
+                }
             }
         }
     }

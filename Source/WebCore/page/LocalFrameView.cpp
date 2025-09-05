@@ -4566,8 +4566,23 @@ void LocalFrameView::updateScrollAnchoringElementsForScrollableAreas()
 void LocalFrameView::updateScrollAnchoringPositionForScrollableAreas()
 {
     auto scrollableAreasNeedingUpdate = std::exchange(m_scrollableAreasWithScrollAnchoringControllersNeedingUpdate, { });
-    for (auto& scrollableArea : scrollableAreasNeedingUpdate)
-        scrollableArea.updateScrollPositionForScrollAnchoringController();
+    
+    // Process main document scope first to prevent cross-scope interference
+    RefPtr mainDocument = frame().document();
+    for (auto& scrollableArea : scrollableAreasNeedingUpdate) {
+        if (auto* controller = scrollableArea.scrollAnchoringController()) {
+            if (controller->owningDocument() == mainDocument.get())
+                scrollableArea.updateScrollPositionForScrollAnchoringController();
+        }
+    }
+    
+    // Then process shadow DOM scopes separately
+    for (auto& scrollableArea : scrollableAreasNeedingUpdate) {
+        if (auto* controller = scrollableArea.scrollAnchoringController()) {
+            if (controller->owningDocument() != mainDocument.get())
+                scrollableArea.updateScrollPositionForScrollAnchoringController();
+        }
+    }
 }
 
 void LocalFrameView::updateAnchorPositionedAfterScroll()

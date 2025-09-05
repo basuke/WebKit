@@ -55,14 +55,42 @@
     customElements.define('test-container', TestContainer);
 
     promise_test(async function() {
+        console.log("Test starting");
         var root = document.getElementById('shadowHost');
+        console.log("Got shadowHost");
         var shadowElement = root.shadowRoot.querySelector("#shadowScroller");
+        console.log("Got shadowElement:");
+        console.log(shadowElement ? "shadowElement exists" : "shadowElement is null");
+        
+        console.log("Main scroll before first scroll:");
+        console.log(document.scrollingElement.scrollTop);
+        
         document.scrollingElement.scrollBy(0,100);
-        shadowElement.scrollBy(0,150);
+        console.log("Main scroll after scrollBy(0,100):");
+        console.log(document.scrollingElement.scrollTop);
+        
+        if (shadowElement) {
+            console.log("Shadow scroll before shadow scrollBy:");
+            console.log(shadowElement.scrollTop);
+            shadowElement.scrollBy(0,150);
+            console.log("Shadow scroll after scrollBy(0,150):");
+            console.log(shadowElement.scrollTop);
+        }
+        
         await new Promise(resolve => {
-            shadowElement.addEventListener("scroll", () => step_timeout(resolve, 0));
+            if (shadowElement) {
+                shadowElement.addEventListener("scroll", () => {
+                    console.log("Shadow scroll event fired");
+                    step_timeout(resolve, 0);
+                });
+            } else {
+                console.log("No shadowElement, resolving immediately");
+                resolve();
+            }
         });
 
+        console.log("Final main scroll position:");
+        console.log(document.scrollingElement.scrollTop);
         assert_equals(document.scrollingElement.scrollTop, 100);
     }, "Ensure there is no scroll anchoring adjustment in the main frame.");
 

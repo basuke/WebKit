@@ -2337,6 +2337,8 @@ Vector<FloatRect> RenderObject::clientBorderAndTextRects(const SimpleRange& rang
 
 ScrollAnchoringController* RenderObject::searchParentChainForScrollAnchoringController(const RenderObject& renderer)
 {
+    RefPtr startingDocument = &renderer.document();
+    
     if (renderer.hasLayer()) {
         if (auto* scrollableArea = downcast<RenderLayerModelObject>(renderer).layer()->scrollableArea()) {
             auto controller = scrollableArea->scrollAnchoringController();
@@ -2347,8 +2349,13 @@ ScrollAnchoringController* RenderObject::searchParentChainForScrollAnchoringCont
     for (auto* enclosingLayer = renderer.enclosingLayer(); enclosingLayer; enclosingLayer = enclosingLayer->parent()) {
         if (RenderLayerScrollableArea* scrollableArea = enclosingLayer->scrollableArea()) {
             auto controller = scrollableArea->scrollAnchoringController();
-            if (controller && controller->anchorElement())
-                return controller;
+            if (controller && controller->anchorElement()) {
+                // Stop at scope boundaries - don't cross into different documents
+                if (controller->owningDocument() == startingDocument.get())
+                    return controller;
+                else
+                    break;
+            }
         }
     }
     return renderer.view().frameView().scrollAnchoringController();

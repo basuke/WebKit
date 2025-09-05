@@ -65,6 +65,7 @@ public:
     bool isInScrollAnchoringAncestorChain(const RenderObject&);
 
     Element* anchorElement() const { return m_anchorElement.get(); }
+    Document* owningDocument() const { return m_owningDocument.get(); }
 
 
 private:
@@ -74,6 +75,7 @@ private:
     LocalFrameView& frameView();
 
     CheckedRef<ScrollableArea> m_owningScrollableArea;
+    RefPtr<Document> m_owningDocument;
     WeakPtr<Element, WeakPtrImplWithEventTargetData> m_anchorElement;
     FloatPoint m_lastOffsetForAnchorElement;
     bool m_midUpdatingScrollPositionForAnchorElement { false };
