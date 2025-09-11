@@ -1,0 +1,11 @@
+<script src="./common.js"></script>
+
+<h1>Different Site</h1>
+<script>testVars.writeSharedHtml('resources/iframe-cross.html')</script>
+<hr>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    testVars.addOtherIframe('/resources/iframe-same.html', 200);
+});
+</script>

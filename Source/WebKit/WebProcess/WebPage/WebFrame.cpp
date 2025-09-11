@@ -651,8 +651,10 @@ void WebFrame::convertMainResourceLoadToDownload(DocumentLoader* documentLoader,
 void WebFrame::addConsoleMessage(MessageSource messageSource, MessageLevel messageLevel, const String& message, uint64_t requestID)
 {
     RefPtr localFrame = dynamicDowncast<LocalFrame>(m_coreFrame.get());
-    if (!localFrame)
+    if (!localFrame) {
+        WTFLogAlways("OH MY GOD!!!! =============================\n");
         return;
+    }
     if (RefPtr document = localFrame->document())
         document->addConsoleMessage(messageSource, messageLevel, message, requestID);
 }
