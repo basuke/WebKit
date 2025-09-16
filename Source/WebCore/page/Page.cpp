@@ -4550,11 +4550,17 @@ void Page::forEachMediaElement(NOESCAPE const Function<void(HTMLMediaElement&)>&
 
 void Page::forEachLocalFrame(NOESCAPE const Function<void(LocalFrame&)>& functor)
 {
-    Vector<Ref<LocalFrame>> frames;
-    for (RefPtr frame = mainFrame(); frame; frame = frame->tree().traverseNext()) {
-        if (RefPtr localFrame = dynamicDowncast<LocalFrame>(*frame))
-            frames.append(localFrame.releaseNonNull());
-    }
+    forEachFrame([&functor](Frame& frame) {
+        if (RefPtr localFrame = dynamicDowncast<LocalFrame>(frame))
+            functor(*localFrame);
+    });
+}
+
+void Page::forEachFrame(NOESCAPE const Function<void(Frame&)>& functor)
+{
+    Vector<Ref<Frame>> frames;
+    for (RefPtr frame = mainFrame(); frame; frame = frame->tree().traverseNext())
+        frames.append(*frame);
 
     for (auto& frame : frames)
         functor(frame);

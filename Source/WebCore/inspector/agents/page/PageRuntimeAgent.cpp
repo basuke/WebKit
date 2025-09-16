@@ -141,17 +141,23 @@ void PageRuntimeAgent::reportExecutionContextCreation()
     if (!pageAgent)
         return;
 
-    m_inspectedPage->forEachLocalFrame([&](LocalFrame& frame) {
-        if (!frame.script().canExecuteScripts(ReasonForCallingCanExecuteScripts::NotAboutToExecuteScript))
+    m_inspectedPage->forEachFrame([&](Frame& frame) {
+        RefPtr localFrame = dynamicDowncast<LocalFrame>(frame);
+        if (!localFrame) {
+            WTFLogAlways("DEBUG: PageRuntimeAgent::reportExecutionContextCreation(): RemoteFrame is silently ignored but it should be reported.");
+            return;
+        }
+
+        if (!localFrame->script().canExecuteScripts(ReasonForCallingCanExecuteScripts::NotAboutToExecuteScript))
             return;
 
-        auto frameId = pageAgent->frameId(&frame);
+        auto frameId = pageAgent->frameId(localFrame.get());
 
         // Always send the main world first.
-        auto& mainGlobalObject = mainWorldGlobalObject(frame);
+        auto& mainGlobalObject = mainWorldGlobalObject(*localFrame);
         notifyContextCreated(frameId, &mainGlobalObject, mainThreadNormalWorldSingleton());
 
-        for (auto& jsWindowProxy : frame.windowProxy().jsWindowProxiesAsVector()) {
+        for (auto& jsWindowProxy : localFrame->windowProxy().jsWindowProxiesAsVector()) {
             auto* globalObject = jsWindowProxy->window();
             if (globalObject == &mainGlobalObject)
                 continue;

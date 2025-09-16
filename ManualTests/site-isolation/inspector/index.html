@@ -1,0 +1,10 @@
+<script src="resources/common.js"></script>
+<h1>Web Inspector Test</h1>
+<script>testVars.writeSharedHtml('index.html')</script>
+<hr>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    testVars.addOtherIframe('/resources/iframe-cross.html', 400);
+});
+</script>

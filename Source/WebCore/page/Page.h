@@ -1167,7 +1167,7 @@ public:
     void forEachRenderableDocument(NOESCAPE const Function<void(Document&)>&) const;
     void forEachMediaElement(NOESCAPE const Function<void(HTMLMediaElement&)>&);
     static void forEachDocumentFromMainFrame(const Frame&, NOESCAPE const Function<void(Document&)>&);
-    void forEachLocalFrame(NOESCAPE const Function<void(LocalFrame&)>&);
+    void forEachFrame(NOESCAPE const Function<void(Frame&)>&);
     void forEachWindowEventLoop(NOESCAPE const Function<void(WindowEventLoop&)>&);
 
     bool shouldDisableCorsForRequestTo(const URL&) const;
@@ -1453,6 +1453,8 @@ private:
     bool hasLocalMainFrame();
 
     void updateControlTints();
+
+    void forEachLocalFrame(NOESCAPE const Function<void(LocalFrame&)>&);
 
     struct Internals;
     const UniqueRef<Internals> m_internals;
