@@ -7790,8 +7790,9 @@ void WebPageProxy::processIsNoLongerAssociatedWithPage(WebProcessProxy& process)
     m_navigationState->clearNavigationsFromProcess(process.coreProcessIdentifier());
 }
 
-void WebPageProxy::isNoLongerAssociatedWithRemotePage(RemotePageProxy&)
+void WebPageProxy::isNoLongerAssociatedWithRemotePage(RemotePageProxy& remotePage)
 {
+    inspectorController().willDestroyRemotePage(remotePage);
     internals().updatePlayingMediaDidChangeTimer.startOneShot(0_s);
 }
 

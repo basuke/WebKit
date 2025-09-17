@@ -40,6 +40,7 @@
 #include "RemotePageVisitedLinkStoreRegistration.h"
 #include "UserMediaProcessManager.h"
 #include "WebFrameProxy.h"
+#include "WebPageInspectorController.h"
 #include "WebPageMessages.h"
 #include "WebPageProxy.h"
 #include "WebPageProxyMessages.h"
@@ -81,6 +82,7 @@ RemotePageProxy::RemotePageProxy(WebPageProxy& page, WebProcessProxy& process, c
         m_messageReceiverRegistration.startReceivingMessages(m_process, m_webPageID, *this);
 
     m_process->addRemotePageProxy(*this);
+    page.inspectorController().didCreateRemotePage(*this);
 }
 
 void RemotePageProxy::injectPageIntoNewProcess()

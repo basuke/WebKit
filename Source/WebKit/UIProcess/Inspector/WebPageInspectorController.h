@@ -79,6 +79,9 @@ public:
     void willDestroyProvisionalPage(const ProvisionalPageProxy&);
     void didCommitProvisionalPage(WebCore::PageIdentifier oldWebPageID, WebCore::PageIdentifier newWebPageID);
 
+    void didCreateRemotePage(RemotePageProxy&);
+    void willDestroyRemotePage(const RemotePageProxy&);
+
     InspectorBrowserAgent* enabledBrowserAgent() const;
     void setEnabledBrowserAgent(InspectorBrowserAgent*);
 

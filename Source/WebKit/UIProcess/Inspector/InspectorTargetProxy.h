@@ -33,6 +33,7 @@
 namespace WebKit {
 
 class ProvisionalPageProxy;
+class RemotePageProxy;
 class WebPageProxy;
 
 // NOTE: This UIProcess side InspectorTarget doesn't care about the frontend channel, since
@@ -44,6 +45,7 @@ class InspectorTargetProxy final : public Inspector::InspectorTarget {
 public:
     static std::unique_ptr<InspectorTargetProxy> create(WebPageProxy&, const String& targetId, Inspector::InspectorTargetType);
     static std::unique_ptr<InspectorTargetProxy> create(ProvisionalPageProxy&, const String& targetId, Inspector::InspectorTargetType);
+    static std::unique_ptr<InspectorTargetProxy> create(RemotePageProxy&, const String& targetId, Inspector::InspectorTargetType);
     InspectorTargetProxy(WebPageProxy&, const String& targetId, Inspector::InspectorTargetType);
     ~InspectorTargetProxy() = default;
 
@@ -62,6 +64,7 @@ private:
     String m_identifier;
     Inspector::InspectorTargetType m_type;
     WeakPtr<ProvisionalPageProxy> m_provisionalPage;
+    WeakPtr<RemotePageProxy> m_remotePage;
 };
 
 } // namespace WebKit

@@ -29,6 +29,7 @@
 #include "APIUIClient.h"
 #include "InspectorBrowserAgent.h"
 #include "ProvisionalPageProxy.h"
+#include "RemotePageProxy.h"
 #include "WebFrameProxy.h"
 #include "WebPageInspectorAgentBase.h"
 #include "WebPageInspectorTarget.h"
@@ -49,6 +50,11 @@ using namespace Inspector;
 static String getTargetID(const ProvisionalPageProxy& provisionalPage)
 {
     return WebPageInspectorTarget::toTargetID(provisionalPage.webPageID());
+}
+
+static String getTargetID(const RemotePageProxy& remotePage)
+{
+    return "TBD"_s;
 }
 
 WTF_MAKE_TZONE_ALLOCATED_IMPL(WebPageInspectorController);
@@ -210,6 +216,16 @@ void WebPageInspectorController::didCreateProvisionalPage(ProvisionalPageProxy& 
 void WebPageInspectorController::willDestroyProvisionalPage(const ProvisionalPageProxy& provisionalPage)
 {
     destroyInspectorTarget(getTargetID(provisionalPage));
+}
+
+void WebPageInspectorController::didCreateRemotePage(RemotePageProxy& remotePage)
+{
+    addTarget(InspectorTargetProxy::create(remotePage, getTargetID(remotePage), Inspector::InspectorTargetType::Page));
+}
+
+void WebPageInspectorController::willDestroyRemotePage(const RemotePageProxy& remotePage)
+{
+    destroyInspectorTarget(getTargetID(remotePage));
 }
 
 void WebPageInspectorController::didCommitProvisionalPage(WebCore::PageIdentifier oldWebPageID, WebCore::PageIdentifier newWebPageID)

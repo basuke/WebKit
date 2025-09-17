@@ -62,6 +62,8 @@ PageRuntimeAgent::PageRuntimeAgent(PageAgentContext& context)
     , m_instrumentingAgents(context.instrumentingAgents)
     , m_inspectedPage(context.inspectedPage)
 {
+    WTFLogAlways("DEBUG: [pid=%d] PageRuntimeAgent(): created", getpid());
+    WTFReportBacktrace();
 }
 
 PageRuntimeAgent::~PageRuntimeAgent() = default;

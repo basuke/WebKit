@@ -71,6 +71,7 @@ void WebPageInspectorTargetController::removeTarget(Inspector::InspectorTarget& 
 void WebPageInspectorTargetController::connectInspector(const String& targetId, Inspector::FrontendChannel::ConnectionType connectionType)
 {
     auto target = m_targets.get(targetId);
+    WTFLogAlways("DEBUG: [pid=%d] WebPageInspectorTargetController::connectInspector(%s): %s", getpid(), targetId.utf8().data(), target ? "found" : "not found");
     if (!target)
         return;
 
@@ -80,6 +81,7 @@ void WebPageInspectorTargetController::connectInspector(const String& targetId, 
 void WebPageInspectorTargetController::disconnectInspector(const String& targetId)
 {
     auto target = m_targets.get(targetId);
+    WTFLogAlways("DEBUG: [pid=%d] WebPageInspectorTargetController::disconnectInspector(%s): %s", getpid(), targetId.utf8().data(), target ? "found" : "not found");
     if (!target)
         return;
 
@@ -89,6 +91,7 @@ void WebPageInspectorTargetController::disconnectInspector(const String& targetI
 void WebPageInspectorTargetController::sendMessageToTargetBackend(const String& targetId, const String& message)
 {
     auto target = m_targets.get(targetId);
+    WTFLogAlways("DEBUG: [pid=%d] WebPageInspectorTargetController::sendMessageToTargetBackend(%s): %s: %s", getpid(), targetId.utf8().data(), target ? "found" : "not found", message.utf8().data());
     if (!target)
         return;
 

@@ -28,6 +28,7 @@
 
 #include "MessageSenderInlines.h"
 #include "ProvisionalPageProxy.h"
+#include "RemotePageProxy.h"
 #include "WebFrameProxy.h"
 #include "WebPageInspectorTarget.h"
 #include "WebPageMessages.h"
@@ -57,6 +58,17 @@ std::unique_ptr<InspectorTargetProxy> InspectorTargetProxy::create(ProvisionalPa
     return target;
 }
 
+std::unique_ptr<InspectorTargetProxy> InspectorTargetProxy::create(RemotePageProxy& remotePage, const String& targetId, Inspector::InspectorTargetType type)
+{
+    RefPtr page = remotePage.page();
+    if (!page)
+        return nullptr;
+
+    auto target = InspectorTargetProxy::create(*page, targetId, type);
+    target->m_remotePage = remotePage;
+    return target;
+}
+
 InspectorTargetProxy::InspectorTargetProxy(WebPageProxy& page, const String& targetId, Inspector::InspectorTargetType type)
     : m_page(page)
     , m_identifier(targetId)
@@ -72,8 +84,11 @@ void InspectorTargetProxy::connect(Inspector::FrontendChannel::ConnectionType co
     }
 
     Ref page = m_page.get();
-    if (page->hasRunningProcess())
-        page->protectedLegacyMainFrameProcess()->send(Messages::WebPage::ConnectInspector(identifier(), connectionType), page->webPageIDInMainFrameProcess());
+    if (page->hasRunningProcess()) {
+        page->forEachWebContentProcess([identifier = this->identifier(), connectionType](auto& process, auto pageID) {
+            process.send(Messages::WebPage::ConnectInspector(identifier, connectionType), pageID);
+        });
+    }
 }
 
 void InspectorTargetProxy::disconnect()
@@ -87,8 +102,12 @@ void InspectorTargetProxy::disconnect()
     }
 
     Ref page = m_page.get();
-    if (page->hasRunningProcess())
-        page->protectedLegacyMainFrameProcess()->send(Messages::WebPage::DisconnectInspector(identifier()), page->webPageIDInMainFrameProcess());
+    if (page->hasRunningProcess()) {
+        // page->protectedLegacyMainFrameProcess()->send(Messages::WebPage::DisconnectInspector(identifier()), page->webPageIDInMainFrameProcess());
+        page->forEachWebContentProcess([identifier = this->identifier()](auto& process, auto pageID) {
+            process.send(Messages::WebPage::DisconnectInspector(identifier), pageID);
+        });
+    }
 }
 
 void InspectorTargetProxy::sendMessageToTargetBackend(const String& message)
@@ -99,8 +118,11 @@ void InspectorTargetProxy::sendMessageToTargetBackend(const String& message)
     }
 
     Ref page = m_page.get();
-    if (page->hasRunningProcess())
-        page->protectedLegacyMainFrameProcess()->send(Messages::WebPage::SendMessageToTargetBackend(identifier(), message), page->webPageIDInMainFrameProcess());
+    if (page->hasRunningProcess()) {
+        page->forEachWebContentProcess([identifier = this->identifier(), &message](auto& process, auto pageID) {
+            process.send(Messages::WebPage::SendMessageToTargetBackend(identifier, message), pageID);
+        });
+    }
 }
 
 void InspectorTargetProxy::didCommitProvisionalTarget()
