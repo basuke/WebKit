@@ -1,0 +1,20 @@
+
+== Running test suite: FrameAttached
+-- Running test case: FrameAttached.SameOriginIFrame
+PASS: Each attaching frame id should be unique
+PASS: Got total of 1 event(s)
+
+-- Running test case: FrameAttached.CrossOriginIFrame
+PASS: Each attaching frame id should be unique
+PASS: Got total of 1 event(s)
+
+-- Running test case: FrameAttached.EmbeddedSameOriginIFrame
+PASS: Each attaching frame id should be unique
+PASS: Each attaching frame id should be unique
+PASS: Got total of 2 event(s)
+
+-- Running test case: FrameAttached.EmbeddedCrossOriginIFrame
+PASS: Each attaching frame id should be unique
+PASS: Each attaching frame id should be unique
+PASS: Got total of 2 event(s)
+

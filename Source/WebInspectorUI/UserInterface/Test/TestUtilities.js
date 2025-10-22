@@ -56,3 +56,21 @@ function promisify(func) {
 function sanitizeURL(url) {
     return url.replace(/^.*?LayoutTests\//, "");
 }
+
+class EventCounter {
+    constructor(target, eventName, onEvent) {
+        this.count = 0;
+
+        let callback = (event) => {
+            this.count++;
+            onEvent(event, this);
+        };
+
+        target.addEventListener(eventName, callback);
+        this._cleanup = () => target.removeEventListener(eventName, callback);
+    }
+
+    cleanup() {
+        this._cleanup();
+    }
+}

@@ -1,0 +1,79 @@
+<!-- webkit-test-runner [ dumpJSConsoleLogInStdErr=true ] -->
+<script src="/inspector/resources/inspector-test.js"></script>
+
+<script>
+    // Utilities for page code.
+    async function addIFrame(url) {
+        return new Promise((resolve, reject) => {
+            const iframe = document.createElement("iframe");
+            iframe.src = url;
+            iframe.onload = () => {
+                console.log("iframe is loaded in " + location.href);
+                resolve(iframe);
+            };
+            iframe.onerror = reject;
+            document.body.appendChild(iframe);
+        });
+    }
+
+    function test() {
+        // The purpose of these tests are to test that Web Inspector should receive frame attached message from various iframe tree correctly.
+
+        const suite = InspectorTest.createAsyncSuite("Network.FrameAttached");
+
+        // Utilities for test code.
+        function runSubTest({resolve, expected}, func) {
+            let frameIds = new Set;
+            new EventCounter(WI.networkManager, WI.NetworkManager.Event.FrameWasAdded, (event, counter) => {
+                let {frame} = event.data;
+
+                InspectorTest.expectFalse(frameIds.has(frame.id), `Each attaching frame id should be unique`);
+                frameIds.add(frame.id);
+
+                if (counter.count === expected) {
+                    InspectorTest.expectEqual(counter.count, expected, `Got total of ${expected} event(s)`);
+                    counter.cleanup();
+                    resolve();
+                }
+            });
+
+            InspectorTest.evaluateInPage(func);
+        }
+
+        suite.addTestCase({
+            name: "Network.FrameAttached.SameOriginIFrame",
+            description: "add iframe with same origin",
+            test: (resolve) => runSubTest({resolve, expected: 1}, `
+                addIFrame("resources/iframe.html")
+            `),
+        });
+
+        suite.addTestCase({
+            name: "Network.FrameAttached.CrossOriginIFrame",
+            description: "add iframe with cross origin",
+            test: (resolve) => runSubTest({resolve, expected: 1}, `
+                addIFrame("http://localhost:8000/inspector/network/resources/iframe.html")
+            `),
+        });
+
+        suite.addTestCase({
+            name: "Network.FrameAttached.EmbeddedSameOriginIFrame",
+            description: "add embedded iframe with same origin",
+            test: (resolve) => runSubTest({resolve, expected: 2}, `
+                addIFrame("resources/iframe-same-origin.html")
+            `),
+        });
+
+        suite.addTestCase({
+            name: "Network.FrameAttached.EmbeddedCrossOriginIFrame",
+            description: "add embedded iframe with cross origin",
+            test: (resolve) => runSubTest({resolve, expected: 2}, `
+                addIFrame("http://localhost:8000/inspector/network/resources/iframe-cross-origin.html")
+            `),
+        });
+
+        suite.runTestCasesAndFinish();
+    }
+</script>
+
+<body onload="runTest()"></body>

@@ -1,0 +1,87 @@
+<!-- webkit-test-runner [ dumpJSConsoleLogInStdErr=true ] -->
+<script src="/inspector/resources/inspector-test.js"></script>
+<script>
+    // Utilities for page code.
+    async function addIFrame(url) {
+        return new Promise((resolve, reject) => {
+            const iframe = document.createElement("iframe");
+            iframe.src = url;
+            iframe.onload = () => {
+                console.log("iframe is loaded in " + location.href);
+                resolve(iframe);
+            };
+            iframe.onerror = reject;
+            document.body.appendChild(iframe);
+        });
+    }
+
+    function removeFrame(iframe) {
+        iframe.remove();
+        console.log(`iframe was detached: src=${iframe.src}`);
+    }
+
+    function test() {
+        // The purpose of these tests are to test that Web Inspector should receive frame detached message from various iframe tree correctly.
+
+        let suite = InspectorTest.createAsyncSuite("Network.FrameDetached");
+
+        // Utilities for test code.
+        function runSubTest({resolve, expected}, func) {
+            let frameIds = new Set;
+            new EventCounter(WI.networkManager, WI.NetworkManager.Event.FrameWasRemoved, (event, counter) => {
+                let {frame} = event.data;
+
+                InspectorTest.expectFalse(frameIds.has(frame.id), `Each detaching frame id should be unique`);
+                frameIds.add(frame.id);
+
+                if (counter.count === expected) {
+                    InspectorTest.expectEqual(counter.count, expected, `Got total of ${expected} event(s)`);
+                    counter.cleanup();
+                    resolve();
+                }
+            });
+
+            InspectorTest.evaluateInPage(func);
+        }
+
+        suite.addTestCase({
+            name: "Network.FrameDetached.SameOriginIFrame",
+            description: "detach iframe with same origin",
+            test: (resolve) => runSubTest({resolve, expected: 1}, `
+                addIFrame("resources/iframe.html")
+                .then((iframe) => removeFrame(iframe));
+            `),
+        });
+
+        suite.addTestCase({
+            name: "Network.FrameDetached.CrossOriginIFrame",
+            description: "detach iframe with cross origin",
+            test: (resolve) => runSubTest({resolve, expected: 1}, `
+                addIFrame("http://localhost:8000/inspector/network/resources/iframe.html")
+                .then((iframe) => removeFrame(iframe));
+            `),
+        });
+
+        suite.addTestCase({
+            name: "Network.FrameDetached.EmbeddedSameOriginIFrame",
+            description: "detach embedded iframe with same origin",
+            test: (resolve) => runSubTest({resolve, expected: 2}, `
+                addIFrame("resources/iframe-same-origin.html")
+                .then((iframe) => removeFrame(iframe));
+            `),
+        });
+
+        suite.addTestCase({
+            name: "Network.FrameDetached.EmbeddedCrossOriginIFrame",
+            description: "detach embedded iframe with cross origin",
+            test: (resolve) => runSubTest({resolve, expected: 2}, `
+                addIFrame("http://localhost:8000/inspector/network/resources/iframe-cross-origin.html")
+                .then((iframe) => removeFrame(iframe));
+            `),
+        });
+
+        suite.runTestCasesAndFinish();
+    }
+</script>
+
+<body onload="runTest()"></body>
