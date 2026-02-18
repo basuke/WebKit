@@ -167,6 +167,9 @@ ALLOW_DEPRECATED_DECLARATIONS_END
 - (void)setSiteSpecificQuirksModeEnabled:(BOOL)enabled
 {
     protect(*_preferences)->setNeedsSiteSpecificQuirks(enabled);
+
+    // Enable UIProcess-driven BackForward item loading with Site Isolation.
+    protect(*_preferences)->setUseUIProcessForBackForwardItemLoading(enabled);
 }
 
 - (BOOL)isElementFullscreenEnabled
@@ -446,6 +449,16 @@ static _WKStorageBlockingPolicy toAPI(WebCore::StorageBlockingPolicy policy)
 - (void)_setTextAutosizingEnabled:(BOOL)enabled
 {
     protect(*_preferences)->setTextAutosizingEnabled(enabled);
+}
+
+- (BOOL)_useUIProcessForBackForwardItemLoading
+{
+    return protect(*_preferences)->useUIProcessForBackForwardItemLoading();
+}
+
+- (void)_setUseUIProcessForBackForwardItemLoading:(BOOL)flag
+{
+    protect(*_preferences)->setUseUIProcessForBackForwardItemLoading(flag);
 }
 
 - (BOOL)_developerExtrasEnabled

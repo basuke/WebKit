@@ -105,6 +105,8 @@ public:
 
     void updateFrameID(WebCore::FrameIdentifier oldFrameID, WebCore::FrameIdentifier newFrameID);
 
+    WebBackForwardListFrameItem* findFrameItem(WebCore::BackForwardFrameItemIdentifier);
+
 private:
     WebBackForwardListItem(Ref<FrameState>&&, WebPageProxyIdentifier, std::optional<WebCore::FrameIdentifier>, BrowsingContextGroup*);
 

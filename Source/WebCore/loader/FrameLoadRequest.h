@@ -26,6 +26,7 @@
 #pragma once
 
 #include <WebCore/AdvancedPrivacyProtections.h>
+#include <WebCore/BackForwardFrameItemIdentifier.h>
 #include <WebCore/Element.h>
 #include <WebCore/FrameLoaderTypes.h>
 #include <WebCore/ReferrerPolicy.h>
@@ -79,6 +80,12 @@ public:
     bool isFromNavigationAPI() const { return m_isFromNavigationAPI; }
     void setIsFromNavigationAPI(bool isFromNavigationAPI) { m_isFromNavigationAPI = isFromNavigationAPI; }
 
+    // For Back/Forward child frame navigation: identifies which child frame item
+    // to load from the parent frame's BackForwardList entry.
+    // Contains the parent frame's item ID and the child's index in the children array.
+    const std::optional<BackForwardChildFrameItemIndex>& backForwardChildFrameIndex() const { return m_backForwardChildFrameIndex; }
+    void setBackForwardChildFrameIndex(std::optional<BackForwardChildFrameItemIndex> index) { m_backForwardChildFrameIndex = index; }
+
 protected:
     FrameLoadRequestBase() = default;
     FrameLoadRequestBase(const FrameLoadRequestBase&) = default;
@@ -103,6 +110,7 @@ private:
     bool m_isInitialFrameSrcLoad { false };
     bool m_isContentRuleListRedirect { false };
     bool m_isFromNavigationAPI { false };
+    std::optional<BackForwardChildFrameItemIndex> m_backForwardChildFrameIndex;
 };
 
 class FrameLoadRequest : public FrameLoadRequestBase {

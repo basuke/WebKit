@@ -219,4 +219,9 @@ void WebBackForwardListItem::updateFrameID(FrameIdentifier oldFrameID, FrameIden
         m_navigatedFrameID = newFrameID;
 }
 
+WebBackForwardListFrameItem* WebBackForwardListItem::findFrameItem(BackForwardFrameItemIdentifier frameItemID)
+{
+    return m_mainFrameItem->childItemForFrameItemID(frameItemID);
+}
+
 } // namespace WebKit

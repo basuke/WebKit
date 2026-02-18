@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <WebCore/BackForwardFrameItemIdentifier.h>
 #include <WebCore/BackForwardItemIdentifier.h>
 #include <WebCore/CrossOriginOpenerPolicy.h>
 #include <WebCore/FrameLoadRequest.h>
@@ -52,6 +53,7 @@ class UIEventWithKeyState;
 enum class SyntheticClickType : uint8_t;
 enum class MouseButton : int8_t;
 enum class NavigationNavigationType : uint8_t;
+enum class PolicyAlreadyDecided : bool { No, Yes };
 
 // NavigationAction should never hold a strong reference to the originating document either directly
 // or indirectly as doing so prevents its destruction even after navigating away from it because
@@ -132,6 +134,16 @@ public:
     void setPendingDispatchNavigateEvent(std::function<bool()>&& function) { m_pendingDispatchNavigateEvent = WTF::move(function); }
     std::function<bool()> takePendingDispatchNavigateEvent() { return std::exchange(m_pendingDispatchNavigateEvent, nullptr); }
 
+    // Whether UIProcess has already made the policy decision for this navigation.
+    // When Yes, PolicyChecker will skip the IPC to UIProcess and proceed with PolicyAction::Use.
+    // This is used for Back/Forward child frame navigation where UIProcess has already:
+    //   1. Retrieved the FrameState from BackForwardList
+    //   2. Performed all necessary policy checks (Safe Browsing, CSP, etc.)
+    //   3. Sent the FrameState back to WebProcess
+    // WebProcess still performs local security checks (CSP, etc.) but skips the IPC roundtrip.
+    PolicyAlreadyDecided policyAlreadyDecided() const { return m_policyAlreadyDecided; }
+    void setPolicyAlreadyDecided(PolicyAlreadyDecided value) { m_policyAlreadyDecided = value; }
+
 private:
     // Do not add a strong reference to the originating document or a subobject that holds the
     // originating document. See comment above the class for more details.
@@ -151,6 +163,7 @@ private:
     bool m_treatAsSameOriginNavigation { false };
     bool m_hasOpenedFrames { false };
     bool m_openedByDOMWithOpener { false };
+    PolicyAlreadyDecided m_policyAlreadyDecided { PolicyAlreadyDecided::No };
 };
 
 } // namespace WebCore

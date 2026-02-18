@@ -32,6 +32,7 @@
 #include "MessageSenderInlines.h"
 #include "NavigationActionData.h"
 #include "WebFrame.h"
+#include "WebLocalFrameLoaderClient.h"
 #include "WebMouseEvent.h"
 #include "WebPage.h"
 #include "WebPageProxyMessages.h"
@@ -177,6 +178,7 @@ std::optional<NavigationActionData> WebFrameLoaderClient::navigationActionData(c
         request,
         request.url().isValid() ? String() : request.url().string(),
         requester,
+        navigationAction.backForwardChildFrameIndex(),
     };
 }
 

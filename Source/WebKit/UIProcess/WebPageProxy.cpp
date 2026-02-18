@@ -5598,6 +5598,16 @@ void WebPageProxy::continueNavigationInNewProcess(API::Navigation& navigation, W
         if (auto& action = navigation.lastNavigationAction())
             loadParameters.requester = action->requester;
 
+        // Pass FrameState for Back/Forward child frame navigation.
+        // When Site Isolation causes a process swap for a child frame's Back/Forward navigation,
+        // the FrameState was stored on the Navigation object during policy decision.
+        // We pass it to the new process so it can restore the historical state without
+        // making another IPC roundtrip to look up the FrameState.
+        if (RefPtr frameState = navigation.backForwardChildFrameState()) {
+            WEBPAGEPROXY_RELEASE_LOG(Loading, "continueNavigationInNewProcess: Passing FrameState for child frame to new process, URL=%s", frameState->urlString.utf8().data());
+            loadParameters.backForwardChildFrameState = frameState;
+        }
+
         if (navigation.isInitialFrameSrcLoad())
             frame.setIsPendingInitialHistoryItem(true);
 
@@ -8432,8 +8442,52 @@ static bool frameSandboxAllowsOpeningExternalCustomProtocols(SandboxFlags sandbo
 }
 #endif
 
-void WebPageProxy::decidePolicyForNavigationAction(Ref<WebProcessProxy>&& process, WebFrameProxy& frame, NavigationActionData&& navigationActionData, CompletionHandler<void(PolicyDecision&&)>&& completionHandler)
+void WebPageProxy::decidePolicyForNavigationAction(Ref<WebProcessProxy>&& process, WebFrameProxy& frame, NavigationActionData&& navigationActionData, CompletionHandler<void(PolicyDecision&&)>&& originalCompletionHandler)
 {
+    // Handle Back/Forward child frame navigation:
+    // For child frames navigating via Back/Forward, we look up the FrameState from the
+    // BackForwardList and rewrite the request URL to match the historical URL.
+    // This ensures:
+    //   1. Policy checks use the correct historical URL (not the potentially stale iframe src)
+    //   2. The FrameState is passed to WebProcess to avoid duplicate IPC
+    //   3. Site Isolation is supported (FrameState is stored on Navigation for process swap)
+    RefPtr<FrameState> frameStateForChildFrame;
+    if (auto& backForwardChildFrameIndex = navigationActionData.backForwardChildFrameIndex) {
+        if (RefPtr currentItem = backForwardList().currentItem()) {
+            if (RefPtr parentFrameItem = currentItem->findFrameItem(backForwardChildFrameIndex->parentFrameItemID)) {
+                if (RefPtr childFrameItem = parentFrameItem->childItemAtIndex(backForwardChildFrameIndex->childIndex)) {
+                    frameStateForChildFrame = childFrameItem->frameState();
+                    if (frameStateForChildFrame) {
+                        WEBPAGEPROXY_RELEASE_LOG(Loading, "decidePolicyForNavigationAction: Back/Forward child frame, rewriting URL to %s",
+                            frameStateForChildFrame->urlString.utf8().data());
+                        navigationActionData.request.setURL(URL { frameStateForChildFrame->urlString });
+                    }
+                }
+            }
+        }
+
+        if (!frameStateForChildFrame)
+            WEBPAGEPROXY_RELEASE_LOG(Loading, "decidePolicyForNavigationAction: Back/Forward child frame, FrameState not found, using fallback");
+    }
+
+    // Keep a copy for navigation (before it's moved into completionHandler)
+    // This is needed for Site Isolation: if the navigation causes a process swap,
+    // the new process needs the FrameState to restore the historical state.
+    RefPtr<FrameState> frameStateForNavigation = frameStateForChildFrame;
+
+    // Wrap completionHandler to include FrameState in response
+    auto completionHandler = [
+        originalCompletionHandler = WTF::move(originalCompletionHandler),
+        frameStateForChildFrame = WTF::move(frameStateForChildFrame)
+    ](PolicyDecision&& policyDecision) mutable {
+        // Include FrameState for both Use and LoadWillContinueInAnotherProcess.
+        // For LoadWillContinueInAnotherProcess, the FrameState will be passed via
+        // LoadParameters to the new process (see continueNavigationInNewProcess).
+        if (frameStateForChildFrame && (policyDecision.policyAction == PolicyAction::Use || policyDecision.policyAction == PolicyAction::LoadWillContinueInAnotherProcess))
+            policyDecision.backForwardChildFrameState = WTF::move(frameStateForChildFrame);
+        originalCompletionHandler(WTF::move(policyDecision));
+    };
+
     auto frameInfo = navigationActionData.frameInfo;
     auto navigationID = navigationActionData.navigationID;
     auto originatingFrameInfoData = navigationActionData.originatingFrameInfoData;
@@ -8486,6 +8540,10 @@ void WebPageProxy::decidePolicyForNavigationAction(Ref<WebProcessProxy>&& proces
         if (!navigation)
             navigation = m_navigationState->createLoadRequestNavigation(process->coreProcessIdentifier(), ResourceRequest(request), protect(backForwardList().currentItem()));
     }
+
+    // Store frameState on navigation for Site Isolation process swap
+    if (frameStateForNavigation && navigation)
+        navigation->setBackForwardChildFrameState(WTF::move(frameStateForNavigation));
 
     if (!checkURLReceivedFromCurrentOrPreviousWebProcess(process, request.url())) {
         WEBPAGEPROXY_RELEASE_LOG_ERROR(Process, "Ignoring request to load this main resource because it is outside the sandbox");

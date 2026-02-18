@@ -44,6 +44,7 @@
 #include "NetworkProcessConnection.h"
 #include "PluginView.h"
 #include "ProvisionalFrameCreationParameters.h"
+#include "SessionStateConversion.h"
 #include "WKAPICast.h"
 #include "WKBundleAPICast.h"
 #include "WebChromeClient.h"
@@ -54,6 +55,7 @@
 #include "WebFrameProxyMessages.h"
 #include "WebImage.h"
 #include "WebKeyboardEvent.h"
+#include "WebLocalFrameLoaderClient.h"
 #include "WebPage.h"
 #include "WebPageProxyMessages.h"
 #include "WebProcess.h"
@@ -611,6 +613,26 @@ void WebFrame::didReceivePolicyDecision(uint64_t listenerID, PolicyDecision&& po
         RefPtr localFrame = dynamicDowncast<LocalFrame>(m_coreFrame.get());
         if (RefPtr documentLoader = localFrame ? localFrame->loader().policyDocumentLoader() : nullptr)
             documentLoader->setNavigationID(*policyDecision.navigationID);
+    }
+
+    // Handle Back/Forward child frame FrameState
+    // Save frameState to client for callback processing
+    if (policyDecision.backForwardChildFrameState) {
+        RELEASE_LOG(Loading, "didReceivePolicyDecision: Received FrameState for child frame, URL=%s", policyDecision.backForwardChildFrameState->urlString.utf8().data());
+
+        if (RefPtr localFrame = dynamicDowncast<LocalFrame>(m_coreFrame.get())) {
+            if (RefPtr page = m_page.get()) {
+                // Build HistoryItem from FrameState
+                Ref historyItemClient = page->historyItemClient();
+                auto ignoreHistoryItemChangesForScope = historyItemClient->ignoreChangesForScope();
+                Ref historyItem = toHistoryItem(historyItemClient, Ref { *policyDecision.backForwardChildFrameState });
+
+                Ref frameLoader = localFrame->loader();
+                frameLoader->setRequestedHistoryItem(historyItem);
+
+                RELEASE_LOG(Loading, "didReceivePolicyDecision: HistoryItem created from FrameState, will load in callback");
+            }
+        }
     }
 
     if (policyDecision.policyAction == PolicyAction::Use && policyDecision.sandboxExtensionHandle) {

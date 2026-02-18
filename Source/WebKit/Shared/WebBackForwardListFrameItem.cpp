@@ -96,6 +96,22 @@ RefPtr<WebBackForwardListFrameItem> WebBackForwardListFrameItem::protectedChildI
     return childItemForFrameID(frameID);
 }
 
+WebBackForwardListFrameItem* WebBackForwardListFrameItem::childItemForFrameItemID(BackForwardFrameItemIdentifier frameItemID)
+{
+    if (m_frameState->frameItemID == frameItemID)
+        return this;
+    for (auto& child : m_children) {
+        if (auto* childFrameItem = child->childItemForFrameItemID(frameItemID))
+            return childFrameItem;
+    }
+    return nullptr;
+}
+
+WebBackForwardListFrameItem* WebBackForwardListFrameItem::childItemAtIndex(size_t index)
+{
+    return index < m_children.size() ? m_children[index].ptr() : nullptr;
+}
+
 WebBackForwardListItem* WebBackForwardListFrameItem::backForwardListItem() const
 {
     return m_backForwardListItem.get();

@@ -44,6 +44,8 @@
 #include "NetworkProcessConnection.h"
 #include "NetworkResourceLoadParameters.h"
 #include "PluginView.h"
+#include "SessionState.h"
+#include "SessionStateConversion.h"
 #include "UserData.h"
 #include "WKBundleAPICast.h"
 #include "WebAutomationSessionProxy.h"
@@ -76,6 +78,7 @@
 #include <WebCore/EventHandler.h>
 #include <WebCore/FormState.h>
 #include <WebCore/FrameDestructionObserverInlines.h>
+#include <WebCore/FrameLoadRequest.h>
 #include <WebCore/FrameLoader.h>
 #include <WebCore/HTMLFormControlElement.h>
 #include <WebCore/HTMLFormElement.h>
@@ -87,6 +90,7 @@
 #include <WebCore/MIMETypeRegistry.h>
 #include <WebCore/MediaDocument.h>
 #include <WebCore/MouseEvent.h>
+#include <WebCore/NavigationAction.h>
 #include <WebCore/NodeDocument.h>
 #include <WebCore/NotImplemented.h>
 #include <WebCore/PluginData.h>
@@ -518,6 +522,7 @@ void WebLocalFrameLoaderClient::didSameDocumentNavigationForFrameViaJS(SameDocum
         { }, /* request */
         { }, /* invalidURLString */
         std::nullopt, /* requester */
+        std::nullopt, /* backForwardChildFrameIndex */
     };
 
     // Notify the UIProcess.
@@ -1027,6 +1032,7 @@ void WebLocalFrameLoaderClient::dispatchDecidePolicyForNewWindowAction(const Nav
         request,
         request.url().isValid() ? String() : request.url().string(), /* invalidURLString */
         std::nullopt, /* requester */
+        std::nullopt, /* backForwardChildFrameIndex */
     };
 
     webPage->sendWithAsyncReply(Messages::WebPageProxy::DecidePolicyForNewWindowAction(navigationActionData, frameName), [frame = m_frame, listenerID] (PolicyDecision&& policyDecision) {
@@ -1140,6 +1146,84 @@ void WebLocalFrameLoaderClient::dispatchWillSubmitForm(FormState& formState, URL
     }
 
     webPage->sendWithAsyncReply(Messages::WebPageProxy::WillSubmitForm { m_frame->info(), sourceFrame->info(), values, UserData { WebProcess::singleton().transformObjectsToHandles(userData.get()).get() }, requestURL, method }, WTF::move(completionHandler));
+}
+
+void WebLocalFrameLoaderClient::dispatchLoadURLIntoChildFrame(URL&& url, const String& referer, LocalFrame& childFrame)
+{
+    RefPtr localFrame = m_localFrame.ptr();
+    if (!localFrame)
+        return;
+
+    Ref loader = localFrame->loader();
+
+    // Check Back/Forward conditions
+    if (isBackForwardLoadType(loader->loadType()) && !localFrame->document()->loadEventFinished()) {
+        if (RefPtr parentItem = loader->history().currentItem()) {
+            if (auto index = childFrame.indexInFrameTreeSiblings()) {
+                if (auto* childClient = dynamicDowncast<WebLocalFrameLoaderClient>(childFrame.loader().client())) {
+                    WebLocalFrameLoaderClient_RELEASE_LOG(Loading, "dispatchLoadURLIntoChildFrame: Back/Forward child frame detected, parentFrameItemID=%" PRIu64 ", childIndex=%" PRIu64,
+                        parentItem->frameItemID().object().toUInt64(), *index);
+
+                    auto frameLoadRequest = loader->createFrameLoadRequest(WTF::move(url));
+                    BackForwardChildFrameItemIndex frameItemIndex { parentItem->frameItemID(), static_cast<unsigned>(*index) };
+                    frameLoadRequest.setBackForwardChildFrameIndex(frameItemIndex);
+
+                    childClient->dispatchDecidePolicyForBackForwardNavigationAction(WTF::move(frameLoadRequest), referer, loader->loadType());
+                    return;
+                }
+            }
+        }
+    }
+
+    loader->continueLoadURLIntoChildFrame(WTF::move(url), referer, childFrame);
+}
+
+void WebLocalFrameLoaderClient::dispatchDecidePolicyForBackForwardNavigationAction(WebCore::FrameLoadRequest&& frameLoadRequest, const String& referer, WebCore::FrameLoadType loadType)
+{
+    RefPtr localFrame = m_localFrame.ptr();
+    if (!localFrame)
+        return;
+
+    NavigationAction navigationAction { frameLoadRequest, NavigationType::BackForward, nullptr };
+    navigationAction.setBackForwardChildFrameIndex(frameLoadRequest.backForwardChildFrameIndex());
+
+    auto request = frameLoadRequest.resourceRequest();
+
+    // Call dispatchDecidePolicyForNavigationAction on this (child) frame's client
+    // Response will be handled in the callback below
+    dispatchDecidePolicyForNavigationAction(
+        navigationAction,
+        request,
+        ResourceResponse { },
+        nullptr, // formState
+        { }, // clientRedirectSourceForHistory
+        std::nullopt, // navigationID
+        std::nullopt, // hitTestResult
+        false, // hasOpener
+        NavigationUpgradeToHTTPSBehavior::BasedOnPolicy,
+        localFrame->effectiveSandboxFlags(),
+        PolicyDecisionMode::Asynchronous,
+        [weakLocalFrame = WeakPtr { *localFrame }, url = request.url(), referer, loadType](PolicyAction action) {
+            if (action != PolicyAction::Use)
+                return;
+
+            RefPtr localFrame = weakLocalFrame.get();
+            if (!localFrame)
+                return;
+
+            RefPtr historyItem = localFrame->loader().requestedHistoryItem();
+            if (!historyItem) {
+                // Fallback: FrameState not found, use normal load path
+                RELEASE_LOG(Loading, "dispatchDecidePolicyForBackForwardNavigationAction: FrameState not found, using fallback normal load path");
+
+                if (RefPtr parent = dynamicDowncast<LocalFrame>(localFrame->tree().parent()))
+                    parent->loader().continueLoadURLIntoChildFrame(URL { url }, referer, *localFrame);
+                return;
+            }
+
+            localFrame->loader().loadRequestedHistoryItem(loadType, PolicyAlreadyDecided::Yes);
+        }
+    );
 }
 
 void WebLocalFrameLoaderClient::revertToProvisionalState(DocumentLoader*)

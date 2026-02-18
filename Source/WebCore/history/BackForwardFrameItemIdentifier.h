@@ -32,4 +32,9 @@ namespace WebCore {
 struct BackForwardFrameItemIdentifierType;
 using BackForwardFrameItemIdentifier = ProcessQualified<ObjectIdentifier<BackForwardFrameItemIdentifierType>>;
 
+struct BackForwardChildFrameItemIndex {
+    BackForwardFrameItemIdentifier parentFrameItemID;
+    unsigned childIndex { 0 };
+};
+
 } // namespace WebCore

@@ -82,3 +82,9 @@ header: "SessionState.h"
     Vector<Ref<WebKit::FrameState>> items;
     std::optional<uint32_t> currentIndex;
 };
+
+header: <WebCore/BackForwardFrameItemIdentifier.h>
+[CustomHeader] struct WebCore::BackForwardChildFrameItemIndex {
+    WebCore::BackForwardFrameItemIdentifier parentFrameItemID;
+    unsigned childIndex;
+};

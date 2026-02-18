@@ -60,6 +60,8 @@ public:
     Ref<WebBackForwardListFrameItem> mainFrame();
     WebBackForwardListFrameItem* childItemForFrameID(WebCore::FrameIdentifier);
     RefPtr<WebBackForwardListFrameItem> protectedChildItemForFrameID(WebCore::FrameIdentifier);
+    WebBackForwardListFrameItem* childItemForFrameItemID(WebCore::BackForwardFrameItemIdentifier);
+    WebBackForwardListFrameItem* childItemAtIndex(size_t);
 
     WebBackForwardListItem* backForwardListItem() const;
 

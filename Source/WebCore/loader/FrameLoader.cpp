@@ -497,14 +497,24 @@ void FrameLoader::checkContentPolicy(const ResourceResponse& response, ContentPo
     protect(client())->dispatchDecidePolicyForResponse(response, activeDocumentLoader()->request(), activeDocumentLoader()->downloadAttribute(), WTF::move(function));
 }
 
-void FrameLoader::changeLocation(const URL& url, const AtomString& passedTarget, Event* triggeringEvent, const ReferrerPolicy& referrerPolicy, ShouldOpenExternalURLsPolicy shouldOpenExternalURLsPolicy, std::optional<NewFrameOpenerPolicy> openerPolicy, const AtomString& downloadAttribute, std::optional<PrivateClickMeasurement>&& privateClickMeasurement, NavigationHistoryBehavior historyBehavior, Element* sourceElement)
+FrameLoadRequest FrameLoader::createFrameLoadRequest(URL&& url)
+{
+    return createFrameLoadRequest(WTF::move(url), selfTargetFrameName());
+}
+
+FrameLoadRequest FrameLoader::createFrameLoadRequest(URL&& url, const AtomString& frameName, const AtomString& downloadAttribute)
 {
     RefPtr frame = lexicalFrameFromCommonVM();
     auto initiatedByMainFrame = frame && frame->isMainFrame() ? InitiatedByMainFrame::Yes : InitiatedByMainFrame::Unknown;
 
     Ref document = *m_frame->document();
+    return FrameLoadRequest(document.copyRef(), document->securityOrigin(), { WTF::move(url) }, frameName, initiatedByMainFrame, downloadAttribute);
+}
+
+void FrameLoader::changeLocation(const URL& url, const AtomString& passedTarget, Event* triggeringEvent, const ReferrerPolicy& referrerPolicy, ShouldOpenExternalURLsPolicy shouldOpenExternalURLsPolicy, std::optional<NewFrameOpenerPolicy> openerPolicy, const AtomString& downloadAttribute, std::optional<PrivateClickMeasurement>&& privateClickMeasurement, NavigationHistoryBehavior historyBehavior, Element* sourceElement)
+{
     NewFrameOpenerPolicy newFrameOpenerPolicy = openerPolicy.value_or(referrerPolicy == ReferrerPolicy::NoReferrer ? NewFrameOpenerPolicy::Suppress : NewFrameOpenerPolicy::Allow);
-    FrameLoadRequest frameLoadRequest(document.copyRef(), document->securityOrigin(), { URL { url } }, passedTarget, initiatedByMainFrame, downloadAttribute);
+    auto frameLoadRequest = createFrameLoadRequest(URL { url }, passedTarget, downloadAttribute);
     frameLoadRequest.setNewFrameOpenerPolicy(newFrameOpenerPolicy);
     frameLoadRequest.setReferrerPolicy(referrerPolicy);
     frameLoadRequest.setShouldOpenExternalURLsPolicy(shouldOpenExternalURLsPolicy);
@@ -1074,6 +1084,13 @@ void FrameLoader::loadURLIntoChildFrame(const URL& url, const String& referer, L
     }
 #endif
 
+    URL childURL { url };
+
+    if (m_frame->page() && m_frame->page()->settings().useUIProcessForBackForwardItemLoading()) {
+        m_client->dispatchLoadURLIntoChildFrame(WTF::move(childURL), referer, childFrame);
+        return;
+    }
+
     // If we're moving in the back/forward list, we might want to replace the content
     // of this child frame with whatever was there at that point.
     RefPtr parentItem = history().currentItem();
@@ -1087,11 +1104,12 @@ void FrameLoader::loadURLIntoChildFrame(const URL& url, const String& referer, L
         }
     }
 
-    RefPtr lexicalFrame = lexicalFrameFromCommonVM();
-    auto initiatedByMainFrame = lexicalFrame && lexicalFrame->isMainFrame() ? InitiatedByMainFrame::Yes : InitiatedByMainFrame::Unknown;
+    continueLoadURLIntoChildFrame(WTF::move(childURL), referer, childFrame);
+}
 
-    RefPtr document = m_frame->document();
-    FrameLoadRequest frameLoadRequest { *document, document->securityOrigin(), { URL { url } }, selfTargetFrameName(), initiatedByMainFrame };
+void FrameLoader::continueLoadURLIntoChildFrame(URL&& url, const String& referer, LocalFrame& childFrame)
+{
+    auto frameLoadRequest = createFrameLoadRequest(WTF::move(url));
     frameLoadRequest.setNewFrameOpenerPolicy(NewFrameOpenerPolicy::Suppress);
     frameLoadRequest.setLockBackForwardList(LockBackForwardList::Yes);
     frameLoadRequest.setIsInitialFrameSrcLoad(true);
@@ -4453,7 +4471,7 @@ void FrameLoader::loadSameDocumentItem(HistoryItem& item)
 // FIXME: This function should really be split into a couple pieces, some of
 // which should be methods of HistoryController and some of which should be
 // methods of FrameLoader.
-void FrameLoader::loadDifferentDocumentItem(HistoryItem& item, HistoryItem* fromItem, FrameLoadType loadType, FormSubmissionCacheLoadPolicy cacheLoadPolicy, ShouldTreatAsContinuingLoad shouldTreatAsContinuingLoad)
+void FrameLoader::loadDifferentDocumentItem(HistoryItem& item, HistoryItem* fromItem, FrameLoadType loadType, FormSubmissionCacheLoadPolicy cacheLoadPolicy, ShouldTreatAsContinuingLoad shouldTreatAsContinuingLoad, PolicyAlreadyDecided policyAlreadyDecided)
 {
     FRAMELOADER_RELEASE_LOG(ResourceLoading, "loadDifferentDocumentItem: frame load started");
 
@@ -4477,6 +4495,7 @@ void FrameLoader::loadDifferentDocumentItem(HistoryItem& item, HistoryItem* from
         action.setTargetBackForwardItem(item);
         action.setSourceBackForwardItem(fromItem);
         action.setNavigationAPIType(determineNavigationType(loadType, NavigationHistoryBehavior::Auto));
+        action.setPolicyAlreadyDecided(policyAlreadyDecided);
         documentLoader->setTriggeringAction(WTF::move(action));
 
         documentLoader->setLastCheckedRequest(ResourceRequest());
@@ -4570,6 +4589,7 @@ void FrameLoader::loadDifferentDocumentItem(HistoryItem& item, HistoryItem* from
     action.setTargetBackForwardItem(item);
     action.setSourceBackForwardItem(fromItem);
     action.setNavigationAPIType(determineNavigationType(loadType, NavigationHistoryBehavior::Auto));
+    action.setPolicyAlreadyDecided(policyAlreadyDecided);
 
     loadWithNavigationAction(WTF::move(request), WTF::move(action), loadType, { }, AllowNavigationToInvalidURL::Yes, shouldTreatAsContinuingLoad);
 }
@@ -4620,6 +4640,26 @@ void FrameLoader::loadItem(HistoryItem& item, HistoryItem* fromItem, FrameLoadTy
         loadSameDocumentItem(item);
     } else
         loadDifferentDocumentItem(item, fromItem, loadType, MayAttemptCacheOnlyLoadForFormSubmissionItem, shouldTreatAsContinuingLoad);
+}
+
+void FrameLoader::setRequestedHistoryItem(HistoryItem& item)
+{
+    Ref frame = m_frame.get();
+
+    item.setFrameID(frame->frameID());
+    m_requestedHistoryItem = item;
+}
+
+void FrameLoader::loadRequestedHistoryItem(FrameLoadType loadType, PolicyAlreadyDecided policyAlreadyDecided)
+{
+    ASSERT(m_requestedHistoryItem);
+    loadDifferentDocumentItem(protect(*m_requestedHistoryItem), nullptr, loadType, MayAttemptCacheOnlyLoadForFormSubmissionItem, ShouldTreatAsContinuingLoad::No, policyAlreadyDecided);
+}
+
+void FrameLoader::loadItem(HistoryItem& item, FrameLoadType loadType, PolicyAlreadyDecided policyAlreadyDecided)
+{
+    setRequestedHistoryItem(item);
+    loadRequestedHistoryItem(loadType, policyAlreadyDecided);
 }
 
 void FrameLoader::retryAfterFailedCacheOnlyMainResourceLoad()

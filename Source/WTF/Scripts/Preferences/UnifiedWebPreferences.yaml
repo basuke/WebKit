@@ -8795,6 +8795,20 @@ UseSystemAppearance:
     WebCore:
       default: false
 
+UseUIProcessForBackForwardItemLoading:
+  type: bool
+  status: unstable
+  exposed: [ WebKit ]
+  humanReadableName: "Use UIProcess for Back/Forward Item Loading"
+  humanReadableDescription: "Enable UIProcess-side BackForwardListFrameItem lookup for child frames during Back/Forward navigation"
+  defaultValue:
+    WebKitLegacy:
+      default: false
+    WebKit:
+      default: false
+    WebCore:
+      default: false
+
 UserActivationAPIEnabled:
   type: bool
   status: stable

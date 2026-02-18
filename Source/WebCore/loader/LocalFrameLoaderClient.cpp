@@ -27,6 +27,7 @@
 #include "LocalFrameLoaderClient.h"
 
 #include "FrameLoader.h"
+#include "LocalFrame.h"
 
 namespace WebCore {
 
@@ -55,6 +56,11 @@ void LocalFrameLoaderClient::didExceedNetworkUsageThreshold()
 RefPtr<Frame> LocalFrameLoaderClient::provisionalParentFrame() const
 {
     return nullptr;
+}
+
+void LocalFrameLoaderClient::dispatchLoadURLIntoChildFrame(URL&& url, const String& referer, LocalFrame& childFrame)
+{
+    protect(m_loader)->continueLoadURLIntoChildFrame(WTF::move(url), referer, childFrame);
 }
 
 } // namespace WebCore

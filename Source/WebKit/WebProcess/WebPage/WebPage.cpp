@@ -2217,6 +2217,25 @@ void WebPage::loadRequest(LoadParameters&& loadParameters)
         return;
     }
 
+    // Handle Back/Forward child frame navigation with Site Isolation.
+    // When a child frame's Back/Forward navigation triggers a process swap (Site Isolation),
+    // UIProcess sends the FrameState directly via LoadParameters instead of PolicyDecision.
+    // This allows the new process to restore the historical state without knowing about
+    // the previous process or making additional IPC calls.
+    if (loadParameters.backForwardChildFrameState) {
+        WEBPAGE_RELEASE_LOG(Loading, "loadRequest: Handling Back/Forward child frame with Site Isolation, URL=%s", loadParameters.backForwardChildFrameState->urlString.utf8().data());
+
+        // Build HistoryItem from FrameState
+        Ref historyItemClient = this->historyItemClient();
+        auto ignoreHistoryItemChangesForScope = historyItemClient->ignoreChangesForScope();
+        Ref historyItem = toHistoryItem(historyItemClient, Ref { *loadParameters.backForwardChildFrameState });
+
+        // Set the history item and do a back/forward navigation.
+        // PolicyAlreadyDecided::Yes because UIProcess already performed all policy checks.
+        localFrame->loader().loadItem(historyItem, FrameLoadType::IndexedBackForward, PolicyAlreadyDecided::Yes);
+        return;
+    }
+
     setLastNavigationWasAppInitiated(loadParameters.request.isAppInitiated());
 
 #if ENABLE(APP_BOUND_DOMAINS)

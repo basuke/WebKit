@@ -30,6 +30,7 @@
 #include "WebMouseEvent.h"
 #include "WebPageProxyIdentifier.h"
 #include <WebCore/AdvancedPrivacyProtections.h>
+#include <WebCore/BackForwardFrameItemIdentifier.h>
 #include <WebCore/BackForwardItemIdentifier.h>
 #include <WebCore/FloatPoint.h>
 #include <WebCore/FrameLoaderTypes.h>
@@ -91,6 +92,7 @@ struct NavigationActionData {
     WebCore::ResourceRequest request;
     String invalidURLString;
     std::optional<WebCore::NavigationRequester> requester;
+    std::optional<WebCore::BackForwardChildFrameItemIndex> backForwardChildFrameIndex;
 };
 
 }

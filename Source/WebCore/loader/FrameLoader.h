@@ -36,6 +36,7 @@
 #include <WebCore/FrameLoaderTypes.h>
 #include <WebCore/LayoutMilestone.h>
 #include <WebCore/LoaderMalloc.h>
+#include <WebCore/NavigationAction.h>
 #include <WebCore/NavigationRequester.h>
 #include <WebCore/PageIdentifier.h>
 #include <WebCore/PrivateClickMeasurement.h>
@@ -79,7 +80,6 @@ class HistoryController;
 class HistoryItem;
 class LocalDOMWindow;
 class LocalFrameLoaderClient;
-class NavigationAction;
 class NetworkingContext;
 class Node;
 class Page;
@@ -354,7 +354,10 @@ public:
 
     // HistoryController specific.
     void loadItem(HistoryItem&, HistoryItem* fromItem, FrameLoadType, ShouldTreatAsContinuingLoad);
+    WEBCORE_EXPORT void loadItem(HistoryItem&, FrameLoadType, PolicyAlreadyDecided = PolicyAlreadyDecided::No);
     HistoryItem* requestedHistoryItem() const { return m_requestedHistoryItem.get(); }
+    WEBCORE_EXPORT void setRequestedHistoryItem(HistoryItem&);
+    WEBCORE_EXPORT void loadRequestedHistoryItem(FrameLoadType, PolicyAlreadyDecided = PolicyAlreadyDecided::No);
 
     void updateURLAndHistory(const URL&, RefPtr<SerializedScriptValue>&& stateObject, NavigationHistoryBehavior = NavigationHistoryBehavior::Replace);
 
@@ -365,6 +368,9 @@ public:
 
     void prefetch(const URL&, const Vector<String>&, std::optional<ReferrerPolicy>, bool lowPriority = false);
     DocumentPrefetcher& documentPrefetcher() { return m_documentPrefetcher.get(); }
+
+    WEBCORE_EXPORT void continueLoadURLIntoChildFrame(URL&&, const String& referer, LocalFrame&);
+    WEBCORE_EXPORT FrameLoadRequest createFrameLoadRequest(URL&&);
 
 private:
     enum FormSubmissionCacheLoadPolicy {
@@ -383,7 +389,7 @@ private:
     void checkCompletenessNow();
 
     void loadSameDocumentItem(HistoryItem&);
-    void loadDifferentDocumentItem(HistoryItem&, HistoryItem* fromItem, FrameLoadType, FormSubmissionCacheLoadPolicy, ShouldTreatAsContinuingLoad);
+    void loadDifferentDocumentItem(HistoryItem&, HistoryItem* fromItem, FrameLoadType, FormSubmissionCacheLoadPolicy, ShouldTreatAsContinuingLoad, PolicyAlreadyDecided = PolicyAlreadyDecided::No);
 
     void loadProvisionalItemFromCachedPage();
 
@@ -464,6 +470,7 @@ private:
     // SubframeLoader specific.
     void loadURLIntoChildFrame(const URL&, const String& referer, LocalFrame&);
     void started();
+    FrameLoadRequest createFrameLoadRequest(URL&&, const AtomString& frameName, const AtomString& downloadAttribute = { });
 
     // PolicyChecker specific.
     void clearProvisionalLoadForPolicyCheck();
