@@ -1087,11 +1087,33 @@ void FrameLoader::loadURLIntoChildFrame(const URL& url, const String& referer, L
         }
     }
 
+    URL childURL { url };
+    // FIXME: This is a workaround for https://webkit.org/b/307121
+    // This logic should replace the above load once UIProcess-driven subframe loading is implemented.
+    if (m_frame->settings().siteIsolationEnabled()) {
+        if (parentItem && isBackForwardLoadType(loadType()) && !m_frame->document()->loadEventFinished()) {
+            if (RefPtr childItem = parentItem->childItemForFrame(childFrame)) {
+                // During session restoration, the child frame should be loaded normally through
+                // the frame tree restoration rather than using the history restoration path.
+                if (!childItem->wasRestoredFromSession()) {
+                    Ref childLoader = childFrame.loader();
+                    childItem->setFrameID(childFrame.frameID());
+                    childLoader->m_requestedHistoryItem = childItem;
+                    childLoader->loadDifferentDocumentItem(*childItem, nullptr, loadType(), MayAttemptCacheOnlyLoadForFormSubmissionItem, ShouldTreatAsContinuingLoad::No);
+                    return;
+                }
+
+                childItem->setWasRestoredFromSession(false);
+                childURL = URL { childItem->urlString() };
+            }
+        }
+    }
+
     RefPtr lexicalFrame = lexicalFrameFromCommonVM();
     auto initiatedByMainFrame = lexicalFrame && lexicalFrame->isMainFrame() ? InitiatedByMainFrame::Yes : InitiatedByMainFrame::Unknown;
 
     RefPtr document = m_frame->document();
-    FrameLoadRequest frameLoadRequest { *document, document->securityOrigin(), { URL { url } }, selfTargetFrameName(), initiatedByMainFrame };
+    FrameLoadRequest frameLoadRequest { *document, document->securityOrigin(), { WTF::move(childURL) }, selfTargetFrameName(), initiatedByMainFrame };
     frameLoadRequest.setNewFrameOpenerPolicy(NewFrameOpenerPolicy::Suppress);
     frameLoadRequest.setLockBackForwardList(LockBackForwardList::Yes);
     frameLoadRequest.setIsInitialFrameSrcLoad(true);
