@@ -51,6 +51,7 @@
 #include "HistoryItem.h"
 #include "LocalDOMWindow.h"
 #include "LocalFrameInlines.h"
+#include "LocalFrameLoaderClient.h"
 #include "Logging.h"
 #include "Navigation.h"
 #include "NavigationDisabler.h"
@@ -312,7 +313,12 @@ public:
             localFrame->loader().changeLocation(localFrame->document()->url(), selfTargetFrameName(), 0, ReferrerPolicy::EmptyString, shouldOpenExternalURLs(), std::nullopt, nullAtom(), std::nullopt, NavigationHistoryBehavior::Reload);
             return;
         }
-        
+
+        if (page->settings().useUIProcessForBackForwardItemLoading()) {
+            localFrame->loader().client().dispatchGoToBackForwardItem(m_historyItem, FrameLoadType::IndexedBackForward);
+            return;
+        }
+
         Ref rootFrame = localFrame->rootFrame();
         page->goToItem(rootFrame, m_historyItem, FrameLoadType::IndexedBackForward, ShouldTreatAsContinuingLoad::No);
     }

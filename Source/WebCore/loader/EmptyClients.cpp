@@ -1065,6 +1065,10 @@ void EmptyFrameLoaderClient::shouldGoToHistoryItemAsync(HistoryItem&, Completion
     RELEASE_ASSERT_NOT_REACHED();
 }
 
+void EmptyFrameLoaderClient::dispatchGoToBackForwardItem(HistoryItem&, FrameLoadType)
+{
+}
+
 void EmptyFrameLoaderClient::saveViewStateToItem(HistoryItem&)
 {
 }

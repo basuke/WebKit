@@ -1121,6 +1121,16 @@ void WebFrameLoaderClient::shouldGoToHistoryItemAsync(WebCore::HistoryItem&, Com
     RELEASE_ASSERT_NOT_REACHED();
 }
 
+void WebFrameLoaderClient::dispatchGoToBackForwardItem(WebCore::HistoryItem& item, WebCore::FrameLoadType frameLoadType)
+{
+    auto* frame = core(m_webFrame.get());
+    if (!frame)
+        return;
+    Ref rootFrame = frame->rootFrame();
+    if (RefPtr page = rootFrame->page())
+        page->goToItem(rootFrame, item, frameLoadType, WebCore::ShouldTreatAsContinuingLoad::No);
+}
+
 bool WebFrameLoaderClient::shouldFallBack(const WebCore::ResourceError& error) const
 {
     // FIXME: Needs to check domain.

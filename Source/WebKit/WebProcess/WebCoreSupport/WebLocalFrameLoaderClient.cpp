@@ -1415,6 +1415,15 @@ void WebLocalFrameLoaderClient::shouldGoToHistoryItemAsync(HistoryItem& item, Co
     webPage->sendWithAsyncReply(Messages::WebPageProxy::ShouldGoToBackForwardListItem(item.itemID(), item.isInBackForwardCache()), WTF::move(completionHandler));
 }
 
+void WebLocalFrameLoaderClient::dispatchGoToBackForwardItem(HistoryItem& item, FrameLoadType frameLoadType)
+{
+    RefPtr webPage = m_frame->page();
+    if (!webPage)
+        return;
+
+    webPage->send(Messages::WebPageProxy::GoToBackForwardItemForHistoryTraversal(item.itemID(), frameLoadType));
+}
+
 bool WebLocalFrameLoaderClient::shouldFallBack(const ResourceError& error) const
 {
     static NeverDestroyed<const ResourceError> cancelledError(WebKit::cancelledError(ResourceRequest()));

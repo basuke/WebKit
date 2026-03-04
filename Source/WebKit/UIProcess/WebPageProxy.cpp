@@ -2779,6 +2779,23 @@ void WebPageProxy::shouldGoToBackForwardListItemSync(BackForwardItemIdentifier i
     shouldGoToBackForwardListItem(itemID, false, WTF::move(completionHandler));
 }
 
+void WebPageProxy::goToBackForwardItemForHistoryTraversal(BackForwardItemIdentifier itemID, FrameLoadType frameLoadType)
+{
+    WEBPAGEPROXY_RELEASE_LOG(Loading, "goToBackForwardItemForHistoryTraversal:");
+
+    RefPtr item = backForwardList().itemForID(itemID);
+    if (!item)
+        return;
+
+    Ref frameItem = item->mainFrameItem();
+    if (RefPtr currentItem = backForwardList().currentItem()) {
+        if (RefPtr childItem = currentItem->navigatedFrameID() ? frameItem->childItemForFrameID(*currentItem->navigatedFrameID()) : nullptr)
+            frameItem = childItem.releaseNonNull();
+    }
+
+    goToBackForwardItem(frameItem, frameLoadType);
+}
+
 bool WebPageProxy::shouldKeepCurrentBackForwardListItemInList(WebBackForwardListItem& item)
 {
     RefPtr protectedPageClient { pageClient() };
@@ -5633,7 +5650,10 @@ void WebPageProxy::continueNavigationInNewProcess(API::Navigation& navigation, W
             // The FrameState from the BackForwardList may contain an old frameID from a
             // previous incarnation of this child frame. Update it to the current frameID
             // so the new process can find the correct frame to navigate.
-            frameState->frameID = frame.frameID();
+            if (auto currentFrameID = frameState->frameID; currentFrameID != frame.frameID()) {
+                frameState->frameID = frame.frameID();
+                backForwardList().updateFrameIdentifier(*currentFrameID, frame.frameID());
+            }
 
             WEBPAGEPROXY_RELEASE_LOG(Loading, "continueNavigationInNewProcess: Sending GoToBackForwardItem for child frame to new process, URL=%" SENSITIVE_LOG_STRING, frameState->urlString.utf8().data());
             auto publicSuffix = WebCore::PublicSuffixStore::singleton().publicSuffix(navigation.currentRequest().url());
