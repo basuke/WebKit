@@ -2727,7 +2727,10 @@ RefPtr<API::Navigation> WebPageProxy::goToBackForwardItem(WebBackForwardListFram
     if (protect(preferences())->siteIsolationEnabled()) {
         if (RefPtr frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this) {
             process = frame->process();
-            frameState = frameItem.copyFrameStateWithChildren();
+            if (protect(preferences())->useUIProcessForBackForwardItemLoading())
+                frameState = frameItem.copyFrameState();
+            else
+                frameState = frameItem.copyFrameStateWithChildren();
         }
     }
     auto publicSuffix = WebCore::PublicSuffixStore::singleton().publicSuffix(URL(item->url()));
