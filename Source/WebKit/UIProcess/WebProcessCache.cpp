@@ -143,12 +143,12 @@ bool WebProcessCache::addProcessIfPossible(Ref<WebProcessProxy>&& process)
     m_pendingAddRequests.add(requestIdentifier, CachedProcess::create(process.copyRef(), m_cachedProcessLifetime));
 
     WEBPROCESSCACHE_RELEASE_LOG("addProcessIfPossible: Checking if process is responsive before caching it", process->processID());
-    process->isResponsive([this, protectedThis = Ref { *this }, process, requestIdentifier](bool isResponsive) {
+    process->isResponsive([this, protectedThis = Ref { *this }, process, requestIdentifier](WebProcessProxy::IsResponsive isResponsive) {
         auto cachedProcess = m_pendingAddRequests.take(requestIdentifier);
         if (!cachedProcess)
             return;
 
-        if (!isResponsive) {
+        if (isResponsive == WebProcessProxy::IsResponsive::No) {
             WEBPROCESSCACHE_RELEASE_LOG_ERROR("addProcessIfPossible(): Not caching process because it is not responsive", cachedProcess->process().processID());
             return;
         }

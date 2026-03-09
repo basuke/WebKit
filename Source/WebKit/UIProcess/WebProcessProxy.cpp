@@ -389,7 +389,7 @@ WebProcessProxy::~WebProcessProxy()
 
     auto isResponsiveCallbacks = WTF::move(m_isResponsiveCallbacks);
     for (auto& callback : isResponsiveCallbacks)
-        callback(false);
+        callback(IsResponsive::No);
 
     while (m_numberOfTimesSuddenTerminationWasDisabled-- > 0)
         WebCore::enableSuddenTermination();
@@ -1344,7 +1344,7 @@ void WebProcessProxy::processDidTerminateOrFailedToLaunch(ProcessTerminationReas
 
     auto isResponsiveCallbacks = std::exchange(m_isResponsiveCallbacks, { });
     for (auto& callback : isResponsiveCallbacks)
-        callback(false);
+        callback(IsResponsive::No);
 
     if (isStandaloneServiceWorkerProcess())
         protect(processPool())->serviceWorkerProcessCrashed(*this, reason);
@@ -1408,9 +1408,8 @@ void WebProcessProxy::didBecomeUnresponsive()
     for (Ref page : pages())
         page->processDidBecomeUnresponsive(*this);
 
-    bool isWebProcessResponsive = false;
     for (auto& callback : isResponsiveCallbacks)
-        callback(isWebProcessResponsive);
+        callback(IsResponsive::No);
 
     // If the web process becomes unresponsive and only runs service/shared workers, kill it ourselves since there are no native clients to do it.
     if (isRunningWorkers() && m_pageMap.isEmpty()) {
@@ -2050,13 +2049,16 @@ void WebProcessProxy::updateMediaStreamingActivity()
     }
 }
 
-void WebProcessProxy::isResponsive(CompletionHandler<void(bool isWebProcessResponsive)>&& callback)
+void WebProcessProxy::isResponsive(CompletionHandler<void(IsResponsive)>&& callback)
 {
     if (m_isResponsive == NoOrMaybe::No) {
         if (callback) {
             RunLoop::mainSingleton().dispatch([callback = WTF::move(callback)]() mutable {
-                bool isWebProcessResponsive = false;
-                callback(isWebProcessResponsive);
+                if (!callback) {
+                    RELEASE_LOG_FAULT(Process, "WebProcessProxy::isResponsive: completion handler is null in RunLoop dispatch");
+                    return;
+                }
+                callback(IsResponsive::No);
             });
         }
         return;
@@ -2070,7 +2072,7 @@ void WebProcessProxy::isResponsive(CompletionHandler<void(bool isWebProcessRespo
             return;
 
         for (auto& isResponsive : std::exchange(weakThis->m_isResponsiveCallbacks, { }))
-            isResponsive(true);
+            isResponsive(IsResponsive::Yes);
     });
 }
 
@@ -2087,7 +2089,7 @@ void WebProcessProxy::isResponsiveWithLazyStop()
                 return;
 
             for (auto& isResponsive : std::exchange(weakThis->m_isResponsiveCallbacks, { }))
-                isResponsive(true);
+                isResponsive(IsResponsive::Yes);
         }, UseLazyStop::Yes);
     }
 }

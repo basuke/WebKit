@@ -361,7 +361,8 @@ public:
 
     void windowServerConnectionStateChanged();
 
-    void isResponsive(CompletionHandler<void(bool isWebProcessResponsive)>&&);
+    enum class IsResponsive : bool { No, Yes };
+    void isResponsive(CompletionHandler<void(IsResponsive)>&&);
     void isResponsiveWithLazyStop();
     void didReceiveBackgroundResponsivenessPing();
 
@@ -828,7 +829,7 @@ private:
     std::optional<WebCore::Site> m_mainFrameSite;
 
     enum class NoOrMaybe { No, Maybe } m_isResponsive;
-    Vector<CompletionHandler<void(bool webProcessIsResponsive)>> m_isResponsiveCallbacks;
+    Vector<CompletionHandler<void(IsResponsive)>> m_isResponsiveCallbacks;
 
     VisibleWebPageCounter m_visiblePageCounter;
     RefPtr<WebsiteDataStore> m_websiteDataStore;
