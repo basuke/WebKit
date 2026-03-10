@@ -3784,6 +3784,9 @@ void FrameLoader::continueFragmentScrollAfterNavigationPolicy(const ResourceRequ
     // frame to be deallocated.
     Ref frame = m_frame.get();
 
+    // A fragment scroll should cancel any pending async back-forward navigation.
+    cancelPendingAsyncBackForwardNavigation();
+
     // If we have a provisional request for a different document, a fragment scroll should cancel it.
     if (m_provisionalDocumentLoader && !equalIgnoringFragmentIdentifier(m_provisionalDocumentLoader->request().url(), request.url())) {
         protect(m_provisionalDocumentLoader)->stopLoading();

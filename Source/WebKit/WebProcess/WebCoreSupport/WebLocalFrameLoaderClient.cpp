@@ -1210,11 +1210,17 @@ void WebLocalFrameLoaderClient::dispatchDecidePolicyForBackForwardNavigationActi
             if (!historyItem) {
                 // Fallback: FrameState not found, use normal load path
                 RELEASE_LOG(Loading, "dispatchDecidePolicyForBackForwardNavigationAction: FrameState not found, using fallback normal load path");
-
+                localFrame->loader().cancelPendingAsyncBackForwardNavigation();
                 if (RefPtr parent = dynamicDowncast<LocalFrame>(localFrame->tree().parent()))
                     parent->loader().continueLoadURLIntoChildFrame(URL { url }, referer, *localFrame);
                 return;
             }
+
+            // The async wait is over — UIProcess has resolved the HistoryItem
+            // and the actual loading begins via normal DocumentLoader mechanisms.
+            // Clear the async state so that frame completion tracking behaves
+            // identically to the non-flag path.
+            localFrame->loader().shouldProceedWithAsyncBackForwardNavigation();
 
             localFrame->loader().loadRequestedHistoryItem(loadType, PolicyAlreadyDecided::Yes);
         }
