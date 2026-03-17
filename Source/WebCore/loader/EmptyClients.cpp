@@ -130,6 +130,7 @@ class EmptyBackForwardClient final : public BackForwardClient {
     unsigned NODELETE forwardListCount() const final { return 0; }
     bool NODELETE containsItem(const HistoryItem&) const final { return false; }
     void NODELETE close() final { }
+    bool isSameDocumentNavigation(int) const final { return false; }
 };
 
 #if ENABLE(CONTEXT_MENUS)

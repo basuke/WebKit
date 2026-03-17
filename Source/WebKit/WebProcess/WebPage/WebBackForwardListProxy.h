@@ -57,6 +57,7 @@ private:
     unsigned backListCount() const override;
     unsigned forwardListCount() const override;
     bool containsItem(const WebCore::HistoryItem&) const final;
+    bool isSameDocumentNavigation(int steps) const final;
     bool isWebBackForwardListProxy() const final { return true; }
     const WebBackForwardListCounts& cacheListCountsIfNecessary() const;
 

@@ -98,6 +98,11 @@ WebBackForwardListFrameItem* WebBackForwardListFrameItem::childItemAtIndex(uint6
     return m_children[index].ptr();
 }
 
+bool WebBackForwardListFrameItem::isSameDocumentNavigation(WebBackForwardListFrameItem& other)
+{
+    return frameState().documentSequenceNumber == other.frameState().documentSequenceNumber;
+}
+
 WebBackForwardListItem* WebBackForwardListFrameItem::backForwardListItem() const
 {
     return m_backForwardListItem.get();

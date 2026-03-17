@@ -111,6 +111,7 @@ private:
     const BackForwardListItemVector& entries() const LIFETIME_BOUND { return m_entries; }
     WebBackForwardListCounts NODELETE counts() const;
     Ref<FrameState> completeFrameStateForNavigation(Ref<FrameState>&&);
+    bool isSameDocumentNavigation(int32_t steps);
 
     // IPC messages
     void backForwardAddItem(IPC::Connection&, Ref<FrameState>&&);
@@ -122,6 +123,7 @@ private:
     void backForwardItemAtIndex(int32_t index, WebCore::FrameIdentifier, CompletionHandler<void(RefPtr<FrameState>&&)>&&);
     void backForwardListContainsItem(WebCore::BackForwardItemIdentifier, CompletionHandler<void(bool)>&&);
     void backForwardListCounts(CompletionHandler<void(WebBackForwardListCounts&&)>&&);
+    void backForwardIsSameDocumentNavigation(int32_t steps, CompletionHandler<void(bool)>&&);
 
     WeakPtr<WebPageProxy> m_page;
     BackForwardListItemVector m_entries;

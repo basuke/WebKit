@@ -318,11 +318,9 @@ public:
             return;
         }
 
-        RefPtr historyItem = targetHistoryItem(*localFrame);
+        Ref rootFrame = localFrame->rootFrame();
+        RefPtr historyItem = protect(page->backForward())->itemAtIndex(m_steps, rootFrame->frameID());
         if (!historyItem)
-            return;
-
-        if (!protect(page->backForward())->containsItem(*historyItem))
             return;
 
         if (RefPtr currentItem = protect(page->backForward())->currentItem(); currentItem && currentItem->itemID() == historyItem->itemID()) {
@@ -330,7 +328,6 @@ public:
             return;
         }
 
-        Ref rootFrame = localFrame->rootFrame();
         page->goToItem(rootFrame, *historyItem, FrameLoadType::IndexedBackForward, ShouldTreatAsContinuingLoad::No);
     }
 
@@ -340,12 +337,11 @@ public:
         if (!localFrame)
             return false;
 
-        RefPtr historyItem = targetHistoryItem(*localFrame);
-        if (!historyItem)
+        RefPtr page { localFrame->page() };
+        if (!page)
             return false;
 
-        RefPtr currentItem = localFrame->loader().history().currentItem();
-        return currentItem && historyItem->shouldDoSameDocumentNavigationTo(*currentItem);
+        return protect(page->backForward())->isSameDocumentNavigation(m_steps);
     }
 
     ShouldCancel adjustForNewBackForwardEntry() final
@@ -358,18 +354,6 @@ public:
     }
 
 private:
-    HistoryItem* targetHistoryItem(LocalFrame& localFrame) const
-    {
-        if (!m_historyItem) {
-            RefPtr page = localFrame.page();
-            if (!page)
-                return nullptr;
-            m_historyItem = protect(page->backForward())->itemAtIndex(m_steps, localFrame.rootFrame().frameID());
-        }
-        return m_historyItem.get();
-    }
-
-    mutable RefPtr<HistoryItem> m_historyItem;
     int m_steps;
 };
 

@@ -260,3 +260,17 @@ bool BackForwardList::containsItem(const HistoryItem& entry) const
 {
     return m_entryHash.contains(const_cast<HistoryItem*>(&entry));
 }
+
+bool BackForwardList::isSameDocumentNavigation(int steps) const
+{
+    if (m_current == NoCurrentItemIndex)
+        return false;
+
+    int target = static_cast<int>(m_current) + steps;
+    if (target < 0 || target >= static_cast<int>(m_entries.size()))
+        return false;
+
+    Ref currentItem = m_entries[m_current];
+    Ref targetItem = m_entries[target];
+    return currentItem->shouldDoSameDocumentNavigationTo(targetItem);
+}

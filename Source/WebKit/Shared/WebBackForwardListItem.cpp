@@ -221,4 +221,25 @@ void WebBackForwardListItem::updateFrameID(FrameIdentifier oldFrameID, FrameIden
         m_navigatedFrameID = newFrameID;
 }
 
+bool WebBackForwardListItem::isSameDocumentNavigation(WebBackForwardListItem& targetItem)
+{
+    Ref targetMainFrame = targetItem.mainFrameItem();
+    Ref currentMainFrame = mainFrameItem();
+
+    if (!targetMainFrame->isSameDocumentNavigation(currentMainFrame))
+        return false;
+
+    // Main frame is same-document. Check if the navigated child frame changed document.
+    auto frameID = this->navigatedFrameID();
+    if (!frameID || *frameID == targetMainFrame->frameID())
+        return true;
+
+    RefPtr targetChild = targetMainFrame->childItemForFrameID(*frameID);
+    RefPtr currentChild = currentMainFrame->childItemForFrameID(*frameID);
+    if (!targetChild || !currentChild)
+        return false;
+
+    return targetChild->isSameDocumentNavigation(*currentChild);
+}
+
 } // namespace WebKit

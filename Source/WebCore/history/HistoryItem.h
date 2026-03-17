@@ -167,7 +167,7 @@ public:
     WEBCORE_EXPORT const Vector<Ref<HistoryItem>>& NODELETE children() const LIFETIME_BOUND;
     void clearChildren();
 
-    bool NODELETE shouldDoSameDocumentNavigationTo(HistoryItem& otherItem) const;
+    WEBCORE_EXPORT bool NODELETE shouldDoSameDocumentNavigationTo(HistoryItem& otherItem) const;
 
     bool isCurrentDocument(Document&) const;
     

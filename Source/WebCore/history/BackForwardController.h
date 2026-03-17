@@ -66,6 +66,7 @@ public:
     WEBCORE_EXPORT unsigned forwardCount() const;
 
     bool containsItem(const HistoryItem&) const;
+    bool isSameDocumentNavigation(int steps) const;
 
     WEBCORE_EXPORT RefPtr<HistoryItem> backItem(std::optional<FrameIdentifier> = std::nullopt);
     WEBCORE_EXPORT RefPtr<HistoryItem> currentItem(std::optional<FrameIdentifier> = std::nullopt);

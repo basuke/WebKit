@@ -149,6 +149,11 @@ bool BackForwardController::containsItem(const HistoryItem& item) const
     return m_client->containsItem(item);
 }
 
+bool BackForwardController::isSameDocumentNavigation(int steps) const
+{
+    return m_client->isSameDocumentNavigation(steps);
+}
+
 unsigned BackForwardController::count() const
 {
     Ref client = m_client;

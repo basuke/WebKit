@@ -699,6 +699,16 @@ void WebBackForwardList::updateFrameIdentifier(FrameIdentifier oldFrameID, Frame
         entry->updateFrameID(oldFrameID, newFrameID);
 }
 
+bool WebBackForwardList::isSameDocumentNavigation(int32_t steps)
+{
+    RefPtr targetItem = itemAtIndex(steps);
+    RefPtr current = currentItem();
+    if (!targetItem || !current)
+        return false;
+
+    return current->isSameDocumentNavigation(*targetItem);
+}
+
 void WebBackForwardList::backForwardGoToItem(BackForwardItemIdentifier itemID, CompletionHandler<void(const WebBackForwardListCounts&)>&& completionHandler)
 {
     // On process swap, we tell the previous process to ignore the load, which causes it to restore its current back forward item to its previous
@@ -755,6 +765,11 @@ void WebBackForwardList::backForwardItemAtIndex(int32_t index, FrameIdentifier f
 void WebBackForwardList::backForwardListCounts(CompletionHandler<void(WebBackForwardListCounts&&)>&& completionHandler)
 {
     completionHandler(counts());
+}
+
+void WebBackForwardList::backForwardIsSameDocumentNavigation(int32_t steps, CompletionHandler<void(bool)>&& completionHandler)
+{
+    completionHandler(isSameDocumentNavigation(steps));
 }
 
 FrameState* WebBackForwardList::findFrameStateInItem(WebCore::BackForwardItemIdentifier itemID, WebCore::FrameIdentifier parentFrameID, uint64_t childFrameIndex)

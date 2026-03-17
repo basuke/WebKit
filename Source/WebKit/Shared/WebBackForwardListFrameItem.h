@@ -61,6 +61,7 @@ public:
     Ref<WebBackForwardListFrameItem> mainFrame();
     WebBackForwardListFrameItem* NODELETE childItemForFrameID(WebCore::FrameIdentifier);
     WebBackForwardListFrameItem* NODELETE childItemAtIndex(uint64_t);
+    bool isSameDocumentNavigation(WebBackForwardListFrameItem&);
 
     WebBackForwardListItem* NODELETE backForwardListItem() const;
 

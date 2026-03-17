@@ -136,6 +136,13 @@ bool WebBackForwardListProxy::containsItem(const WebCore::HistoryItem& item) con
     return contains;
 }
 
+bool WebBackForwardListProxy::isSameDocumentNavigation(int steps) const
+{
+    auto sendResult = m_page->sendSync(Messages::WebBackForwardList::BackForwardIsSameDocumentNavigation(steps));
+    auto [isSameDocument] = sendResult.takeReplyOr(false);
+    return isSameDocument;
+}
+
 const WebBackForwardListCounts& WebBackForwardListProxy::cacheListCountsIfNecessary() const
 {
     if (!m_cachedBackForwardListCounts) {

@@ -68,6 +68,7 @@ public:
     unsigned backListCount() const override;
     unsigned forwardListCount() const override;
     bool containsItem(const WebCore::HistoryItem&) const final;
+    bool isSameDocumentNavigation(int) const final;
 
     void close() override;
     bool NODELETE closed();

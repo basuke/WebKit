@@ -54,6 +54,7 @@ public:
     virtual unsigned backListCount() const = 0;
     virtual unsigned forwardListCount() const = 0;
     virtual bool containsItem(const HistoryItem&) const = 0;
+    virtual bool isSameDocumentNavigation(int steps) const = 0;
 
     virtual void close() = 0;
     virtual bool isWebBackForwardListProxy() const { return false; }
