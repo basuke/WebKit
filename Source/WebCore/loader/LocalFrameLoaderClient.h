@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <WebCore/BackForwardItemIdentifier.h>
 #include <WebCore/FrameLoaderClient.h>
 #include <WebCore/IntPoint.h>
 #include <WebCore/LayoutMilestone.h>
@@ -207,6 +208,7 @@ public:
     virtual void dispatchWillSubmitForm(FormState&, URL&& requestURL, String&& method, CompletionHandler<void()>&&) = 0;
 
     virtual void dispatchBackForwardItemLoading(const URL&, const String& referer, LocalFrame& childFrame);
+    virtual void dispatchBackForwardSubframeNavigation(LocalFrame& childFrame, BackForwardItemIdentifier targetItemID, FrameLoadType);
 
     virtual void revertToProvisionalState(DocumentLoader*) = 0;
     virtual void setMainDocumentError(DocumentLoader*, const ResourceError&) = 0;

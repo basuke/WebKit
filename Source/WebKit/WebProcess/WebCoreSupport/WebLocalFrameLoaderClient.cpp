@@ -1169,6 +1169,19 @@ void WebLocalFrameLoaderClient::dispatchBackForwardItemLoading(const URL& url, c
     childClient->dispatchDecidePolicyForBackForwardNavigationAction(WTF::move(frameLoadRequest), referer, loader->loadType());
 }
 
+void WebLocalFrameLoaderClient::dispatchBackForwardSubframeNavigation(LocalFrame& childFrame, BackForwardItemIdentifier targetItemID, FrameLoadType loadType)
+{
+    auto* childClient = dynamicDowncast<WebLocalFrameLoaderClient>(childFrame.loader().client());
+    ASSERT(childClient);
+
+    URL childURL = childFrame.document() ? protect(childFrame.document())->url() : URL();
+    auto frameLoadRequest = childFrame.loader().createFrameLoadRequest(URL { childURL });
+    frameLoadRequest.setTargetBackForwardItemIdentifier(targetItemID);
+
+    String referer = m_localFrame->document() ? protect(m_localFrame->document())->url().string() : String();
+    childClient->dispatchDecidePolicyForBackForwardNavigationAction(WTF::move(frameLoadRequest), referer, loadType);
+}
+
 void WebLocalFrameLoaderClient::dispatchDecidePolicyForBackForwardNavigationAction(WebCore::FrameLoadRequest&& frameLoadRequest, const String& referer, WebCore::FrameLoadType loadType)
 {
     Ref localFrame = m_localFrame.get();

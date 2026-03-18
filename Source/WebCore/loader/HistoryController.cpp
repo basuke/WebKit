@@ -962,6 +962,25 @@ void HistoryController::recursiveGoToItem(HistoryItem& item, HistoryItem* fromIt
     if (!itemsAreClones(item, fromItem))
         return m_frame->loader().loadItem(item, fromItem, type, shouldTreatAsContinuingLoad);
 
+    // When UseUIProcessForBackForwardItemLoading is enabled, the target HistoryItem
+    // has no children. Use fromItem's children to find child frames that may need
+    // navigation, and dispatch each to UIProcess for back/forward resolution.
+    if (item.children().isEmpty() && fromItem && !fromItem->children().isEmpty()
+        && m_frame->page() && m_frame->page()->settings().useUIProcessForBackForwardItemLoading()) {
+        for (Ref fromChildItem : fromItem->children()) {
+            auto frameID = fromChildItem->frameID();
+            if (!frameID)
+                continue;
+
+            RefPtr childFrame = dynamicDowncast<LocalFrame>(m_frame->tree().descendantByFrameID(*frameID));
+            if (!childFrame)
+                continue;
+
+            m_frame->loader().client().dispatchBackForwardSubframeNavigation(*childFrame, item.itemID(), type);
+        }
+        return;
+    }
+
     // Just iterate over the rest, looking for frames to navigate.
     for (Ref childItem : item.children()) {
         auto frameID = childItem->frameID();

@@ -153,6 +153,7 @@ private:
     void dispatchWillSubmitForm(WebCore::FormState&, URL&& requestURL, String&& method, CompletionHandler<void()>&&) final;
     
     void dispatchBackForwardItemLoading(const URL&, const String& referer, WebCore::LocalFrame& childFrame) final;
+    void dispatchBackForwardSubframeNavigation(WebCore::LocalFrame& childFrame, WebCore::BackForwardItemIdentifier targetItemID, WebCore::FrameLoadType) final;
 
     void revertToProvisionalState(WebCore::DocumentLoader*) final;
     void setMainDocumentError(WebCore::DocumentLoader*, const WebCore::ResourceError&) final;

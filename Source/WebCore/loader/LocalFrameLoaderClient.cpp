@@ -70,4 +70,8 @@ void LocalFrameLoaderClient::dispatchBackForwardItemLoading(const URL& url, cons
     loader->continueLoadURLIntoChildFrame(url, referer, childFrame);
 }
 
+void LocalFrameLoaderClient::dispatchBackForwardSubframeNavigation(LocalFrame&, BackForwardItemIdentifier, FrameLoadType)
+{
+}
+
 } // namespace WebCore

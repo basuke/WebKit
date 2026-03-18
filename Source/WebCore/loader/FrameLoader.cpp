@@ -4711,6 +4711,14 @@ bool FrameLoader::shouldProceedWithAsyncBackForwardNavigation()
 void FrameLoader::loadRequestedHistoryItem(FrameLoadType loadType, PolicyAlreadyDecided policyAlreadyDecided)
 {
     ASSERT(m_requestedHistoryItem);
+
+    RefPtr currentItem = history().currentItem();
+    if (currentItem && m_requestedHistoryItem->shouldDoSameDocumentNavigationTo(*currentItem)) {
+        m_loadType = loadType;
+        loadSameDocumentItem(*m_requestedHistoryItem);
+        return;
+    }
+
     loadDifferentDocumentItem(protect(*m_requestedHistoryItem), nullptr, loadType, MayAttemptCacheOnlyLoadForFormSubmissionItem, ShouldTreatAsContinuingLoad::No, policyAlreadyDecided);
 }
 
