@@ -293,4 +293,69 @@ void NetworkProcess::setProxyConfigData(PAL::SessionID sessionID, Vector<std::pa
 }
 #endif // HAVE(NW_PROXY_CONFIG)
 
+void NetworkProcess::startNetworkPathMonitor()
+{
+    stopNetworkPathMonitor();
+
+    RELEASE_LOG(ProcessSuspension, "%p - NetworkProcess::startNetworkPathMonitor()", this);
+    m_waitingForNetworkPathUpdate = true;
+    unsigned serial = ++m_networkPathMonitorSerial;
+
+    RetainPtr monitor = adoptNS(nw_path_monitor_create());
+    nw_path_monitor_set_queue(monitor.get(), mainDispatchQueueSingleton());
+    nw_path_monitor_set_update_handler(monitor.get(), makeBlockPtr([weakThis = WeakPtr { *this }](nw_path_t) {
+        if (RefPtr protectedThis = weakThis.get())
+            protectedThis->networkPathDidUpdate();
+    }).get());
+    nw_path_monitor_start(monitor.get());
+    m_nwPathMonitor = WTF::move(monitor);
+
+    // Safety timeout: release queued tasks even if the monitor callback does not arrive.
+    RunLoop::currentSingleton().dispatchAfter(1_s, [weakThis = WeakPtr { *this }, serial] {
+        if (RefPtr protectedThis = weakThis.get()) {
+            if (protectedThis->m_networkPathMonitorSerial == serial) {
+                RELEASE_LOG_ERROR(ProcessSuspension, "%p - NetworkProcess::startNetworkPathMonitor safety timeout fired — nw_path_monitor did not deliver initial update within 1s", protectedThis.get());
+                protectedThis->networkPathDidUpdate();
+            } else
+                RELEASE_LOG(ProcessSuspension, "%p - NetworkProcess::startNetworkPathMonitor stale timeout ignored (serial %u vs current %u)", protectedThis.get(), serial, protectedThis->m_networkPathMonitorSerial);
+        }
+    });
+}
+
+void NetworkProcess::stopNetworkPathMonitor()
+{
+    if (m_nwPathMonitor) {
+        nw_path_monitor_cancel(static_cast<nw_path_monitor_t>(m_nwPathMonitor.get()));
+        m_nwPathMonitor = nullptr;
+    }
+    networkPathDidUpdate();
+}
+
+void NetworkProcess::networkPathDidUpdate()
+{
+    if (!m_waitingForNetworkPathUpdate)
+        return;
+
+    RELEASE_LOG(ProcessSuspension, "%p - NetworkProcess::networkPathDidUpdate() releasing %zu pending task(s)", this, m_pendingTaskResumes.size());
+    m_waitingForNetworkPathUpdate = false;
+
+    if (m_nwPathMonitor) {
+        nw_path_monitor_cancel(static_cast<nw_path_monitor_t>(m_nwPathMonitor.get()));
+        m_nwPathMonitor = nullptr;
+    }
+
+    auto pendingResumes = std::exchange(m_pendingTaskResumes, { });
+    for (auto& resumeCallback : pendingResumes)
+        resumeCallback();
+}
+
+void NetworkProcess::whenNetworkPathIsReady(Function<void()>&& callback)
+{
+    if (!m_waitingForNetworkPathUpdate) {
+        callback();
+        return;
+    }
+    m_pendingTaskResumes.append(WTF::move(callback));
+}
+
 } // namespace WebKit

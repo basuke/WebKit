@@ -606,6 +606,15 @@ void NetworkDataTaskCocoa::resume()
     if (!m_session || m_session->isInvalidated())
         return;
 
+    if (m_session->networkProcess().isWaitingForNetworkPathUpdate()) {
+        RELEASE_LOG(NetworkSession, "%p - NetworkDataTaskCocoa::resume: waiting for network path update after process resume", this);
+        m_session->networkProcess().whenNetworkPathIsReady([weakThis = ThreadSafeWeakPtr { *this }] {
+            if (auto protectedThis = weakThis.get())
+                protectedThis->resume();
+        });
+        return;
+    }
+
     {
         CheckedRef session = *m_session;
         CheckedPtr storageSession = session->networkStorageSession();

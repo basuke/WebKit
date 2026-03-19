@@ -2512,6 +2512,10 @@ void NetworkProcess::prepareToSuspend(bool isSuspensionImminent, MonotonicTime e
     RELEASE_LOG(ProcessSuspension, "%p - NetworkProcess::prepareToSuspend(), isSuspensionImminent=%d, remainingRunTime=%fs", this, isSuspensionImminent, remainingRunTime);
 
     m_isSuspended = true;
+
+#if PLATFORM(COCOA)
+    stopNetworkPathMonitor();
+#endif
     lowMemoryHandler(Critical::Yes);
 
     RefPtr callbackAggregator = CallbackAggregator::create([weakThis = WeakPtr { *this }, completionHandler = WTF::move(completionHandler)]() mutable {
@@ -2546,6 +2550,10 @@ void NetworkProcess::processDidResume(bool forForegroundActivity)
     RELEASE_LOG(ProcessSuspension, "%p - NetworkProcess::processDidResume() forForegroundActivity=%d", this, forForegroundActivity);
 
     m_isSuspended = false;
+
+#if PLATFORM(COCOA)
+    startNetworkPathMonitor();
+#endif
 
     WebResourceLoadStatisticsStore::resume();
     PCM::PersistentStore::processDidResume();

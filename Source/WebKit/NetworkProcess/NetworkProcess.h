@@ -213,6 +213,11 @@ public:
     void prepareToSuspend(bool isSuspensionImminent, MonotonicTime estimatedSuspendTime, CompletionHandler<void()>&&);
     void processDidResume(bool forForegroundActivity);
 
+#if PLATFORM(COCOA)
+    bool isWaitingForNetworkPathUpdate() const { return m_waitingForNetworkPathUpdate; }
+    void whenNetworkPathIsReady(Function<void()>&&);
+#endif
+
     CacheModel cacheModel() const { return m_cacheModel; }
 
     const HashSet<String>& localhostAliasesForTesting() const LIFETIME_BOUND { return m_localhostAliasesForTesting; }
@@ -589,7 +594,13 @@ private:
     void terminateRemoteWorkerContextConnectionWhenPossible(RemoteWorkerType, PAL::SessionID, const WebCore::RegistrableDomain&, WebCore::ProcessIdentifier);
     void runningOrTerminatingServiceWorkerCountForTesting(PAL::SessionID, CompletionHandler<void(unsigned)>&&) const;
     void platformFlushCookies(PAL::SessionID, CompletionHandler<void()>&&);
-    
+
+#if PLATFORM(COCOA)
+    void startNetworkPathMonitor();
+    void stopNetworkPathMonitor();
+    void networkPathDidUpdate();
+#endif
+
     void registerURLSchemeAsSecure(const String&) const;
     void registerURLSchemeAsBypassingContentSecurityPolicy(const String&) const;
     void registerURLSchemeAsLocal(const String&) const;
@@ -672,6 +683,10 @@ private:
     bool m_isSuspended { false };
     bool m_didSyncCookiesForClose { false };
 #if PLATFORM(COCOA)
+    RetainPtr<id> m_nwPathMonitor;
+    bool m_waitingForNetworkPathUpdate { false };
+    unsigned m_networkPathMonitorSerial { 0 };
+    Vector<Function<void()>> m_pendingTaskResumes;
     int m_mediaStreamingActivitityToken { NOTIFY_TOKEN_INVALID };
     bool m_isParentProcessFullWebBrowserOrRunningTest { false };
 #endif
