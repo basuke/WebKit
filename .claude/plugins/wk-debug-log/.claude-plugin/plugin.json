@@ -1,0 +1,5 @@
+{
+  "name": "wk-debug-log",
+  "description": "Add or remove WTFLogAlways debug logging in WebKit repository",
+  "version": "1.0.0"
+}

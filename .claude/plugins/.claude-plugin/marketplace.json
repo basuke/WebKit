@@ -8,6 +8,11 @@
       "name": "git-webkit",
       "source": "./git-webkit",
       "description": "Teaches Claude to use git-webkit tools for working with the WebKit repository"
+    },
+    {
+      "name": "wk-debug-log",
+      "source": "./wk-debug-log",
+      "description": "Add or remove WTFLogAlways debug logging in WebKit repository"
     }
   ]
 }
