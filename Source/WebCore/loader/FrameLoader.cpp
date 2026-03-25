@@ -2757,6 +2757,7 @@ void FrameLoader::open(CachedFrameBase& cachedFrame)
     m_needsClear = true;
     m_isComplete = false;
     m_didCallImplicitClose = false;
+    document->resetLoadEventFinished();
     setOutgoingReferrer(url);
 
     RefPtr view = cachedFrame.view();

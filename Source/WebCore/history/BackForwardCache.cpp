@@ -49,6 +49,7 @@
 #include "LocalFrameView.h"
 #include "Logging.h"
 #include "Page.h"
+#include "RemoteFrame.h"
 #include "ScriptDisallowedScope.h"
 #include "SecurityOriginHash.h"
 #include "Settings.h"
@@ -79,6 +80,24 @@ static inline void logBackForwardCacheFailureDiagnosticMessage(Page* page, const
         return;
 
     logBackForwardCacheFailureDiagnosticMessage(protect(page->diagnosticLoggingClient()), reason);
+}
+
+static bool canCacheFrame(LocalFrame&, DiagnosticLoggingClient&, unsigned indentLevel);
+
+// Recurse through RemoteFrame bridges to check cacheability of LocalFrame descendants.
+// This handles A→B→A nesting patterns where LocalFrames exist behind RemoteFrame boundaries.
+static bool canCacheFrameDescendants(Frame& frame, DiagnosticLoggingClient& diagnosticLoggingClient, unsigned indentLevel)
+{
+    for (RefPtr child = frame.tree().firstChild(); child; child = child->tree().nextSibling()) {
+        if (auto* localChild = dynamicDowncast<LocalFrame>(child.get())) {
+            if (!canCacheFrame(*localChild, diagnosticLoggingClient, indentLevel + 1))
+                return false;
+        } else if (is<RemoteFrame>(*child)) {
+            if (!canCacheFrameDescendants(*child, diagnosticLoggingClient, indentLevel + 1))
+                return false;
+        }
+    }
+    return true;
 }
 
 static bool canCacheFrame(LocalFrame& frame, DiagnosticLoggingClient& diagnosticLoggingClient, unsigned indentLevel)
@@ -182,11 +201,13 @@ static bool canCacheFrame(LocalFrame& frame, DiagnosticLoggingClient& diagnostic
     }
 
     for (RefPtr child = frame.tree().firstChild(); child; child = child->tree().nextSibling()) {
-        auto* localChild = dynamicDowncast<LocalFrame>(child.get());
-        if (!localChild)
-            continue;
-        if (!canCacheFrame(*localChild, diagnosticLoggingClient, indentLevel + 1))
-            isCacheable = false;
+        if (auto* localChild = dynamicDowncast<LocalFrame>(child.get())) {
+            if (!canCacheFrame(*localChild, diagnosticLoggingClient, indentLevel + 1))
+                isCacheable = false;
+        } else if (is<RemoteFrame>(*child)) {
+            if (!canCacheFrameDescendants(*child, diagnosticLoggingClient, indentLevel + 1))
+                isCacheable = false;
+        }
     }
     
     PCLOG(isCacheable ? " Frame CAN be cached"_s : " Frame CANNOT be cached"_s);
@@ -204,11 +225,24 @@ static bool canCachePage(Page& page)
 
     CheckedRef diagnosticLoggingClient = page.diagnosticLoggingClient();
     RefPtr localMainFrame = page.localMainFrame();
-    if (!localMainFrame)
-        return false;
-    bool isCacheable = canCacheFrame(*localMainFrame, diagnosticLoggingClient, indentLevel + 1);
 
-    if (!page.settings().usesBackForwardCache() || page.isResourceCachingDisabledByWebInspector() || page.settings().siteIsolationEnabled()) {
+    // In iframe processes with Site Isolation, the main frame is a RemoteFrame,
+    // so localMainFrame() returns null. Find the topmost LocalFrame as the
+    // representative frame for cacheability checks.
+    RefPtr<LocalFrame> representativeFrame = localMainFrame;
+    if (!representativeFrame) {
+        for (RefPtr frame = page.mainFrame().tree().firstChild(); frame; frame = frame->tree().traverseNext()) {
+            if (auto* localFrame = dynamicDowncast<LocalFrame>(frame.get())) {
+                representativeFrame = localFrame;
+                break;
+            }
+        }
+        if (!representativeFrame)
+            return false;
+    }
+    bool isCacheable = canCacheFrame(*representativeFrame, diagnosticLoggingClient, indentLevel + 1);
+
+    if (!page.settings().usesBackForwardCache() || page.isResourceCachingDisabledByWebInspector()) {
         PCLOG("   -Page settings says b/f cache disabled"_s);
         logBackForwardCacheFailureDiagnosticMessage(diagnosticLoggingClient, DiagnosticLoggingKeys::isDisabledKey());
         isCacheable = false;
@@ -226,7 +260,7 @@ static bool canCachePage(Page& page)
     }
 #endif
 
-    FrameLoadType loadType = localMainFrame->loader().loadType();
+    FrameLoadType loadType = representativeFrame->loader().loadType();
     switch (loadType) {
     case FrameLoadType::Reload:
         // No point writing to the cache on a reload, since we will just write over it again when we leave that page.
@@ -282,9 +316,9 @@ static bool canCachePage(Page& page)
 
     // If this is a same-origin navigation and the navigated-to main resource serves the
     // `Clear-Site-Data: "cache"` HTTP header, then we shouldn't cache the current page.
-    if (RefPtr provisionalDocumentLoader = localMainFrame->loader().provisionalDocumentLoader()) {
+    if (RefPtr provisionalDocumentLoader = representativeFrame->loader().provisionalDocumentLoader()) {
         if (provisionalDocumentLoader->responseClearSiteDataValues().contains(ClearSiteDataValue::Cache)) {
-            if (RefPtr topDocument = localMainFrame->document()) {
+            if (RefPtr topDocument = representativeFrame->document()) {
                 if (protect(topDocument->securityOrigin())->isSameOriginAs(SecurityOrigin::create(provisionalDocumentLoader->response().url()))) {
                     PCLOG("   -`Clear-Site-Data: cache` HTTP header is present"_s);
                     isCacheable = false;

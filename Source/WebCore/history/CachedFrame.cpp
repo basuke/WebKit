@@ -30,9 +30,11 @@
 #include "CachedFramePlatformData.h"
 #include "CachedPage.h"
 #include "DocumentLoader.h"
+#include "HTMLFrameOwnerElement.h"
 #include "DocumentPage.h"
 #include "DocumentView.h"
 #include "DocumentWindow.h"
+#include "FrameInlines.h"
 #include "FrameLoader.h"
 #include "LocalDOMWindow.h"
 #include "LocalFrame.h"
@@ -127,6 +129,15 @@ void CachedFrameBase::restore()
 
         // Reconstruct the FrameTree. And open the child CachedFrames in their respective FrameLoaders.
         for (auto& childFrame : m_childFrames) {
+            // Skip RemoteFrame children — they have no document and are reconnected
+            // by the UIProcess separately after main frame restoration completes.
+            // Clear the stale content frame reference so the iframe element triggers
+            // fresh frame creation and loading after restoration.
+            if (!childFrame->document()) {
+                if (auto* ownerElement = childFrame->view()->frame().ownerElement())
+                    ownerElement->clearContentFrame();
+                continue;
+            }
             ASSERT(childFrame->view()->frame().page());
             frame->tree().appendChild(protect(protect(childFrame->view())->frame()));
             childFrame->open();

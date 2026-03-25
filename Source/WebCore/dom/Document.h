@@ -1423,6 +1423,7 @@ public:
 
     bool processingLoadEvent() const { return m_processingLoadEvent; }
     bool loadEventFinished() const { return m_loadEventFinished; }
+    void resetLoadEventFinished() { m_loadEventFinished = false; }
 
     bool isContextThread() const final;
     bool isSecureContext() const final;
