@@ -1512,9 +1512,11 @@ WebBackForwardCache& WebPageProxy::backForwardCache() const
 bool WebPageProxy::shouldUseBackForwardCache() const
 {
     Ref preferences = m_preferences;
-    return preferences->usesBackForwardCache()
-        && backForwardCache().capacity() > 0
-        && !preferences->siteIsolationEnabled();
+    if (!preferences->usesBackForwardCache() || backForwardCache().capacity() == 0)
+        return false;
+    if (preferences->siteIsolationEnabled())
+        return preferences->useMultiProcessBackForwardCache();
+    return true;
 }
 
 void WebPageProxy::setBrowsingContextGroup(BrowsingContextGroup& browsingContextGroup)
