@@ -8826,6 +8826,20 @@ UseMicrophoneMuteStatusAPI:
     WebCore:
       default: false
 
+UseMultiProcessBackForwardCache:
+  type: bool
+  status: unstable
+  category: security
+  humanReadableName: "Multi-Process Back/Forward Cache"
+  humanReadableDescription: "Enable back/forward cache when site isolation is active"
+  defaultValue:
+    WebKitLegacy:
+      default: false
+    WebKit:
+      default: false
+    WebCore:
+      default: false
+
 UsePreHTML5ParserQuirks:
   type: bool
   status: embedder
