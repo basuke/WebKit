@@ -259,6 +259,12 @@ void BrowsingContextGroup::forEachRemotePage(const WebPageProxy& page, Function<
         function(remotePage);
 }
 
+void BrowsingContextGroup::closeRemotePagesForPage(WebPageProxy& page)
+{
+    for (auto& remotePage : m_remotePages.take(page))
+        remotePage->disconnect();
+}
+
 RefPtr<RemotePageProxy> BrowsingContextGroup::remotePageInProcess(const WebPageProxy& page, const WebProcessProxy& process)
 {
     auto it = m_remotePages.find(page);

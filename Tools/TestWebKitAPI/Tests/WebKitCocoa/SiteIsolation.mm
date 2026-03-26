@@ -68,6 +68,8 @@
 #import <wtf/BlockPtr.h>
 #import <wtf/text/MakeString.h>
 
+#include <signal.h>
+
 #if ENABLE(IMAGE_ANALYSIS)
 #import "ImageAnalysisTestingUtilities.h"
 #import <pal/spi/cocoa/VisionKitCoreSPI.h>
@@ -8415,6 +8417,95 @@ TEST(SiteIsolation, ProcessActivityGroup)
     [webView setHidden:YES];
     [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://example.com/example"]]];
     Util::run(&finishedLoading);
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheIframeProcessSurvival)
+{
+    HTTPServer server({
+        { "/a"_s, { "<iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"UseMultiProcessBackForwardCache");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    // Record iframe process PID.
+    pid_t iframePID = 0;
+    auto trees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in trees.get()) {
+        if (!tree.info._isLocalFrame && tree.childFrames.count)
+            iframePID = tree.childFrames[0].info._processIdentifier;
+    }
+    EXPECT_NE(iframePID, 0);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Iframe process must survive. Without Phase 2, removeChildFrames()
+    // sends WebPage::Close() and kills it.
+    EXPECT_EQ(kill(iframePID, 0), 0);
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheOpenerSkipsBFCache)
+{
+    HTTPServer server({
+        { "/a"_s, { "<script>window.open('https://a.com/child');</script>"_s } },
+        { "/child"_s, { "child page"_s } },
+        { "/b"_s, { "page b"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"UseMultiProcessBackForwardCache");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    auto uiDelegate = adoptNS([TestUIDelegate new]);
+    [webView setUIDelegate:uiDelegate.get()];
+
+    __block RetainPtr<WKWebView> openedWebView;
+    uiDelegate.get().createWebViewWithConfiguration = ^WKWebView *(WKWebViewConfiguration *config, WKNavigationAction *action, WKWindowFeatures *windowFeatures) {
+        openedWebView = adoptNS([[WKWebView alloc] initWithFrame:CGRectZero configuration:config]);
+        return openedWebView.get();
+    };
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+    while (!openedWebView)
+        Util::spinRunLoop();
+
+    // Set a BFCache marker on the opener page.
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheMarker = true" completionHandler:^(id, NSError *) {
+        done = true;
+    }];
+    Util::run(&done);
+
+    // Navigate to a different site to trigger PSON.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://b.com/b"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Go back.
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Verify the marker is gone (full reload, not BFCache restore).
+    done = false;
+    __block bool markerGone = false;
+    [webView evaluateJavaScript:@"window.__bfcacheMarker ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        markerGone = [result isEqualToString:@"no"];
+        done = true;
+    }];
+    Util::run(&done);
+    EXPECT_TRUE(markerGone);
 }
 
 }
