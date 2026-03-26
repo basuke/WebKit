@@ -8527,6 +8527,52 @@ void WebPage::setIsSuspended(bool suspended, CompletionHandler<void(std::optiona
     suspendForProcessSwap(WTF::move(completionHandler));
 }
 
+RefPtr<HistoryItem> WebPage::findHistoryItemByFrameItemID(BackForwardFrameItemIdentifier frameItemID)
+{
+    for (auto* frame = &corePage()->mainFrame(); frame; frame = frame->tree().traverseNext()) {
+        auto* localFrame = dynamicDowncast<LocalFrame>(frame);
+        if (!localFrame)
+            continue;
+        if (RefPtr item = localFrame->loader().history().currentItem()) {
+            if (item->frameItemID() == frameItemID)
+                return item;
+        }
+    }
+    return nullptr;
+}
+
+void WebPage::suspendForProcessSwapWithFrameItem(BackForwardFrameItemIdentifier frameItemID, CompletionHandler<void(std::optional<bool>)>&& completionHandler)
+{
+    flushDeferredDidReceiveMouseEvent();
+    RefPtr historyItem = findHistoryItemByFrameItemID(frameItemID);
+    if (!historyItem)
+        return completionHandler(false);
+    if (!BackForwardCache::singleton().addIfCacheable(*historyItem, protect(corePage()).get()))
+        return completionHandler(false);
+    completionHandler(true);
+}
+
+void WebPage::setIsSuspendedWithFrameItem(bool suspended, BackForwardFrameItemIdentifier frameItemID, CompletionHandler<void(std::optional<bool>)>&& completionHandler)
+{
+    if (m_isSuspended == suspended)
+        return completionHandler({ });
+    m_isSuspended = suspended;
+
+    if (!suspended) {
+        // Phase 4 restore path.
+        unfreezeLayerTree(LayerTreeFreezeReason::PageSuspended);
+        auto cachedPage = BackForwardCache::singleton().takeByFrameItemID(frameItemID, corePage());
+        if (!cachedPage)
+            return completionHandler(false);
+        cachedPage->restore(*corePage());
+        return completionHandler(true);
+    }
+
+    freezeLayerTree(LayerTreeFreezeReason::PageSuspended);
+    unfreezeLayerTree(LayerTreeFreezeReason::BackgroundApplication);
+    suspendForProcessSwapWithFrameItem(frameItemID, WTF::move(completionHandler));
+}
+
 void WebPage::hasStorageAccess(RegistrableDomain&& subFrameDomain, RegistrableDomain&& topFrameDomain, WebFrame& frame, CompletionHandler<void(bool)>&& completionHandler)
 {
     if (hasPageLevelStorageAccess(topFrameDomain, subFrameDomain)) {

@@ -1502,6 +1502,33 @@ bool WebPageProxy::suspendCurrentPageIfPossible(API::Navigation& navigation, Ref
             frameProcess->addSuspendedPageProxy(suspendedPage);
     }
 
+    if (fromItem && preferences().useMultiProcessBackForwardCache()) {
+        auto& rootFrameItem = fromItem->mainFrameItem();
+        suspendedPage->browsingContextGroup().forEachRemotePage(*this,
+            [&](RemotePageProxy& remotePage) {
+                RefPtr<WebFrameProxy> frameInProcess;
+                for (RefPtr f = suspendedPage->mainFrame().traverseNext().frame;
+                     f; f = f->traverseNext().frame) {
+                    if (&f->process() == &remotePage.siteIsolatedProcess()) {
+                        frameInProcess = f;
+                        break;
+                    }
+                }
+                if (!frameInProcess)
+                    return;
+
+                RefPtr frameItem = rootFrameItem.childItemForFrameID(frameInProcess->frameID());
+                if (!frameItem)
+                    return;
+
+                remotePage.siteIsolatedProcess().sendWithAsyncReply(
+                    Messages::WebPage::SetIsSuspendedWithFrameItem(true, frameItem->identifier()),
+                    [](std::optional<bool>) { },
+                    remotePage.identifierInSiteIsolatedProcess()
+                );
+            });
+    }
+
     LOG(ProcessSwapping, "WebPageProxy %" PRIu64 " created suspended page %s for process pid %i, back/forward item %s" PRIu64, identifier().toUInt64(), suspendedPage->loggingString().utf8().data(), m_legacyMainFrameProcess->processID(), fromItem ? fromItem->identifier().toString().utf8().data() : "0"_s);
 
     m_lastSuspendedPage = suspendedPage.get();

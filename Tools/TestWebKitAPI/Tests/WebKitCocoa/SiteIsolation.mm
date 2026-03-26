@@ -8508,4 +8508,41 @@ TEST(SiteIsolation, MultiProcessBFCacheOpenerSkipsBFCache)
     EXPECT_TRUE(markerGone);
 }
 
+TEST(SiteIsolation, MultiProcessBFCacheSuspensionDoesNotCrash)
+{
+    HTTPServer server({
+        { "/a"_s, { "<iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"UseMultiProcessBackForwardCache");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    // Record iframe process PID.
+    pid_t iframePID = 0;
+    auto trees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in trees.get()) {
+        if (!tree.info._isLocalFrame && tree.childFrames.count)
+            iframePID = tree.childFrames[0].info._processIdentifier;
+    }
+    EXPECT_NE(iframePID, 0);
+
+    // Navigate away — triggers multi-process suspension.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // No crash, iframe process still alive.
+    EXPECT_EQ(kill(iframePID, 0), 0);
+}
+
 }
