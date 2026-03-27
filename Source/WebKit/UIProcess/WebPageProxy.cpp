@@ -2797,8 +2797,14 @@ Ref<FrameState> WebPageProxy::copyFrameStateForBackForwardNavigation(WebBackForw
 {
     auto frameItemForNavigation = [&]() -> Ref<WebBackForwardListFrameItem> {
         if (protect(preferences())->siteIsolationEnabled()) {
-            if (RefPtr frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this)
-                return frameItem;
+            if (RefPtr frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this) {
+                // Only use this frame's item if it's in the live tree,
+                // not surviving in a SuspendedPageProxy.
+                for (RefPtr f = m_mainFrame.get(); f; f = f->traverseNext().frame) {
+                    if (f.get() == frame.get())
+                        return frameItem;
+                }
+            }
         }
         return frameItem.backForwardListItem()->mainFrameItem();
     };

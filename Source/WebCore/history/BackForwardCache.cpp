@@ -574,7 +574,6 @@ std::unique_ptr<CachedPage> BackForwardCache::take(HistoryItem& item, Page* page
 
     m_items.remove(item.frameItemID());
     auto cachedPage = std::get<UniqueRef<CachedPage>>(m_cachedPageMap.take(it));
-    item.notifyChanged();
 
     if (page && &cachedPage->page() != page) {
         auto ptr = cachedPage.moveToUniquePtr();
@@ -582,6 +581,8 @@ std::unique_ptr<CachedPage> BackForwardCache::take(HistoryItem& item, Page* page
         m_items.add(item.frameItemID());
         return nullptr;
     }
+
+    item.notifyChanged();
 
     RELEASE_LOG(BackForwardCache, "BackForwardCache::take item: %s, frameItem: %s, size: %u / %u", item.itemID().toString().utf8().data(), item.frameItemID().toString().utf8().data(), pageCount(), maxSize());
 

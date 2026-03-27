@@ -8548,7 +8548,7 @@ TEST(SiteIsolation, MultiProcessBFCacheSuspensionDoesNotCrash)
 TEST(SiteIsolation, MultiProcessBFCacheSimpleGoBack)
 {
     HTTPServer server({
-        { "/a"_s, { "page a"_s } },
+        { "/a"_s, { "<script>window.__bfcacheMarker = true;</script>page a"_s } },
         { "/b"_s, { "page b"_s } }
     }, HTTPServer::Protocol::HttpsProxy);
 
@@ -8559,11 +8559,27 @@ TEST(SiteIsolation, MultiProcessBFCacheSimpleGoBack)
     [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
     [navigationDelegate waitForDidFinishNavigation];
 
+    // Verify marker is set.
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheMarker ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+
     [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://b.com/b"]]];
     [navigationDelegate waitForDidFinishNavigation];
 
     [webView goBack];
     [navigationDelegate waitForDidFinishNavigation];
+
+    // Verify JS state was preserved (BFCache used, not full reload).
+    done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheMarker ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
 }
 
 TEST(SiteIsolation, MultiProcessBFCacheNavigationCompletesAfterRestore)
