@@ -249,6 +249,12 @@ void CachedFrame::open()
 
     if (RefPtr localFrameView = dynamicDowncast<LocalFrameView>(m_view.get()))
         localFrameView->frame().loader().open(*this);
+    else {
+        // RemoteFrame main frame in iframe process.
+        // Open child CachedFrames directly to restore LocalFrame content.
+        for (auto& childFrame : m_childFrames)
+            childFrame->open();
+    }
 }
 
 void CachedFrame::clear()

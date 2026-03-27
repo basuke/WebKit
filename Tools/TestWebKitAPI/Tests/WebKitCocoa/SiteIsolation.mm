@@ -8545,4 +8545,48 @@ TEST(SiteIsolation, MultiProcessBFCacheSuspensionDoesNotCrash)
     EXPECT_EQ(kill(iframePID, 0), 0);
 }
 
+TEST(SiteIsolation, MultiProcessBFCacheSimpleGoBack)
+{
+    HTTPServer server({
+        { "/a"_s, { "page a"_s } },
+        { "/b"_s, { "page b"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"UseMultiProcessBackForwardCache");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://b.com/b"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheNavigationCompletesAfterRestore)
+{
+    HTTPServer server({
+        { "/a"_s, { "<iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"UseMultiProcessBackForwardCache");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // goBack must complete without hanging.
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+}
+
 }

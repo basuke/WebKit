@@ -490,7 +490,7 @@ void ProvisionalPageProxy::didCommitLoadForFrame(IPC::Connection& connection, Fr
         Site pageMainFrameSite { pageMainFrame->url() };
 
         bool frameProcessChanged = m_frameProcess.ptr() != pageMainFrameProcess.ptr();
-        if (frameProcessChanged)
+        if (frameProcessChanged && pageMainFrame == m_mainFrame)
             pageMainFrame->setProcess(m_frameProcess);
 
         // If the originating FrameProcess still has local frames and is still in the same

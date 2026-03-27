@@ -2780,8 +2780,14 @@ RefPtr<API::Navigation> WebPageProxy::goToBackForwardItem(WebBackForwardListFram
 WebProcessProxy& WebPageProxy::processForTheFrameItem(WebBackForwardListFrameItem& frameItem) const
 {
     if (protect(preferences())->siteIsolationEnabled()) {
-        if (RefPtr frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this)
-            return frame->process();
+        if (RefPtr frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this) {
+            // Only use this frame's process if it's in the live tree,
+            // not surviving in a SuspendedPageProxy.
+            for (RefPtr f = m_mainFrame.get(); f; f = f->traverseNext().frame) {
+                if (f.get() == frame.get())
+                    return frame->process();
+            }
+        }
     }
 
     return m_legacyMainFrameProcess;
