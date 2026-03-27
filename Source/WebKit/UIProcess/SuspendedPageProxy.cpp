@@ -33,8 +33,11 @@
 #include "HandleMessage.h"
 #include "Logging.h"
 #include "MessageSenderInlines.h"
+#include "RemotePageProxy.h"
 #include "WebBackForwardCache.h"
 #include "WebBackForwardList.h"
+#include "WebBackForwardListFrameItem.h"
+#include "WebBackForwardListItem.h"
 #include "WebBackForwardListMessages.h"
 #include "WebFrameProxy.h"
 #include "WebPageMessages.h"
@@ -218,7 +221,7 @@ void SuspendedPageProxy::waitUntilReadyToUnsuspend(CompletionHandler<void(Suspen
     }
 }
 
-void SuspendedPageProxy::unsuspend()
+void SuspendedPageProxy::unsuspend(WebBackForwardListItem* targetItem)
 {
     ASSERT(m_suspensionState == SuspensionState::Suspended);
 
@@ -226,6 +229,35 @@ void SuspendedPageProxy::unsuspend()
     sendWithAsyncReply(Messages::WebPage::SetIsSuspended(false), [](std::optional<bool> didSuspend) {
         ASSERT(!didSuspend.has_value());
     });
+
+    RefPtr page = m_page.get();
+    if (!targetItem || !page || !page->preferences().useMultiProcessBackForwardCache())
+        return;
+
+    auto& rootFrameItem = targetItem->mainFrameItem();
+    m_browsingContextGroup->forEachRemotePage(*page,
+        [&](RemotePageProxy& remotePage) {
+            RefPtr<WebFrameProxy> frameInProcess;
+            for (RefPtr f = m_mainFrame->traverseNext().frame;
+                 f; f = f->traverseNext().frame) {
+                if (&f->process() == &remotePage.siteIsolatedProcess()) {
+                    frameInProcess = f;
+                    break;
+                }
+            }
+            if (!frameInProcess)
+                return;
+
+            RefPtr frameItem = rootFrameItem.childItemForFrameID(frameInProcess->frameID());
+            if (!frameItem)
+                return;
+
+            remotePage.siteIsolatedProcess().sendWithAsyncReply(
+                Messages::WebPage::SetIsSuspendedWithFrameItem(false, frameItem->identifier()),
+                [](std::optional<bool>) { },
+                remotePage.identifierInSiteIsolatedProcess()
+            );
+        });
 }
 
 void SuspendedPageProxy::close()

@@ -83,7 +83,7 @@ public:
     bool NODELETE pageIsClosedOrClosing() const;
 
     void waitUntilReadyToUnsuspend(CompletionHandler<void(SuspendedPageProxy*)>&&);
-    void unsuspend();
+    void unsuspend(WebBackForwardListItem* targetItem = nullptr);
 
     void pageDidFirstLayerFlush();
     void closeWithoutFlashing();
