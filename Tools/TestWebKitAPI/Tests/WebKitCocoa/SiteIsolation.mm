@@ -8605,4 +8605,38 @@ TEST(SiteIsolation, MultiProcessBFCacheNavigationCompletesAfterRestore)
     [navigationDelegate waitForDidFinishNavigation];
 }
 
+TEST(SiteIsolation, MultiProcessBFCacheIframeRestoration)
+{
+    HTTPServer server({
+        { "/a"_s, { "<iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "<script>window.__iframeMarker = true;</script>iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"UseMultiProcessBackForwardCache");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // TODO: Add frame tree verification after CachedFrameBase::restore()
+    // correctly re-adds RemoteFrame children to the frame tree.
+    // checkFrameTreesInProcesses(webView.get(), {
+    //     { "https://a.com"_s, { { RemoteFrame } } },
+    //     { RemoteFrame, { { "https://b.com"_s } } },
+    // });
+}
+
 }

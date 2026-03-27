@@ -5700,7 +5700,22 @@ void WebPageProxy::commitProvisionalPage(IPC::Connection& connection, FrameIdent
 #endif
 
     const auto oldWebPageID = m_webPageID;
+    RefPtr suspendedPageBCG = provisionalPage->suspendedPageBrowsingContextGroup();
     swapToProvisionalPage(provisionalPage.releaseNonNull());
+
+    // Reconnect iframe processes to the new BCG after BFCache restoration.
+    if (suspendedPageBCG) {
+        suspendedPageBCG->forEachRemotePage(*this, [&](RemotePageProxy& oldRP) {
+            Ref process = oldRP.siteIsolatedProcess();
+            auto site = oldRP.site();
+            auto pageID = oldRP.identifierInSiteIsolatedProcess();
+
+            m_browsingContextGroup->ensureProcessForSite(site, Site { mainFrame()->url() }, process, preferences, LoadedWebArchive::No, BrowsingContextGroupUpdate::AddProcess);
+            Ref newRP = RemotePageProxy::create(*this, process, site, nullptr, pageID);
+            newRP->setupSubsystemsForBFCacheRestoration();
+            m_browsingContextGroup->addRemotePage(*this, WTF::move(newRP));
+        });
+    }
 
     didCommitLoadForFrame(connection, frameID, WTF::move(frameInfo), WTF::move(request), navigationID, WTF::move(mimeType), frameHasCustomContentProvider, frameLoadType, certificateInfo, usedLegacyTLS, privateRelayed, WTF::move(proxyName), source, containsPluginDocument, hasInsecureContent, mouseEventPolicy, WTF::move(documentSecurityPolicy), userData);
 

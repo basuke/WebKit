@@ -129,13 +129,12 @@ void CachedFrameBase::restore()
 
         // Reconstruct the FrameTree. And open the child CachedFrames in their respective FrameLoaders.
         for (auto& childFrame : m_childFrames) {
-            // Skip RemoteFrame children — they have no document and are reconnected
-            // by the UIProcess separately after main frame restoration completes.
-            // Clear the stale content frame reference so the iframe element triggers
-            // fresh frame creation and loading after restoration.
+            // RemoteFrame children have no document. Re-add them to the frame
+            // tree so the iframe element stays connected, but skip open() —
+            // the iframe process restores its content independently via
+            // SetIsSuspendedWithFrameItem IPC.
             if (!childFrame->document()) {
-                if (auto* ownerElement = childFrame->view()->frame().ownerElement())
-                    ownerElement->clearContentFrame();
+                frame->tree().appendChild(protect(protect(childFrame->view())->frame()));
                 continue;
             }
             ASSERT(childFrame->view()->frame().page());

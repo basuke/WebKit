@@ -183,6 +183,36 @@ void RemotePageProxy::injectPageIntoNewProcess()
     );
 }
 
+void RemotePageProxy::setupSubsystemsForBFCacheRestoration()
+{
+    RefPtr page = m_page.get();
+    if (!page)
+        return;
+    if (!page->mainFrame())
+        return;
+
+    Ref drawingArea = *page->drawingArea();
+    m_drawingArea = RemotePageDrawingAreaProxy::create(drawingArea.get(), m_process);
+#if ENABLE(FULLSCREEN_API)
+    m_fullscreenManager = RemotePageFullscreenManagerProxy::create(pageID(), protect(page->fullScreenManager()), m_process);
+#endif
+#if ENABLE(VIDEO_PRESENTATION_MODE)
+    m_videoPresentationManager = RemotePageVideoPresentationManagerProxy::create(pageID(), m_process, protect(page->videoPresentationManager()));
+#endif
+#if PLATFORM(IOS_FAMILY) && ENABLE(DEVICE_ORIENTATION)
+    m_webDeviceOrientationUpdateProvider = RemotePageWebDeviceOrientationUpdateProviderProxy::create(pageID(), m_process, page->webDeviceOrientationUpdateProviderProxy());
+#endif
+#if PLATFORM(IOS_FAMILY) || (PLATFORM(MAC) && ENABLE(VIDEO_PRESENTATION_MODE))
+    m_playbackSessionManager = RemotePagePlaybackSessionManagerProxy::create(pageID(), protect(page->playbackSessionManager()), m_process);
+#endif
+
+    if (RefPtr screenOrientationManager = page->screenOrientationManager())
+        m_screenOrientationManager = RemotePageScreenOrientationManagerProxy::create(m_webPageID, screenOrientationManager.get(), m_process);
+
+    m_visitedLinkStoreRegistration = makeUnique<RemotePageVisitedLinkStoreRegistration>(*page, m_process);
+    // No CreateWebPage IPC — the WebPage already exists in this process.
+}
+
 void RemotePageProxy::processDidTerminate(WebProcessProxy& process, ProcessTerminationReason reason)
 {
     RefPtr page = m_page.get();

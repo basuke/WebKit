@@ -124,6 +124,7 @@ ProvisionalPageProxy::ProvisionalPageProxy(WebPageProxy& page, Ref<FrameProcess>
     // already exists and already has a main frame.
     if (suspendedPage) {
         ASSERT(&suspendedPage->process() == process.ptr());
+        m_suspendedPageBrowsingContextGroup = &suspendedPage->browsingContextGroup();
         suspendedPage->unsuspend(navigation.targetItem());
         m_mainFrame = suspendedPage->mainFrame();
         m_mainFrame->updateReferrerPolicy(ReferrerPolicy::EmptyString);
@@ -260,7 +261,7 @@ void ProvisionalPageProxy::initializeWebPage(RefPtr<API::WebsitePolicies>&& webs
     if (websitePolicies)
         m_mainFrameWebsitePolicies = websitePolicies->copy();
 
-    if (preferences->siteIsolationEnabled()) {
+    if (preferences->siteIsolationEnabled() && !m_suspendedPageBrowsingContextGroup) {
         if (RefPtr existingRemotePageProxy = m_browsingContextGroup->takeRemotePageInProcessForProvisionalPage(page, process)) {
             if (m_shouldReuseMainFrame) {
                 m_webPageID = existingRemotePageProxy->pageID();
@@ -282,7 +283,7 @@ void ProvisionalPageProxy::initializeWebPage(RefPtr<API::WebsitePolicies>&& webs
 
     RefPtr mainFrame = m_mainFrame;
     auto creationParameters = page->creationParametersForProvisionalPage(process, *drawingArea, mainFrame->frameID());
-    if (preferences->siteIsolationEnabled()) {
+    if (preferences->siteIsolationEnabled() && !m_suspendedPageBrowsingContextGroup) {
         creationParameters.remotePageParameters = RemotePageParameters {
             m_request.url(),
             mainFrame->frameTreeCreationParameters(),

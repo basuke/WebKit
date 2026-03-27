@@ -100,6 +100,7 @@ public:
     WebPageProxy* NODELETE page() const;
 
     void injectPageIntoNewProcess();
+    void setupSubsystemsForBFCacheRestoration();
     void processDidTerminate(WebProcessProxy&, ProcessTerminationReason);
 
     WebPageProxyMessageReceiverRegistration& messageReceiverRegistration() LIFETIME_BOUND { return m_messageReceiverRegistration; }

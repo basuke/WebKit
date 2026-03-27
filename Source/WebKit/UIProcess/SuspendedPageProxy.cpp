@@ -171,12 +171,11 @@ SuspendedPageProxy::~SuspendedPageProxy()
         });
     }
 
-    if (RefPtr page = m_page.get())
-        m_browsingContextGroup->closeRemotePagesForPage(*page);
-
     if (m_suspensionState != SuspensionState::Resumed) {
         // If the suspended page was not consumed before getting destroyed, then close the corresponding page
         // on the WebProcess side.
+        if (RefPtr page = m_page.get())
+            m_browsingContextGroup->closeRemotePagesForPage(*page);
         close();
     }
 
