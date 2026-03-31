@@ -33,8 +33,11 @@
 #include "HandleMessage.h"
 #include "Logging.h"
 #include "MessageSenderInlines.h"
+#include "RemotePageProxy.h"
 #include "WebBackForwardCache.h"
 #include "WebBackForwardList.h"
+#include "WebBackForwardListFrameItem.h"
+#include "WebBackForwardListItem.h"
 #include "WebBackForwardListMessages.h"
 #include "WebFrameProxy.h"
 #include "WebPageMessages.h"
@@ -168,11 +171,13 @@ SuspendedPageProxy::~SuspendedPageProxy()
         });
     }
 
-    if (m_suspensionState != SuspensionState::Resumed) {
-        // If the suspended page was not consumed before getting destroyed, then close the corresponding page
-        // on the WebProcess side.
+    if (RefPtr page = m_page.get())
+        m_browsingContextGroup->cleanupSuspendedPage(*page, *this, m_suspensionState != SuspensionState::Resumed ? CloseRemotePages::Yes : CloseRemotePages::No);
+
+    // If the suspended page was not consumed before getting destroyed, then close the corresponding page
+    // on the WebProcess side.
+    if (m_suspensionState != SuspensionState::Resumed)
         close();
-    }
 
     m_process->removeSuspendedPageProxy(*this);
 }
@@ -198,8 +203,14 @@ void SuspendedPageProxy::waitUntilReadyToUnsuspend(CompletionHandler<void(Suspen
         m_readyToUnsuspendHandler = WTF::move(completionHandler);
         break;
     case SuspensionState::FailedToSuspend:
-    case SuspensionState::Suspended:
         completionHandler(this);
+        break;
+    case SuspensionState::Suspended:
+        // Store the handler and let maybeFireReadyToUnsuspendHandler() decide
+        // whether to fire it or invalidate the BFCache entry (if an iframe
+        // suspension failed).
+        m_readyToUnsuspendHandler = WTF::move(completionHandler);
+        maybeFireReadyToUnsuspendHandler();
         break;
     case SuspensionState::Resumed:
         ASSERT_NOT_REACHED();
@@ -208,10 +219,10 @@ void SuspendedPageProxy::waitUntilReadyToUnsuspend(CompletionHandler<void(Suspen
     }
 }
 
-void SuspendedPageProxy::unsuspend()
+void SuspendedPageProxy::unsuspend(WebBackForwardListItem*)
 {
     ASSERT(m_suspensionState == SuspensionState::Suspended);
-
+    // FIXME: Use targetItem to restore iframe processes in the follow-up patch.
     m_suspensionState = SuspensionState::Resumed;
     sendWithAsyncReply(Messages::WebPage::SetIsSuspended(false), [](std::optional<bool> didSuspend) {
         ASSERT(!didSuspend.has_value());
@@ -276,14 +287,104 @@ void SuspendedPageProxy::didProcessRequestToSuspend(SuspensionState newSuspensio
     if (m_suspensionState == SuspensionState::FailedToSuspend)
         closeWithoutFlashing();
 
-    if (m_readyToUnsuspendHandler)
-        m_readyToUnsuspendHandler(this);
+    maybeFireReadyToUnsuspendHandler();
 }
 
 void SuspendedPageProxy::suspensionTimedOut()
 {
     RELEASE_LOG_ERROR(ProcessSwapping, "%p - SuspendedPageProxy::suspensionTimedOut() destroying the suspended page because it failed to suspend in time", this);
     protect(backForwardCache())->removeEntry(*this); // Will destroy |this|.
+}
+
+void SuspendedPageProxy::suspendIframeProcesses(WebBackForwardListItem& fromItem)
+{
+    RefPtr page = m_page.get();
+    if (!page)
+        return;
+
+    Ref rootFrameItem = fromItem.mainFrameItem();
+
+    m_browsingContextGroup->forEachRemotePage(*page, [&](auto& remotePage) {
+        // FIXME: Add WebFrameProxy::forEachDescendant() to avoid manual traverseNext() loops.
+        for (RefPtr f = m_mainFrame->traverseNext().frame; f; f = f->traverseNext().frame) {
+            Ref process = remotePage.siteIsolatedProcess();
+            if (&f->process() != process.ptr())
+                continue;
+
+            RefPtr frameItem = rootFrameItem->childItemForFrameID(f->frameID());
+            if (!frameItem)
+                continue;
+
+            RELEASE_LOG(ProcessSwapping, "%p - SuspendedPageProxy::suspendIframeProcesses: Sending SetIsSuspendedWithFrameItem to iframe process pid %i for frameItem %s", this, process->processID(), frameItem->identifier().toString().utf8().data());
+            ++m_expectedIframeSuspensions;
+
+            process->sendWithAsyncReply(Messages::WebPage::SetIsSuspendedWithFrameItem(true, frameItem->identifier()), [weakThis = WeakPtr { *this }](std::optional<bool> didSuspend) {
+                RefPtr protectedThis = weakThis.get();
+                if (protectedThis)
+                    protectedThis->didIframeSuspensionComplete(didSuspend.value_or(false));
+            }, remotePage.identifierInSiteIsolatedProcess());
+        }
+    });
+}
+
+bool SuspendedPageProxy::hasIframeInProcess(WebCore::ProcessIdentifier processIdentifier) const
+{
+    // FIXME: Add WebFrameProxy::forEachDescendant() to avoid manual traverseNext() loops.
+    for (RefPtr frame = m_mainFrame->traverseNext().frame; frame; frame = frame->traverseNext().frame) {
+        if (frame->process().coreProcessIdentifier() == processIdentifier)
+            return true;
+    }
+    return false;
+}
+
+void SuspendedPageProxy::didIframeSuspensionComplete(bool success)
+{
+    if (m_suspensionState == SuspensionState::Resumed)
+        return;
+
+    ++m_completedIframeSuspensions;
+    if (!success)
+        m_anyIframeSuspensionFailed = true;
+
+    if (m_completedIframeSuspensions < m_expectedIframeSuspensions)
+        return;
+
+    RELEASE_LOG(ProcessSwapping, "%p - SuspendedPageProxy::didIframeSuspensionComplete: All %u iframe suspensions completed (anyFailed: %d)", this, m_expectedIframeSuspensions, m_anyIframeSuspensionFailed);
+
+    maybeFireReadyToUnsuspendHandler();
+}
+
+void SuspendedPageProxy::maybeFireReadyToUnsuspendHandler()
+{
+    // Don't fire until the main page suspension has completed.
+    if (m_suspensionState == SuspensionState::Suspending)
+        return;
+
+    // If the main page failed to suspend, fire immediately — iframe results
+    // are irrelevant since the entry is already being closed.
+    if (m_suspensionState == SuspensionState::FailedToSuspend) {
+        if (m_readyToUnsuspendHandler)
+            m_readyToUnsuspendHandler(nullptr);
+        return;
+    }
+
+    // Main page suspended successfully. Wait for all iframe suspensions to
+    // complete before allowing restoration (if any are expected).
+    if (m_expectedIframeSuspensions && m_completedIframeSuspensions < m_expectedIframeSuspensions)
+        return;
+
+    // If any iframe suspension failed, invalidate the BFCache entry instead of
+    // allowing restoration. This must run even when there is no handler
+    // waiting, because the iframe failure can be reported before the
+    // navigation calls waitUntilReadyToUnsuspend().
+    if (m_anyIframeSuspensionFailed) {
+        RELEASE_LOG_ERROR(ProcessSwapping, "%p - SuspendedPageProxy::maybeFireReadyToUnsuspendHandler: iframe suspension failed, invalidating cache entry", this);
+        protect(backForwardCache())->removeEntry(*this); // Will destroy |this|.
+        return;
+    }
+
+    if (m_readyToUnsuspendHandler)
+        m_readyToUnsuspendHandler(this);
 }
 
 WebPageProxy* SuspendedPageProxy::page() const

@@ -1467,6 +1467,11 @@ bool WebPageProxy::suspendCurrentPageIfPossible(API::Navigation& navigation, Ref
         return false;
     }
 
+    if (mainFrame->opener() || hasPageOpenedByMainFrame(*mainFrame)) {
+        WEBPAGEPROXY_RELEASE_LOG(ProcessSwapping, "suspendCurrentPageIfPossible: Not suspending current page for process pid %i because it has opener relationships", m_legacyMainFrameProcess->processID());
+        return false;
+    }
+
     RefPtr fromItem = navigation.fromItem();
 
     // If the source and the destination back / forward list items are the same, then this is a client-side redirect. In this case,
@@ -1494,6 +1499,13 @@ bool WebPageProxy::suspendCurrentPageIfPossible(API::Navigation& navigation, Ref
     mainFrame->frameLoadState().didSuspend();
 
     Ref suspendedPage = SuspendedPageProxy::create(*this, protect(legacyMainFrameProcess()), mainFrame.releaseNonNull(), std::exchange(m_browsingContextGroup, BrowsingContextGroup::create()), shouldDelayClosingUntilFirstLayerFlush);
+
+    if (protect(preferences())->multiProcessBackForwardCacheEnabled()) {
+        protect(suspendedPage->browsingContextGroup())->detachPageForSuspension(*this, suspendedPage);
+
+        if (fromItem)
+            suspendedPage->suspendIframeProcesses(*fromItem);
+    }
 
     LOG(ProcessSwapping, "WebPageProxy %" PRIu64 " created suspended page %s for process pid %i, back/forward item %s" PRIu64, identifier().toUInt64(), suspendedPage->loggingString().utf8().data(), m_legacyMainFrameProcess->processID(), fromItem ? fromItem->identifier().toString().utf8().data() : "0"_s);
 
@@ -5623,7 +5635,6 @@ void WebPageProxy::commitProvisionalPage(IPC::Connection& connection, FrameIdent
         // handles the update).
         if (*oldMainFrameID != frameID)
             backForwardList().updateFrameIdentifier(*oldMainFrameID, frameID);
-        mainFrameInPreviousProcess->removeChildFrames();
     }
 
     ASSERT(m_legacyMainFrameProcess.ptr() != &provisionalPage->process() || preferences->siteIsolationEnabled());
@@ -5644,6 +5655,10 @@ void WebPageProxy::commitProvisionalPage(IPC::Connection& connection, FrameIdent
     removeAllMessageReceivers();
     RefPtr navigation = m_navigationState->navigation(provisionalPage->navigationID());
     bool didSuspendPreviousPage = navigation ? suspendCurrentPageIfPossible(*navigation, WTF::move(mainFrameInPreviousProcess), shouldDelayClosingUntilFirstLayerFlush) : false;
+
+    if (!didSuspendPreviousPage && mainFrameInPreviousProcess && preferences->siteIsolationEnabled())
+        mainFrameInPreviousProcess->removeChildFrames();
+
     // Defer shutting down old process as it might lead WebPageProxy to be closed and removeWebPage to be invoked again.
     auto preventProcessShutdownScope = protect(legacyMainFrameProcess())->shutdownPreventingScope();
     protect(legacyMainFrameProcess())->removeWebPage(*this, m_websiteDataStore.ptr() == provisionalPage->process().websiteDataStore() ? WebProcessProxy::EndsUsingDataStore::No : WebProcessProxy::EndsUsingDataStore::Yes);
@@ -9708,12 +9723,18 @@ bool WebPageProxy::hasOpenedPage() const
 bool WebPageProxy::hasPageOpenedByMainFrame() const
 {
     ASSERT(mainFrame());
+    if (!mainFrame())
+        return false;
+    return hasPageOpenedByMainFrame(protect(*mainFrame()));
+}
 
+bool WebPageProxy::hasPageOpenedByMainFrame(const WebFrameProxy& frameToCheck) const
+{
     for (Ref page : internals().m_openedPages) {
         auto* openedFrame = page->mainFrame();
         if (!openedFrame)
             continue;
-        if (openedFrame->opener() == mainFrame())
+        if (openedFrame->opener() == &frameToCheck)
             return true;
     }
 

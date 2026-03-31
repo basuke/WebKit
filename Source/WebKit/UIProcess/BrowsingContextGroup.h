@@ -49,6 +49,7 @@ namespace WebKit {
 class FrameProcess;
 class ProvisionalPageProxy;
 class RemotePageProxy;
+class SuspendedPageProxy;
 class WebPageProxy;
 class WebPreferences;
 class WebProcessPool;
@@ -56,6 +57,8 @@ class WebProcessPool;
 enum class IsMainFrame : bool;
 
 enum class BrowsingContextGroupUpdate : uint8_t { None, AddProcess, AddProcessAndInjectBrowsingContext };
+
+enum class CloseRemotePages : bool { No, Yes };
 
 class BrowsingContextGroup : public RefCountedAndCanMakeWeakPtr<BrowsingContextGroup> {
 public:
@@ -75,6 +78,9 @@ public:
     void addRemotePage(WebPageProxy&, Ref<RemotePageProxy>&&);
     void removePage(WebPageProxy&);
     void forEachRemotePage(const WebPageProxy&, Function<void(RemotePageProxy&)>&&);
+    void closeRemotePagesForPage(WebPageProxy&);
+    void detachPageForSuspension(WebPageProxy&, SuspendedPageProxy&);
+    void cleanupSuspendedPage(WebPageProxy&, SuspendedPageProxy&, CloseRemotePages);
 
     RefPtr<RemotePageProxy> remotePageInProcess(const WebPageProxy&, const WebProcessProxy&);
 

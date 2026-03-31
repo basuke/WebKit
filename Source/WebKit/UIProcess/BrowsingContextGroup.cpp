@@ -33,6 +33,7 @@
 #include "PageLoadState.h"
 #include "ProvisionalPageProxy.h"
 #include "RemotePageProxy.h"
+#include "SuspendedPageProxy.h"
 #include "WebFrameProxy.h"
 #include "WebPageProxy.h"
 #include "WebProcessPool.h"
@@ -205,6 +206,16 @@ void BrowsingContextGroup::removeFrameProcess(FrameProcess& process)
     });
 }
 
+void BrowsingContextGroup::detachPageForSuspension(WebPageProxy& page, SuspendedPageProxy& suspendedPage)
+{
+    forEachRemotePage(page, [&](auto& remotePage) {
+        remotePage.siteIsolatedProcess().addSuspendedPageProxy(suspendedPage);
+        m_processMap.remove(remotePage.site());
+    });
+    m_processMap.remove(Site { suspendedPage.mainFrame().url() });
+    m_pages.remove(page);
+}
+
 void BrowsingContextGroup::addPage(WebPageProxy& page)
 {
     ASSERT(!m_pages.contains(page));
@@ -246,8 +257,7 @@ void BrowsingContextGroup::addRemotePage(WebPageProxy& page, Ref<RemotePageProxy
 void BrowsingContextGroup::removePage(WebPageProxy& page)
 {
     m_pages.remove(page);
-    for (auto& remotePage : m_remotePages.take(page))
-        remotePage->disconnect();
+    closeRemotePagesForPage(page);
 }
 
 void BrowsingContextGroup::forEachRemotePage(const WebPageProxy& page, Function<void(RemotePageProxy&)>&& function)
@@ -257,6 +267,21 @@ void BrowsingContextGroup::forEachRemotePage(const WebPageProxy& page, Function<
         return;
     for (Ref remotePage : it->value)
         function(remotePage);
+}
+
+void BrowsingContextGroup::closeRemotePagesForPage(WebPageProxy& page)
+{
+    for (auto& remotePage : m_remotePages.take(page))
+        remotePage->disconnect();
+}
+
+void BrowsingContextGroup::cleanupSuspendedPage(WebPageProxy& page, SuspendedPageProxy& suspendedPage, CloseRemotePages closeRemotePages)
+{
+    forEachRemotePage(page, [&](auto& remotePage) {
+        remotePage.siteIsolatedProcess().removeSuspendedPageProxy(suspendedPage);
+    });
+    if (closeRemotePages == CloseRemotePages::Yes)
+        closeRemotePagesForPage(page);
 }
 
 RefPtr<RemotePageProxy> BrowsingContextGroup::remotePageInProcess(const WebPageProxy& page, const WebProcessProxy& process)

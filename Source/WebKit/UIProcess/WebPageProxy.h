@@ -2625,6 +2625,7 @@ public:
     void addOpenedPage(WebPageProxy&);
     bool NODELETE hasOpenedPage() const;
     bool hasPageOpenedByMainFrame() const;
+    bool hasPageOpenedByMainFrame(const WebFrameProxy&) const;
 
     void requestImageBitmap(const WebCore::ElementContext&, CompletionHandler<void(std::optional<WebCore::ShareableBitmapHandle>&&, const String& sourceMIMEType)>&&);
 
