@@ -43,7 +43,7 @@ class SerializedScriptValue;
 enum class ShouldGoToHistoryItem : uint8_t;
 enum class ShouldTreatAsContinuingLoad : uint8_t;
 
-struct NavigationAPIMethodTracker;
+class NavigationAPIMethodTracker;
 struct StringWithDirection;
 
 class HistoryController final : public CanMakeWeakPtr<HistoryController>  {

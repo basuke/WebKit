@@ -237,7 +237,7 @@ struct CharacterRange;
 struct ClientOrigin;
 struct DocumentSyncSerializationData;
 struct FixedContainerEdges;
-struct NavigationAPIMethodTracker;
+class NavigationAPIMethodTracker;
 struct ResolvedCaptionDisplaySettingsOptions;
 struct SpatialBackdropSource;
 struct SystemPreviewInfo;

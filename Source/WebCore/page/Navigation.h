@@ -51,34 +51,52 @@ class NavigationDestination;
 
 enum class FrameLoadType : uint8_t;
 
-enum class NavigationAPIMethodTrackerType { };
-using NavigationAPIMethodTrackerIdentifier = ObjectIdentifier<NavigationAPIMethodTrackerType>;
-
 // https://html.spec.whatwg.org/multipage/nav-history-apis.html#navigation-api-method-tracker
-struct NavigationAPIMethodTracker : public RefCounted<NavigationAPIMethodTracker> {
-    WTF_DEPRECATED_MAKE_STRUCT_FAST_ALLOCATED(NavigationAPIMethodTracker);
-
+class NavigationAPIMethodTracker : public RefCounted<NavigationAPIMethodTracker> {
+    WTF_MAKE_TZONE_ALLOCATED(NavigationAPIMethodTracker);
+public:
     static Ref<NavigationAPIMethodTracker> create(JSC::JSGlobalObject&, Ref<DeferredPromise>&& committed, Ref<DeferredPromise>&& finished, JSC::JSValue&& info, RefPtr<SerializedScriptValue>&& serializedState);
     ~NavigationAPIMethodTracker();
 
     bool operator==(const NavigationAPIMethodTracker& other) const
     {
-        // key is optional so we manually identify each tracker.
-        return identifier == other.identifier;
+        return m_identifier == other.m_identifier;
     }
 
-    bool finishedBeforeCommit { false };
-    String key;
-    JSValueInWrappedObject info;
-    RefPtr<SerializedScriptValue> serializedState;
-    RefPtr<NavigationHistoryEntry> committedToEntry;
-    Ref<DeferredPromise> committedPromise;
-    Ref<DeferredPromise> finishedPromise;
+    const String& key() const { return m_key; }
+    void setKey(const String& key) { m_key = key; }
+
+    JSValueInWrappedObject& info() { return m_info; }
+
+    SerializedScriptValue* serializedState() const { return m_serializedState.get(); }
+    void setSerializedState(RefPtr<SerializedScriptValue>&& state) { m_serializedState = WTF::move(state); }
+    RefPtr<SerializedScriptValue> takeSerializedState() { return WTF::move(m_serializedState); }
+
+    NavigationHistoryEntry* committedToEntry() const { return m_committedToEntry.get(); }
+    void setCommittedToEntry(NavigationHistoryEntry* entry) { m_committedToEntry = entry; }
+
+    DeferredPromise& committedPromise() { return m_committedPromise; }
+    const DeferredPromise& committedPromise() const { return m_committedPromise; }
+    DeferredPromise& finishedPromise() { return m_finishedPromise; }
+    const DeferredPromise& finishedPromise() const { return m_finishedPromise; }
+
+    bool finishedBeforeCommit() const { return m_finishedBeforeCommit; }
+    void setFinishedBeforeCommit(bool value) { m_finishedBeforeCommit = value; }
 
 private:
     NavigationAPIMethodTracker(JSC::JSGlobalObject&, Ref<DeferredPromise>&& committed, Ref<DeferredPromise>&& finished, JSC::JSValue&& info, RefPtr<SerializedScriptValue>&& serializedState);
 
-    NavigationAPIMethodTrackerIdentifier identifier;
+    enum class IdentifierType { };
+    using Identifier = ObjectIdentifier<IdentifierType>;
+
+    bool m_finishedBeforeCommit { false };
+    String m_key;
+    JSValueInWrappedObject m_info;
+    RefPtr<SerializedScriptValue> m_serializedState;
+    RefPtr<NavigationHistoryEntry> m_committedToEntry;
+    Ref<DeferredPromise> m_committedPromise;
+    Ref<DeferredPromise> m_finishedPromise;
+    Identifier m_identifier;
 };
 
 enum class ShouldCopyStateObjectFromCurrentEntry : bool { No, Yes };
@@ -167,6 +185,51 @@ public:
 
     void visitAdditionalChildrenInGCThread(JSC::AbstractSlotVisitor&);
 
+    // Controls how an upcoming tracker is promoted to the ongoing tracker.
+    enum class TrackerPromotion : uint8_t {
+        NonTraverse,
+        TraverseByKey,
+        TraverseFallback
+    };
+
+    // Manages NavigationAPIMethodTracker lifecycle: upcoming → ongoing → cleanup.
+    class TrackerManager {
+        WTF_MAKE_NONCOPYABLE(TrackerManager);
+    public:
+        TrackerManager() = default;
+
+        // Lifecycle: upcoming → ongoing → cleanup
+        RefPtr<NavigationAPIMethodTracker> setUpcomingNonTraverse(JSC::JSGlobalObject&, Ref<DeferredPromise>&& committed, Ref<DeferredPromise>&& finished, JSC::JSValue info, RefPtr<SerializedScriptValue>&&, bool shouldStore);
+        RefPtr<NavigationAPIMethodTracker> addUpcomingTraverse(JSC::JSGlobalObject&, Ref<DeferredPromise>&& committed, Ref<DeferredPromise>&& finished, const String& key, JSC::JSValue info);
+        void promoteToOngoing(TrackerPromotion, const String& key = { }) WTF_EXCLUDES_LOCK(m_lock);
+        void cleanup(NavigationAPIMethodTracker*) WTF_EXCLUDES_LOCK(m_lock);
+
+        // Promise resolution
+        void resolveFinished(NavigationAPIMethodTracker*);
+        void rejectFinished(NavigationAPIMethodTracker*, const Exception&, JSC::JSValue);
+        void notifyCommitted(NavigationAPIMethodTracker*, NavigationHistoryEntry*, NavigationNavigationType);
+
+        // Access
+        RefPtr<NavigationAPIMethodTracker> ongoing() const WTF_EXCLUDES_LOCK(m_lock);
+        NavigationAPIMethodTracker* upcomingTraverse(const String& key) const WTF_EXCLUDES_LOCK(m_lock);
+        std::optional<Result> existingTraverseResult(const String& key) const WTF_EXCLUDES_LOCK(m_lock);
+        bool clearIfStillUpcomingNonTraverse(NavigationAPIMethodTracker*) WTF_EXCLUDES_LOCK(m_lock);
+        Result derivedResult(const NavigationAPIMethodTracker&) const;
+
+#if ASSERT_ENABLED
+        void assertEmpty() const WTF_EXCLUDES_LOCK(m_lock);
+#endif
+
+        // GC support
+        void visitInGCThread(JSC::AbstractSlotVisitor&) WTF_EXCLUDES_LOCK(m_lock);
+
+    private:
+        mutable Lock m_lock;
+        RefPtr<NavigationAPIMethodTracker> m_ongoing WTF_GUARDED_BY_LOCK(m_lock);
+        RefPtr<NavigationAPIMethodTracker> m_upcomingNonTraverse WTF_GUARDED_BY_LOCK(m_lock);
+        HashMap<String, Ref<NavigationAPIMethodTracker>> m_upcomingTraverses WTF_GUARDED_BY_LOCK(m_lock);
+    };
+
     class AbortHandler : public RefCountedAndCanMakeWeakPtr<AbortHandler> {
     public:
         bool wasAborted() const { return m_wasAborted; }
@@ -183,7 +246,6 @@ public:
 
     // Rate limiter to prevent excessive navigation requests.
     class RateLimiter {
-        WTF_MAKE_TZONE_ALLOCATED(RateLimiter);
         WTF_MAKE_NONCOPYABLE(RateLimiter);
         WTF_MAKE_NONMOVABLE(RateLimiter);
     public:
@@ -250,15 +312,7 @@ private:
 
     void setActivation(HistoryItem* previousItem, std::optional<NavigationNavigationType>);
 
-    RefPtr<NavigationAPIMethodTracker> maybeSetUpcomingNonTraversalTracker(JSC::JSGlobalObject&, Ref<DeferredPromise>&& committed, Ref<DeferredPromise>&& finished, JSC::JSValue info, RefPtr<SerializedScriptValue>&&);
-    RefPtr<NavigationAPIMethodTracker> addUpcomingTraverseAPIMethodTracker(JSC::JSGlobalObject&, Ref<DeferredPromise>&& committed, Ref<DeferredPromise>&& finished, const String& key, JSC::JSValue info);
-    void cleanupAPIMethodTracker(NavigationAPIMethodTracker*) WTF_EXCLUDES_LOCK(m_apiMethodTrackersLock);
-    void resolveFinishedPromise(NavigationAPIMethodTracker*);
-    void rejectFinishedPromise(NavigationAPIMethodTracker*, const Exception&, JSC::JSValue exceptionObject);
     void abortOngoingNavigation(NavigateEvent&);
-    void promoteUpcomingAPIMethodTracker(const String& destinationKey) WTF_EXCLUDES_LOCK(m_apiMethodTrackersLock);
-    void notifyCommittedToEntry(NavigationAPIMethodTracker*, NavigationHistoryEntry*, NavigationNavigationType);
-    Result apiMethodTrackerDerivedResult(const NavigationAPIMethodTracker&);
 
     size_t entryIndexOfKey(const String&) const;
     bool hasEntryWithKey(const String&) const;
@@ -274,10 +328,7 @@ private:
     RefPtr<NavigateEvent> m_ongoingNavigateEvent;
     FocusDidChange m_focusChangedDuringOngoingNavigation { FocusDidChange::No };
     bool m_suppressNormalScrollRestorationDuringOngoingNavigation { false };
-    mutable Lock m_apiMethodTrackersLock;
-    RefPtr<NavigationAPIMethodTracker> m_ongoingAPIMethodTracker WTF_GUARDED_BY_LOCK(m_apiMethodTrackersLock);
-    RefPtr<NavigationAPIMethodTracker> m_upcomingNonTraverseMethodTracker WTF_GUARDED_BY_LOCK(m_apiMethodTrackersLock);
-    HashMap<String, Ref<NavigationAPIMethodTracker>> m_upcomingTraverseMethodTrackers WTF_GUARDED_BY_LOCK(m_apiMethodTrackersLock);
+    TrackerManager m_trackers;
     WeakHashSet<AbortHandler> m_abortHandlers;
     RateLimiter m_rateLimiter;
 };
