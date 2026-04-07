@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "BrowsingContextGroup.h"
 #include "MessageReceiver.h"
 #include "MessageSender.h"
 #include "NetworkResourceLoadIdentifier.h"
@@ -105,6 +106,7 @@ public:
     WebCore::PageIdentifier webPageID() const { return m_webPageID; }
     WebFrameProxy* mainFrame() const { return m_mainFrame.get(); }
     BrowsingContextGroup& browsingContextGroup() const { return m_browsingContextGroup.get(); }
+    RefPtr<BrowsingContextGroup> suspendedPageBrowsingContextGroup() const { return m_suspendedPageBrowsingContextGroup; }
     WebProcessProxy& NODELETE process();
     ProcessSwapRequestedByClient processSwapRequestedByClient() const { return m_processSwapRequestedByClient; }
     WebCore::NavigationIdentifier navigationID() const { return m_navigationID; }
@@ -212,6 +214,7 @@ private:
     WebCore::PageIdentifier m_webPageID;
     Ref<FrameProcess> m_frameProcess;
     const Ref<BrowsingContextGroup> m_browsingContextGroup;
+    RefPtr<BrowsingContextGroup> m_suspendedPageBrowsingContextGroup;
     RefPtr<RemotePageProxy> m_takenRemotePage;
 
     // Keep WebsiteDataStore alive for provisional page load.

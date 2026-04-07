@@ -8591,8 +8591,16 @@ void WebPage::setIsSuspendedWithFrameItem(bool suspended, BackForwardFrameItemId
     m_isSuspended = suspended;
 
     if (!suspended) {
-        // FIXME: Restore path (implemented in a follow-up patch).
-        return completionHandler({ });
+        // Phase 4 restore path.
+        unfreezeLayerTree(LayerTreeFreezeReason::PageSuspended);
+        auto cachedPage = BackForwardCache::singleton().take(frameItemID, corePage());
+        if (!cachedPage) {
+            WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "setIsSuspendedWithFrameItem: Failed to take cached page for frameItemID %s", frameItemID.toString().utf8().data());
+            return completionHandler(false);
+        }
+        cachedPage->restore(*corePage());
+        WEBPAGE_RELEASE_LOG(ProcessSwapping, "setIsSuspendedWithFrameItem: Successfully restored cached page for frameItemID %s", frameItemID.toString().utf8().data());
+        return completionHandler(true);
     }
 
     freezeLayerTree(LayerTreeFreezeReason::PageSuspended);
@@ -10004,6 +10012,15 @@ void WebPage::frameTextForTesting(WebCore::FrameIdentifier frameID, CompletionHa
     }
     constexpr bool includeSubframes { true };
     completionHandler(webFrame->frameTextForTesting(includeSubframes));
+}
+
+void WebPage::preventBackForwardCacheForTesting()
+{
+    if (RefPtr page = corePage()) {
+        page->forEachDocument([](Document& document) {
+            document.preventEnteringBackForwardCacheForTesting();
+        });
+    }
 }
 
 void WebPage::requestAllTextAndRects(CompletionHandler<void(Vector<std::pair<String, WebCore::FloatRect>>&&)>&& completion)

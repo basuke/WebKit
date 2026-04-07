@@ -72,6 +72,7 @@ public:
     void addFrameProcessAndInjectPageContextIf(FrameProcess&, Function<bool(WebPageProxy&)>);
     bool addFrameProcessWithoutInjectingPageContext(FrameProcess&);
     void removeFrameProcess(FrameProcess&);
+    void removeProcessMapEntryForSite(const WebCore::Site&);
     void processDidTerminate(WebPageProxy&, WebProcessProxy&);
 
     void addPage(WebPageProxy&);
@@ -81,6 +82,7 @@ public:
     void closeRemotePagesForPage(WebPageProxy&);
     void detachPageForSuspension(WebPageProxy&, SuspendedPageProxy&);
     void cleanupSuspendedPage(WebPageProxy&, SuspendedPageProxy&, CloseRemotePages);
+    HashSet<Ref<RemotePageProxy>> takeRemotePagesForPage(WebPageProxy&);
 
     RefPtr<RemotePageProxy> remotePageInProcess(const WebPageProxy&, const WebProcessProxy&);
 

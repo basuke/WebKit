@@ -30,9 +30,11 @@
 #include "CachedFramePlatformData.h"
 #include "CachedPage.h"
 #include "DocumentLoader.h"
+#include "HTMLFrameOwnerElement.h"
 #include "DocumentPage.h"
 #include "DocumentView.h"
 #include "DocumentWindow.h"
+#include "FrameInlines.h"
 #include "FrameLoader.h"
 #include "LocalDOMWindow.h"
 #include "LocalFrame.h"
@@ -127,6 +129,14 @@ void CachedFrameBase::restore()
 
         // Reconstruct the FrameTree. And open the child CachedFrames in their respective FrameLoaders.
         for (auto& childFrame : m_childFrames) {
+            // RemoteFrame children have no document. Re-add them to the frame
+            // tree so the iframe element stays connected, but skip open() —
+            // the iframe process restores its content independently via
+            // SetIsSuspendedWithFrameItem IPC.
+            if (!childFrame->document()) {
+                frame->tree().appendChild(protect(protect(childFrame->view())->frame()));
+                continue;
+            }
             ASSERT(childFrame->view()->frame().page());
             frame->tree().appendChild(protect(protect(childFrame->view())->frame()));
             childFrame->open();
@@ -238,6 +248,18 @@ void CachedFrame::open()
 
     if (RefPtr localFrameView = dynamicDowncast<LocalFrameView>(m_view.get()))
         localFrameView->frame().loader().open(*this);
+    else {
+        // RemoteFrame main frame in iframe process.
+        // Re-attach child frames to the frame tree and open them to restore
+        // LocalFrame content. This mirrors what CachedFrameBase::restore()
+        // does for LocalFrame parents, but RemoteFrames have no FrameLoader
+        // so we handle the appendChild + open() directly here.
+        Ref frame = m_view->frame();
+        for (auto& childFrame : m_childFrames) {
+            frame->tree().appendChild(protect(childFrame->view()->frame()));
+            childFrame->open();
+        }
+    }
 }
 
 void CachedFrame::clear()

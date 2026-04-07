@@ -852,6 +852,7 @@ messages -> WebPage WantsAsyncDispatchMessage {
     RenderTreeAsTextForTesting(WebCore::FrameIdentifier frameID, uint64_t baseIndent, OptionSet<WebCore::RenderAsTextFlag> behavior) -> (String renderTreeDump) Synchronous
     LayerTreeAsTextForTesting(WebCore::FrameIdentifier frameID, uint64_t baseIndent, OptionSet<WebCore::LayerTreeAsTextOptions> options) -> (String layerTreeDump) Synchronous
     FrameTextForTesting(WebCore::FrameIdentifier frameID) -> (String text) Synchronous
+    PreventBackForwardCacheForTesting()
 
     RequestAllTextAndRects() -> (Vector<std::pair<String, WebCore::FloatRect>> textAndRects)
 

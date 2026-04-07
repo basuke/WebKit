@@ -2626,6 +2626,7 @@ public:
     bool NODELETE hasOpenedPage() const;
     bool hasPageOpenedByMainFrame() const;
     bool hasPageOpenedByMainFrame(const WebFrameProxy&) const;
+    bool isFrameInLiveTree(const WebFrameProxy&) const;
 
     void requestImageBitmap(const WebCore::ElementContext&, CompletionHandler<void(std::optional<WebCore::ShareableBitmapHandle>&&, const String& sourceMIMEType)>&&);
 
@@ -2970,6 +2971,8 @@ public:
 #endif
 
     bool shouldUseBackForwardCache() const;
+
+    void preventBackForwardCacheForTestingInSubframes();
 
 private:
     WebPageProxy(PageClient&, WebProcessProxy&, Ref<API::PageConfiguration>&&);

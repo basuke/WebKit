@@ -100,6 +100,7 @@ public:
     WebPageProxy* NODELETE page() const;
 
     void injectPageIntoNewProcess();
+    void setupSubsystemsForBFCacheRestoration();
     void processDidTerminate(WebProcessProxy&, ProcessTerminationReason);
 
     WebPageProxyMessageReceiverRegistration& messageReceiverRegistration() LIFETIME_BOUND { return m_messageReceiverRegistration; }
@@ -120,6 +121,7 @@ public:
     bool hasNetworkRequestsInProgress() const { return m_hasNetworkRequestsInProgress; }
 
     void disconnect();
+    void disconnectWithoutClosingWebPage();
 
 #if HAVE(VISIBILITY_PROPAGATION_VIEW)
     void didCreateContextInWebProcessForVisibilityPropagation(LayerHostingContextID);
@@ -128,6 +130,10 @@ public:
 
 private:
     RemotePageProxy(WebPageProxy&, WebProcessProxy&, const WebCore::Site&, WebPageProxyMessageReceiverRegistration*, std::optional<WebCore::PageIdentifier>);
+
+    void setupSubsystems();
+    void cleanupSubsystems();
+
     void didReceiveMessage(IPC::Connection&, IPC::Decoder&) final;
     void didReceiveSyncMessage(IPC::Connection&, IPC::Decoder&, UniqueRef<IPC::Encoder>&) final;
     void isPlayingMediaDidChange(WebCore::MediaProducerMediaStateFlags);

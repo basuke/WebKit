@@ -1325,6 +1325,11 @@ static void dumpCALayer(TextStream& ts, CALayer *layer, bool traverse)
 #endif
 }
 
+- (void)_preventBackForwardCacheInSubframesForTesting
+{
+    _page->preventBackForwardCacheForTestingInSubframes();
+}
+
 @end
 
 #if ENABLE(MEDIA_SESSION_COORDINATOR)

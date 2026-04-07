@@ -206,6 +206,8 @@ typedef NSVisualEffectView _WKPlatformVisualEffectView;
 
 - (void)_lastPageLoadNetworkActivityCompletionCodeForTesting:(void(^)(NSNumber * _Nullable completionCode))completionHandler;
 
+- (void)_preventBackForwardCacheInSubframesForTesting;
+
 @end
 
 typedef NS_ENUM(NSInteger, _WKMediaSessionReadyState) {

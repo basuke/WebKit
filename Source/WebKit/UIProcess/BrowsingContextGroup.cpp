@@ -216,6 +216,12 @@ void BrowsingContextGroup::detachPageForSuspension(WebPageProxy& page, Suspended
     m_pages.remove(page);
 }
 
+void BrowsingContextGroup::removeProcessMapEntryForSite(const Site& site)
+{
+    m_processMap.remove(site);
+}
+}
+
 void BrowsingContextGroup::addPage(WebPageProxy& page)
 {
     ASSERT(!m_pages.contains(page));
@@ -282,6 +288,12 @@ void BrowsingContextGroup::cleanupSuspendedPage(WebPageProxy& page, SuspendedPag
     });
     if (closeRemotePages == CloseRemotePages::Yes)
         closeRemotePagesForPage(page);
+}
+
+HashSet<Ref<RemotePageProxy>> BrowsingContextGroup::takeRemotePagesForPage(WebPageProxy& page)
+{
+    return m_remotePages.take(page);
+}
 }
 
 RefPtr<RemotePageProxy> BrowsingContextGroup::remotePageInProcess(const WebPageProxy& page, const WebProcessProxy& process)

@@ -219,14 +219,44 @@ void SuspendedPageProxy::waitUntilReadyToUnsuspend(CompletionHandler<void(Suspen
     }
 }
 
-void SuspendedPageProxy::unsuspend(WebBackForwardListItem*)
+void SuspendedPageProxy::unsuspend(WebBackForwardListItem* targetItem)
 {
     ASSERT(m_suspensionState == SuspensionState::Suspended);
-    // FIXME: Use targetItem to restore iframe processes in the follow-up patch.
     m_suspensionState = SuspensionState::Resumed;
     sendWithAsyncReply(Messages::WebPage::SetIsSuspended(false), [](std::optional<bool> didSuspend) {
         ASSERT(!didSuspend.has_value());
     });
+
+    RefPtr page = m_page.get();
+    if (!targetItem || !page || !page->preferences().multiProcessBackForwardCacheEnabled())
+        return;
+
+    auto& rootFrameItem = targetItem->mainFrameItem();
+    m_browsingContextGroup->forEachRemotePage(*page,
+        [&](RemotePageProxy& remotePage) {
+            RefPtr<WebFrameProxy> frameInProcess;
+            for (RefPtr f = m_mainFrame->traverseNext().frame;
+                 f; f = f->traverseNext().frame) {
+                if (&f->process() == &remotePage.siteIsolatedProcess()) {
+                    frameInProcess = f;
+                    break;
+                }
+            }
+            if (!frameInProcess)
+                return;
+
+            RefPtr frameItem = rootFrameItem.childItemForFrameID(frameInProcess->frameID());
+            if (!frameItem)
+                return;
+
+            RELEASE_LOG(ProcessSwapping, "%p - SuspendedPageProxy::unsuspend: Sending restore IPC to iframe process pid %i for frameItem %s", this, remotePage.siteIsolatedProcess().processID(), frameItem->identifier().toString().utf8().data());
+
+            remotePage.siteIsolatedProcess().sendWithAsyncReply(
+                Messages::WebPage::SetIsSuspendedWithFrameItem(false, frameItem->identifier()),
+                [](std::optional<bool>) { },
+                remotePage.identifierInSiteIsolatedProcess()
+            );
+        });
 }
 
 void SuspendedPageProxy::close()

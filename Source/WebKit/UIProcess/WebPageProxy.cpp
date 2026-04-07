@@ -2758,8 +2758,10 @@ RefPtr<API::Navigation> WebPageProxy::goToBackForwardItem(WebBackForwardListFram
 WebProcessProxy& WebPageProxy::processForTheFrameItem(WebBackForwardListFrameItem& frameItem) const
 {
     if (protect(preferences())->siteIsolationEnabled()) {
-        if (RefPtr frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this)
-            return frame->process();
+        if (RefPtr frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this) {
+            if (isFrameInLiveTree(*frame))
+                return frame->process();
+        }
     }
 
     return m_legacyMainFrameProcess;
@@ -2769,8 +2771,10 @@ Ref<FrameState> WebPageProxy::copyFrameStateForBackForwardNavigation(WebBackForw
 {
     auto frameItemForNavigation = [&]() -> Ref<WebBackForwardListFrameItem> {
         if (protect(preferences())->siteIsolationEnabled()) {
-            if (RefPtr frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this)
-                return frameItem;
+            if (RefPtr frame = WebFrameProxy::webFrame(frameItem.frameID()); frame && frame->page() == this) {
+                if (isFrameInLiveTree(*frame))
+                    return frameItem;
+            }
         }
         return frameItem.backForwardListItem()->mainFrameItem();
     };
@@ -5677,7 +5681,32 @@ void WebPageProxy::commitProvisionalPage(IPC::Connection& connection, FrameIdent
 
     const auto oldProcessID = siteIsolatedProcess().coreProcessIdentifier();
     const auto oldWebPageID = m_webPageID;
+    RefPtr suspendedPageBCG = provisionalPage->suspendedPageBrowsingContextGroup();
     swapToProvisionalPage(provisionalPage.releaseNonNull());
+
+    // Reconnect iframe processes to the new BCG after BFCache restoration.
+    // Collect old RemotePageProxy entries before iterating to avoid iterator
+    // invalidation when suspendedPageBCG == m_browsingContextGroup (which is
+    // always true during goBack — both reference the old BCG from the
+    // back/forward item).
+    if (suspendedPageBCG) {
+        Vector<Ref<RemotePageProxy>> oldRemotePages;
+        suspendedPageBCG->forEachRemotePage(*this, [&](RemotePageProxy& oldRP) {
+            oldRemotePages.append(oldRP);
+        });
+
+        for (auto& oldRP : oldRemotePages) {
+            Ref process = oldRP->siteIsolatedProcess();
+            auto preventProcessShutdown = process->shutdownPreventingScope();
+            auto site = oldRP->site();
+            auto pageID = oldRP->identifierInSiteIsolatedProcess();
+
+            m_browsingContextGroup->ensureProcessForSite(site, Site { mainFrame()->url() }, process, preferences, LoadedWebArchive::No, BrowsingContextGroupUpdate::AddProcess);
+            Ref newRP = RemotePageProxy::create(*this, process, site, nullptr, pageID);
+            newRP->setupSubsystemsForBFCacheRestoration();
+            m_browsingContextGroup->addRemotePage(*this, WTF::move(newRP));
+        }
+    }
 
     didCommitLoadForFrame(connection, frameID, WTF::move(frameInfo), WTF::move(request), navigationID, WTF::move(mimeType), frameHasCustomContentProvider, frameLoadType, certificateInfo, usedLegacyTLS, privateRelayed, WTF::move(proxyName), source, containsPluginDocument, hasInsecureContent, mouseEventPolicy, WTF::move(documentSecurityPolicy), userData);
 
@@ -9718,6 +9747,15 @@ void WebPageProxy::showPage()
 bool WebPageProxy::hasOpenedPage() const
 {
     return !internals().m_openedPages.isEmptyIgnoringNullReferences();
+}
+
+bool WebPageProxy::isFrameInLiveTree(const WebFrameProxy& frame) const
+{
+    for (RefPtr f = m_mainFrame.get(); f; f = f->traverseNext().frame) {
+        if (f.get() == &frame)
+            return true;
+    }
+    return false;
 }
 
 bool WebPageProxy::hasPageOpenedByMainFrame() const
@@ -17620,6 +17658,16 @@ void WebPageProxy::frameTextForTesting(WebCore::FrameIdentifier frameID, Complet
 
     auto [result] = sendResult.takeReply();
     completionHandler(WTF::move(result));
+}
+
+void WebPageProxy::preventBackForwardCacheForTestingInSubframes()
+{
+    protect(browsingContextGroup())->forEachRemotePage(*this, [](RemotePageProxy& remotePage) {
+        remotePage.siteIsolatedProcess().send(
+            Messages::WebPage::PreventBackForwardCacheForTesting(),
+            remotePage.identifierInSiteIsolatedProcess()
+        );
+    });
 }
 
 void WebPageProxy::requestAllTextAndRects(CompletionHandler<void(Vector<Ref<API::TextRun>>&&)>&& completion)

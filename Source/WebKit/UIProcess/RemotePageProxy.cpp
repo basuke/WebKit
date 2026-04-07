@@ -109,14 +109,8 @@ RemotePageProxy::RemotePageProxy(WebPageProxy& page, WebProcessProxy& process, c
     protectedPage->didCreateRemotePage(*this);
 }
 
-void RemotePageProxy::disconnect()
+void RemotePageProxy::cleanupSubsystems()
 {
-    if (RefPtr page = m_page.get())
-        page->isNoLongerAssociatedWithRemotePage(*this);
-    if (m_drawingArea)
-        m_process->send(Messages::WebPage::Close(), m_webPageID);
-    m_process->removeRemotePageProxy(*this);
-
     m_drawingArea = nullptr;
 #if ENABLE(FULLSCREEN_API)
     m_fullscreenManager = nullptr;
@@ -138,17 +132,32 @@ void RemotePageProxy::disconnect()
 #endif
 }
 
-void RemotePageProxy::injectPageIntoNewProcess()
+void RemotePageProxy::disconnect()
+{
+    if (RefPtr page = m_page.get())
+        page->isNoLongerAssociatedWithRemotePage(*this);
+    if (m_drawingArea)
+        m_process->send(Messages::WebPage::Close(), m_webPageID);
+    m_process->removeRemotePageProxy(*this);
+    cleanupSubsystems();
+}
+
+void RemotePageProxy::disconnectWithoutClosingWebPage()
+{
+    if (RefPtr page = m_page.get())
+        page->isNoLongerAssociatedWithRemotePage(*this);
+    // No WebPage::Close IPC — the iframe WebPage is preserved in BFCache.
+    m_process->removeRemotePageProxy(*this);
+    cleanupSubsystems();
+}
+
+void RemotePageProxy::setupSubsystems()
 {
     RefPtr page = m_page.get();
-    if (!page) {
-        ASSERT_NOT_REACHED();
+    if (!page)
         return;
-    }
-    if (!page->mainFrame()) {
-        ASSERT_NOT_REACHED();
+    if (!page->mainFrame())
         return;
-    }
 
     Ref drawingArea = *page->drawingArea();
     m_drawingArea = RemotePageDrawingAreaProxy::create(drawingArea.get(), m_process);
@@ -169,7 +178,23 @@ void RemotePageProxy::injectPageIntoNewProcess()
         m_screenOrientationManager = RemotePageScreenOrientationManagerProxy::create(m_webPageID, screenOrientationManager.get(), m_process);
 
     m_visitedLinkStoreRegistration = makeUnique<RemotePageVisitedLinkStoreRegistration>(*page, m_process);
+}
 
+void RemotePageProxy::injectPageIntoNewProcess()
+{
+    RefPtr page = m_page.get();
+    if (!page) {
+        ASSERT_NOT_REACHED();
+        return;
+    }
+    if (!page->mainFrame()) {
+        ASSERT_NOT_REACHED();
+        return;
+    }
+
+    setupSubsystems();
+
+    Ref drawingArea = *page->drawingArea();
     RefPtr websitePolicies = page->mainFrameWebsitePolicies();
     m_process->send(
         Messages::WebProcess::CreateWebPage(
@@ -181,6 +206,12 @@ void RemotePageProxy::injectPageIntoNewProcess()
             })
         ), 0
     );
+}
+
+void RemotePageProxy::setupSubsystemsForBFCacheRestoration()
+{
+    setupSubsystems();
+    // No CreateWebPage IPC — the WebPage already exists in this process.
 }
 
 void RemotePageProxy::processDidTerminate(WebProcessProxy& process, ProcessTerminationReason reason)

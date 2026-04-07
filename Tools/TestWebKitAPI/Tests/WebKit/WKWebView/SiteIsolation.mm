@@ -438,6 +438,20 @@ void checkFrameTreesInProcesses(WKWebView *webView, Vector<ExpectedFrameTree>&& 
     checkFrameTreesInProcesses(frameTrees(webView).get(), WTF::move(expectedFrameTrees));
 }
 
+static void waitForFrameTreesInProcesses(WKWebView *webView, Vector<ExpectedFrameTree>&& expectedFrameTrees)
+{
+    // BFCache restoration in iframe processes is asynchronous. Poll until
+    // the frame trees match or a generous timeout expires.
+    bool matched = false;
+    for (int attempt = 0; attempt < 500 && !matched; ++attempt) {
+        matched = frameTreesMatch(frameTrees(webView).get(), Vector<ExpectedFrameTree> { expectedFrameTrees });
+        if (!matched)
+            Util::spinRunLoop();
+    }
+    if (!matched)
+        checkFrameTreesInProcesses(frameTrees(webView).get(), expectedFrameTrees);
+}
+
 static unsigned countWebPages(const RetainPtr<WKWebView>& webView)
 {
     __block bool done { false };
@@ -8570,6 +8584,715 @@ TEST(SiteIsolation, MultiProcessBFCacheOpenerSkipsBFCache)
 
     // Verify the marker is gone (full reload, not BFCache restore).
     EXPECT_FALSE([[webView objectByEvaluatingJavaScript:@"window.__bfcacheMarker ? true : false"] boolValue]);
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheSimpleGoBack)
+{
+    HTTPServer server({
+        { "/a"_s, { "<script>window.__bfcacheMarker = true;</script>page a"_s } },
+        { "/b"_s, { "page b"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Verify marker is set.
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheMarker ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://b.com/b"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Verify JS state was preserved (BFCache used, not full reload).
+    done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheMarker ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheNavigationCompletesAfterRestore)
+{
+    HTTPServer server({
+        { "/a"_s, { "<iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // goBack must complete without hanging.
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheIframeRestoration)
+{
+    HTTPServer server({
+        { "/a"_s, { "<script>window.addEventListener('pageshow', function(e) { if (e.persisted) window.__bfcacheRestored = true; });</script><iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "<script>window.__iframeMarker = true;</script>iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    // Record iframe process PID.
+    pid_t iframePID = 0;
+    auto trees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in trees.get()) {
+        if (!tree.info._isLocalFrame && tree.childFrames.count)
+            iframePID = tree.childFrames[0].info._processIdentifier;
+    }
+    EXPECT_NE(iframePID, 0);
+
+    // Navigate away — triggers multi-process suspension.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Verify BFCache was actually used (pageshow event.persisted was true).
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheRestored ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // Verify the frame tree is correct after BFCache restoration.
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    // Verify iframe process survived (same PID as before suspension).
+    pid_t restoredIframePID = 0;
+    auto restoredTrees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in restoredTrees.get()) {
+        if (!tree.info._isLocalFrame && tree.childFrames.count)
+            restoredIframePID = tree.childFrames[0].info._processIdentifier;
+    }
+    EXPECT_EQ(restoredIframePID, iframePID);
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheScriptNavigation)
+{
+    HTTPServer server({
+        { "/a"_s, { "<script>window.addEventListener('pageshow', function(e) { if (e.persisted) window.__bfcacheRestored = true; });</script><iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Navigate away — triggers multi-process suspension. The processMap
+    // cleanup in suspendCurrentPageIfPossible() prevents duplicate
+    // CreateWebPage messages when addPage() later iterates the old BCG's
+    // processMap entries. Without this cleanup, stale iframe FrameProcess
+    // entries cause spurious injectPageIntoNewProcess() calls.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // goBack triggers BFCache restoration and Phase 4c BCG reconnection.
+    // The reconnection code collects RemotePageProxy entries into a Vector
+    // before processing them, avoiding iterator invalidation when the
+    // suspended page's BCG is the same object as the current BCG (which is
+    // always true during goBack).
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Verify BFCache was used.
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheRestored ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheIframeProcessDeath)
+{
+    HTTPServer server({
+        { "/a"_s, { "<script>window.__bfcacheMarker = true; window.addEventListener('pageshow', function(e) { if (e.persisted) window.__bfcacheRestored = true; });</script><iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    // 1. Load a.com with b.com iframe.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Record iframe process PID.
+    pid_t iframePID = 0;
+    auto trees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in trees.get()) {
+        if (!tree.info._isLocalFrame && tree.childFrames.count)
+            iframePID = tree.childFrames[0].info._processIdentifier;
+    }
+    EXPECT_NE(iframePID, 0);
+
+    // 2. Navigate to c.com (triggers multi-process BFCache suspension).
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 3. Kill the b.com iframe process and wait for it to be reaped.
+    kill(iframePID, SIGKILL);
+    // Wait until the process is actually gone.
+    for (int i = 0; i < 100; i++) {
+        if (kill(iframePID, 0) != 0)
+            break;
+        Util::runFor(0.01_s);
+    }
+    // Give the run loop time to process the XPC connection close notification.
+    Util::runFor(0.5_s);
+
+    // 4. goBack — should do full page reload, NOT BFCache restore.
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+    [navigationDelegate waitForDidFinishLoadInSubframe];
+
+    // 5. Verify: BFCache was NOT used (full reload).
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheRestored ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "no");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 6. Verify: page loads correctly with iframe (fresh load).
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheSuspensionFailure)
+{
+    HTTPServer server({
+        { "/a"_s, { "<iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    // 1. Load a.com with cross-origin b.com iframe.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    // 2. Set a JS marker in the main frame to detect BFCache vs full reload.
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__marker = true" completionHandler:^(id, NSError *) {
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 3. Mark iframe documents as uncacheable.
+    [webView _preventBackForwardCacheInSubframesForTesting];
+
+    // 4. Navigate to c.com — triggers multi-process BFCache suspension.
+    //    The iframe process will fail to cache (preventEnteringBackForwardCacheForTesting),
+    //    causing the BFCache entry to be invalidated.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 5. goBack — should do a full page reload, NOT BFCache restore.
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+    [navigationDelegate waitForDidFinishLoadInSubframe];
+
+    // 6. Verify: frame tree is correct after full reload.
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    // 7. Verify: BFCache was NOT used. The marker should be absent after full reload.
+    done = false;
+    [webView evaluateJavaScript:@"window.__marker ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "no");
+        done = true;
+    }];
+    Util::run(&done);
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheMainProcessDeath)
+{
+    HTTPServer server({
+        { "/a"_s, { "<script>window.__bfcacheMarker = true; window.addEventListener('pageshow', function(e) { if (e.persisted) window.__bfcacheRestored = true; });</script><iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    // 1. Load a.com with b.com iframe.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Record the a.com main process PID.
+    pid_t mainPID = [webView _webProcessIdentifier];
+    EXPECT_NE(mainPID, 0);
+
+    // 2. Navigate to c.com (triggers multi-process BFCache suspension).
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // The main PID should now be different (PSON to c.com).
+    EXPECT_NE([webView _webProcessIdentifier], mainPID);
+
+    // 3. Kill the suspended a.com main process.
+    kill(mainPID, SIGKILL);
+    // Wait until the process is actually gone.
+    for (int i = 0; i < 100; i++) {
+        if (kill(mainPID, 0) != 0)
+            break;
+        Util::runFor(0.01_s);
+    }
+    // Give the run loop time to process the XPC connection close notification.
+    Util::runFor(0.5_s);
+
+    // 4. goBack — should do full page reload, NOT BFCache restore.
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+    [navigationDelegate waitForDidFinishLoadInSubframe];
+
+    // 5. Verify: BFCache was NOT used (full reload, no crash).
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheRestored ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "no");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 6. Verify: page loads correctly with iframe (fresh load).
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheMultipleIframes)
+{
+    HTTPServer server({
+        { "/a"_s, { "<script>window.addEventListener('pageshow', function(e) { if (e.persisted) window.__bfcacheRestored = true; });</script><iframe src='https://b.com/frame1'></iframe><iframe src='https://c.com/frame2'></iframe>"_s } },
+        { "/frame1"_s, { "<script>window.__iframeMarkerB = true;</script>iframe b content"_s } },
+        { "/frame2"_s, { "<script>window.__iframeMarkerC = true;</script>iframe c content"_s } },
+        { "/d"_s, { "page d"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    // 1. Load a.com with iframes from b.com AND c.com.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame }, { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s }, { RemoteFrame } } },
+        { RemoteFrame, { { RemoteFrame }, { "https://c.com"_s } } },
+    });
+
+    // 2. Record both iframe PIDs.
+    pid_t bPID = 0, cPID = 0;
+    auto trees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in trees.get()) {
+        for (_WKFrameTreeNode *child in tree.childFrames) {
+            if (child.info._isLocalFrame) {
+                NSString *url = child.info.request.URL.absoluteString;
+                if ([url containsString:@"frame1"])
+                    bPID = child.info._processIdentifier;
+                else if ([url containsString:@"frame2"])
+                    cPID = child.info._processIdentifier;
+            }
+        }
+    }
+    EXPECT_NE(bPID, 0);
+    EXPECT_NE(cPID, 0);
+    EXPECT_NE(bPID, cPID);
+
+    // 3. Navigate to d.com -- triggers multi-process suspension of BOTH iframes.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://d.com/d"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 4. goBack -- triggers BFCache restoration.
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 5. Verify BFCache was used.
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheRestored ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 6. Verify the frame tree is correct after restoration (main + 2 remote frames).
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame }, { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s }, { RemoteFrame } } },
+        { RemoteFrame, { { RemoteFrame }, { "https://c.com"_s } } },
+    });
+
+    // 7. Verify both iframe PIDs survived.
+    pid_t restoredBPID = 0, restoredCPID = 0;
+    auto restoredTrees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in restoredTrees.get()) {
+        for (_WKFrameTreeNode *child in tree.childFrames) {
+            if (child.info._isLocalFrame) {
+                NSString *url = child.info.request.URL.absoluteString;
+                if ([url containsString:@"frame1"])
+                    restoredBPID = child.info._processIdentifier;
+                else if ([url containsString:@"frame2"])
+                    restoredCPID = child.info._processIdentifier;
+            }
+        }
+    }
+    EXPECT_EQ(restoredBPID, bPID);
+    EXPECT_EQ(restoredCPID, cPID);
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheGoForward)
+{
+    HTTPServer server({
+        { "/a"_s, { "<script>window.__marker = true; window.addEventListener('pageshow', function(e) { if (e.persisted) window.__bfcacheRestored = true; });</script><iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/c"_s, { "<script>window.addEventListener('pageshow', function(e) { if (e.persisted) window.__bfcacheRestoredC = true; });</script>page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    // 1. Load a.com with b.com iframe.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 2. Navigate to c.com (a.com + b.com cached).
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 3. goBack (restore a.com + b.com).
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 4. Verify BFCache was used (marker present).
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheRestored ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 5. goForward (restore c.com).
+    [webView goForward];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 6. Verify on c.com.
+    done = false;
+    [webView evaluateJavaScript:@"window.location.hostname" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "c.com");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 7. goBack again (restore a.com + b.com again).
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 8. Verify BFCache was used (marker still present from original load).
+    done = false;
+    [webView evaluateJavaScript:@"window.__marker ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheRapidNavigation)
+{
+    HTTPServer server({
+        { "/a"_s, { "<script>window.__marker = true; window.addEventListener('pageshow', function(e) { if (e.persisted) window.__bfcacheRestored = true; });</script><iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "iframe content"_s } },
+        { "/c"_s, { "page c"_s } },
+        { "/d"_s, { "page d"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    // 1. Load a.com with b.com iframe.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    // 2. Navigate to c.com (a.com cached).
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 3. Navigate to d.com (c.com cached).
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://d.com/d"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 4. goBack (restore c.com -- no iframe).
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.location.hostname" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "c.com");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 5. goBack (restore a.com with b.com iframe).
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 6. Verify BFCache was used (marker present).
+    done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheRestored ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 7. Verify frame tree correct. Use waitFor variant because the iframe
+    // process CachedPage restoration is asynchronous after multiple goBack hops.
+    waitForFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheNestedIframes)
+{
+    // A→B→A nesting: a.com main → b.com iframe → a.com nested iframe.
+    // Tests canCacheFrame() RemoteFrame traversal and CachedFrame tree reconstruction with nesting.
+    HTTPServer server({
+        { "/a"_s, { "<script>window.__marker = true; window.addEventListener('pageshow', function(e) { if (e.persisted) window.__bfcacheRestored = true; });</script><iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "<iframe src='https://a.com/nested'></iframe>"_s } },
+        { "/nested"_s, { "<script>window.__nestedMarker = true; alert('nested-loaded');</script>nested content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    // 1. Load a.com with b.com iframe containing nested a.com iframe.
+    //    Wait for nested iframe alert to ensure all frames are loaded.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    EXPECT_WK_STREQ([webView _test_waitForAlert], "nested-loaded");
+
+    // 2. Record b.com iframe PID.
+    pid_t iframePID = 0;
+    auto trees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in trees.get()) {
+        for (_WKFrameTreeNode *child in tree.childFrames) {
+            if (child.info._isLocalFrame) {
+                NSString *url = child.info.request.URL.absoluteString;
+                if ([url containsString:@"frame"])
+                    iframePID = child.info._processIdentifier;
+            }
+        }
+    }
+    EXPECT_NE(iframePID, 0);
+
+    // 3. Verify nested iframe marker is set via JS evaluation.
+    __block bool done = false;
+    RetainPtr<WKFrameInfo> nestedFrame = [webView mainFrame].childFrames.firstObject.childFrames.firstObject.info;
+    EXPECT_NOT_NULL(nestedFrame.get());
+    [webView evaluateJavaScript:@"window.__nestedMarker ? 'yes' : 'no'" inFrame:nestedFrame.get() completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 4. Navigate to c.com — triggers multi-process suspension.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 5. goBack — triggers BFCache restoration.
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 6. Verify BFCache was used.
+    done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheRestored ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 7. Verify b.com iframe PID survived.
+    pid_t restoredIframePID = 0;
+    auto restoredTrees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in restoredTrees.get()) {
+        for (_WKFrameTreeNode *child in tree.childFrames) {
+            if (child.info._isLocalFrame) {
+                NSString *url = child.info.request.URL.absoluteString;
+                if ([url containsString:@"frame"])
+                    restoredIframePID = child.info._processIdentifier;
+            }
+        }
+    }
+    EXPECT_EQ(restoredIframePID, iframePID);
+
+    // 8. Verify nested iframe marker survived BFCache (not a fresh load).
+    done = false;
+    RetainPtr<WKFrameInfo> restoredNestedFrame = [webView mainFrame].childFrames.firstObject.childFrames.firstObject.info;
+    EXPECT_NOT_NULL(restoredNestedFrame.get());
+    [webView evaluateJavaScript:@"window.__nestedMarker ? 'yes' : 'no'" inFrame:restoredNestedFrame.get() completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+}
+
+TEST(SiteIsolation, MultiProcessBFCacheNavigateIframeBeforeGoBack)
+{
+    // Navigate iframe to a different origin, then navigate main frame (BFCache),
+    // then goBack. Verifies the post-navigation iframe state (c.com) is cached and restored.
+    HTTPServer server({
+        { "/a"_s, { "<script>window.addEventListener('pageshow', function(e) { if (e.persisted) window.__bfcacheRestored = true; });</script><iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "original b.com content"_s } },
+        { "/frame2"_s, { "<script>window.__cMarker = true; alert('c-loaded');</script>c.com content"_s } },
+        { "/d"_s, { "page d"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    // 1. Load a.com with b.com iframe.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 2. Verify initial frame tree.
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    // 3. Navigate iframe from b.com to c.com.
+    [webView evaluateJavaScript:@"location.href = 'https://c.com/frame2'" inFrame:[webView firstChildFrame] completionHandler:nil];
+    EXPECT_WK_STREQ([webView _test_waitForAlert], "c-loaded");
+
+    // 4. Verify frame tree now shows c.com (not b.com).
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://c.com"_s } } },
+    });
+
+    // 5. Record c.com iframe PID.
+    pid_t cPID = 0;
+    auto trees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in trees.get()) {
+        if (!tree.info._isLocalFrame && tree.childFrames.count)
+            cPID = tree.childFrames[0].info._processIdentifier;
+    }
+    EXPECT_NE(cPID, 0);
+
+    // 6. Navigate to d.com — triggers BFCache suspension with c.com iframe state.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://d.com/d"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 7. goBack — restores a.com + c.com iframe from BFCache.
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // 8. Verify BFCache was used.
+    __block bool done = false;
+    [webView evaluateJavaScript:@"window.__bfcacheRestored ? 'yes' : 'no'" completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
+
+    // 9. Verify frame tree shows c.com (NOT b.com) — the post-navigation state was cached.
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://c.com"_s } } },
+    });
+
+    // 10. Verify c.com iframe PID survived.
+    pid_t restoredCPID = 0;
+    auto restoredTrees = frameTrees(webView.get());
+    for (_WKFrameTreeNode *tree in restoredTrees.get()) {
+        if (!tree.info._isLocalFrame && tree.childFrames.count)
+            restoredCPID = tree.childFrames[0].info._processIdentifier;
+    }
+    EXPECT_EQ(restoredCPID, cPID);
+
+    // 11. Verify c.com iframe marker survived BFCache (not a fresh reload).
+    done = false;
+    [webView evaluateJavaScript:@"window.__cMarker ? 'yes' : 'no'" inFrame:[webView firstChildFrame] completionHandler:^(NSString *result, NSError *) {
+        EXPECT_WK_STREQ(result, "yes");
+        done = true;
+    }];
+    Util::run(&done);
 }
 
 }

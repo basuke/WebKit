@@ -2150,20 +2150,32 @@ void WebProcessPool::processForNavigation(WebPageProxy& page, WebFrameProxy& fra
     }
 
     if (siteIsolationEnabled && !site.isEmpty()) {
-        ASSERT(frameInfo.isMainFrame ? site == mainFrameSite : Site(URL(protect(page.pageLoadState())->activeURL())) == mainFrameSite);
-        if (!frame.isMainFrame() && site == mainFrameSite) {
-            Ref mainFrameProcess = Ref { page.mainFrame()->process() };
-            if (!mainFrameProcess->isInProcessCache())
-                return completionHandler(mainFrameProcess.copyRef(), nullptr, "Found process for the same site as main frame"_s);
-        }
-        RefPtr<WebProcessProxy> process;
-        if (RefPtr frameProcess = browsingContextGroup.processForSite(site))
-            process = &frameProcess->process();
-        if (process && process->websiteDataStore() == dataStore.ptr() && process->websiteDataStore() == &page.websiteDataStore() && !process->isInProcessCache() && process->lockdownMode() == lockdownMode && enhancedSecurityStatesAreConsistent(process->enhancedSecurity(), enhancedSecurity)) {
-            protect(dataStore->networkProcess())->addAllowedFirstPartyForCookies(*process, mainFrameSite.domain(), LoadedWebArchive::No, [completionHandler = WTF::move(completionHandler), process] () mutable {
-                completionHandler(process.releaseNonNull(), nullptr, "Found process for the same site"_s);
-            });
-            return;
+        // For back/forward navigations with a suspended page, skip the BCG
+        // process lookup and fall through to processForNavigationInternal()
+        // which handles BFCache restoration properly.
+        bool hasSuspendedPageForTarget = false;
+        if (RefPtr targetItem = navigation.targetItem())
+            hasSuspendedPageForTarget = !!targetItem->suspendedPage();
+
+        if (hasSuspendedPageForTarget)
+            WEBPROCESSPOOL_RELEASE_LOG(ProcessSwapping, "processForNavigation: Bypassing BCG process lookup because target back/forward item has a suspended page");
+
+        if (!hasSuspendedPageForTarget) {
+            ASSERT(frameInfo.isMainFrame ? site == mainFrameSite : Site(URL(protect(page.pageLoadState())->activeURL())) == mainFrameSite);
+            if (!frame.isMainFrame() && site == mainFrameSite) {
+                Ref mainFrameProcess = Ref { page.mainFrame()->process() };
+                if (!mainFrameProcess->isInProcessCache())
+                    return completionHandler(mainFrameProcess.copyRef(), nullptr, "Found process for the same site as main frame"_s);
+            }
+            RefPtr<WebProcessProxy> process;
+            if (RefPtr frameProcess = browsingContextGroup.processForSite(site))
+                process = &frameProcess->process();
+            if (process && process->websiteDataStore() == dataStore.ptr() && process->websiteDataStore() == &page.websiteDataStore() && !process->isInProcessCache() && process->lockdownMode() == lockdownMode && enhancedSecurityStatesAreConsistent(process->enhancedSecurity(), enhancedSecurity)) {
+                protect(dataStore->networkProcess())->addAllowedFirstPartyForCookies(*process, mainFrameSite.domain(), LoadedWebArchive::No, [completionHandler = WTF::move(completionHandler), process] () mutable {
+                    completionHandler(process.releaseNonNull(), nullptr, "Found process for the same site"_s);
+                });
+                return;
+            }
         }
     }
 
@@ -2297,7 +2309,7 @@ std::tuple<Ref<WebProcessProxy>, RefPtr<SuspendedPageProxy>, ASCIILiteral> WebPr
         && !(isRequestFromClientOrUserInput || siteIsolationEnabled))
         return { WTF::move(sourceProcess), nullptr, "Browsing context has opened other windows"_s };
 
-    if (RefPtr targetItem = navigation.targetItem(); targetItem && !siteIsolationEnabled) {
+    if (RefPtr targetItem = navigation.targetItem(); targetItem && (!siteIsolationEnabled || protect(page.preferences())->multiProcessBackForwardCacheEnabled())) {
         if (CheckedPtr suspendedPage = targetItem->suspendedPage()) {
             if (suspendedPage->process().state() != AuxiliaryProcessProxy::State::Terminated)
                 return { suspendedPage->process(), suspendedPage.get(), "Using target back/forward item's process and suspended page"_s };
