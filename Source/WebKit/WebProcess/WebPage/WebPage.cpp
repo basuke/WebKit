@@ -8586,13 +8586,25 @@ void WebPage::suspendForProcessSwapWithFrameItem(BackForwardFrameItemIdentifier 
 
 void WebPage::setIsSuspendedWithFrameItem(bool suspended, BackForwardFrameItemIdentifier frameItemID, CompletionHandler<void(std::optional<bool>)>&& completionHandler)
 {
-    if (m_isSuspended == suspended)
+    RefPtr page = corePage();
+    if (!page || m_isSuspended == suspended)
         return completionHandler({ });
+
     m_isSuspended = suspended;
 
     if (!suspended) {
-        // FIXME: Restore path (implemented in a follow-up patch).
-        return completionHandler({ });
+        // Unlike the main-frame path (setIsSuspended), iframe processes don't
+        // receive goToBackForwardItem — they must restore explicitly here.
+        unfreezeLayerTree(LayerTreeFreezeReason::PageSuspended);
+
+        auto cachedPage = BackForwardCache::singleton().takeByFrameItemID(frameItemID, *page);
+        if (!cachedPage) {
+            WEBPAGE_RELEASE_LOG_ERROR(ProcessSwapping, "setIsSuspendedWithFrameItem: restore failed - no CachedPage for frameItemID %s", frameItemID.toString().utf8().data());
+            return completionHandler(false);
+        }
+        WEBPAGE_RELEASE_LOG(ProcessSwapping, "setIsSuspendedWithFrameItem: restoring CachedPage for frameItemID %s", frameItemID.toString().utf8().data());
+        cachedPage->restore(*page);
+        return completionHandler(true);
     }
 
     freezeLayerTree(LayerTreeFreezeReason::PageSuspended);

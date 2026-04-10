@@ -8572,4 +8572,47 @@ TEST(SiteIsolation, MultiProcessBFCacheOpenerSkipsBFCache)
     EXPECT_FALSE([[webView objectByEvaluatingJavaScript:@"window.__bfcacheMarker ? true : false"] boolValue]);
 }
 
+TEST(SiteIsolation, MultiProcessBFCacheIframeRestoration)
+{
+    HTTPServer server({
+        { "/a"_s, { "<iframe src='https://b.com/frame'></iframe>"_s } },
+        { "/frame"_s, { "<script>window.__bfcacheMarker = true;</script>iframe content"_s } },
+        { "/c"_s, { "page c"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto *configuration = server.httpsProxyConfiguration();
+    enableFeature(configuration, @"MultiProcessBackForwardCacheEnabled");
+    auto [webView, navigationDelegate] = siteIsolatedViewAndDelegate(configuration);
+
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://a.com/a"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    pid_t iframePID = findFramePID(frameTrees(webView.get()).get(), FrameType::Remote);
+
+    // Navigate away to trigger BFCache suspension.
+    [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"https://c.com/c"]]];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    EXPECT_TRUE(processStillRunning(iframePID));
+
+    // Go back — BFCache should restore the page with iframe.
+    [webView goBack];
+    [navigationDelegate waitForDidFinishNavigation];
+
+    // Verify the frame tree is restored with site isolation.
+    checkFrameTreesInProcesses(webView.get(), {
+        { "https://a.com"_s, { { RemoteFrame } } },
+        { RemoteFrame, { { "https://b.com"_s } } },
+    });
+
+    // Verify iframe is in the same process (restored from BFCache, not reloaded).
+    pid_t restoredIframePID = findFramePID(frameTrees(webView.get()).get(), FrameType::Remote);
+    EXPECT_EQ(iframePID, restoredIframePID);
+}
+
 }

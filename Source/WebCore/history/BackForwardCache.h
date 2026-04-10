@@ -61,6 +61,7 @@ public:
     WEBCORE_EXPORT void remove(HistoryItem&);
     CachedPage* get(HistoryItem&, Page*);
     std::unique_ptr<CachedPage> take(HistoryItem&, Page*);
+    WEBCORE_EXPORT std::unique_ptr<CachedPage> takeByFrameItemID(BackForwardFrameItemIdentifier, Page&);
 
     void removeAllItemsForPage(Page&);
 

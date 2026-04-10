@@ -75,6 +75,11 @@ static inline void logBackForwardCacheFailureDiagnosticMessage(DiagnosticLogging
     client.logDiagnosticMessage(DiagnosticLoggingKeys::backForwardCacheFailureKey(), reason, ShouldSample::No);
 }
 
+static inline void logBackForwardCacheFailureDiagnosticMessage(Page& page, const String& reason)
+{
+    logBackForwardCacheFailureDiagnosticMessage(protect(page.diagnosticLoggingClient()), reason);
+}
+
 static inline void logBackForwardCacheFailureDiagnosticMessage(Page* page, const String& reason)
 {
     if (!page)
@@ -369,12 +374,12 @@ void BackForwardCache::dump() const
 bool BackForwardCache::canCache(Page& page) const
 {
     if (!m_maxSize) {
-        logBackForwardCacheFailureDiagnosticMessage(&page, DiagnosticLoggingKeys::isDisabledKey());
+        logBackForwardCacheFailureDiagnosticMessage(page, DiagnosticLoggingKeys::isDisabledKey());
         return false;
     }
 
     if (MemoryPressureHandler::singleton().isUnderMemoryPressure()) {
-        logBackForwardCacheFailureDiagnosticMessage(&page, DiagnosticLoggingKeys::underMemoryPressureKey());
+        logBackForwardCacheFailureDiagnosticMessage(page, DiagnosticLoggingKeys::underMemoryPressureKey());
         return false;
     }
     
@@ -537,12 +542,11 @@ bool BackForwardCache::addIfCacheable(HistoryItem& item, Page* page)
     if (!page)
         return false;
 
-    // FIXME (rdar://173799983): Remove this workaround once the UIProcess has a
-    // mechanism to detach RemotePageProxy objects from the BrowsingContextGroup
-    // during in-process (same-origin) navigations. Cross-process suspension
-    // (suspendPage with ForceSuspension::Yes) already handles this via
-    // BrowsingContextGroup exchange in suspendCurrentPageIfPossible.
-    if (page->settings().siteIsolationEnabled())
+    // When multi-process BFCache is enabled, the BrowsingContextGroup exchange
+    // in suspendCurrentPageIfPossible handles RemotePageProxy lifecycle, so
+    // in-process caching is safe. Without it, same-origin navigations can leave
+    // stale RemotePageProxy objects in the BCG.
+    if (page->settings().siteIsolationEnabled() && !page->settings().multiProcessBackForwardCacheEnabled())
         return false;
 
     auto cachedPage = trySuspendPage(*page, ForceSuspension::No);
@@ -591,6 +595,35 @@ std::unique_ptr<CachedPage> BackForwardCache::take(HistoryItem& item, Page* page
 
     if (cachedPage->hasExpired() || (page && page->isResourceCachingDisabledByWebInspector())) {
         LOG(BackForwardCache, "Not restoring page for %s from back/forward cache because cache entry has expired", item.url().string().ascii().data());
+        logBackForwardCacheFailureDiagnosticMessage(page, DiagnosticLoggingKeys::expiredKey());
+        return nullptr;
+    }
+
+    return cachedPage.moveToUniquePtr();
+}
+
+// FIXME: Unify with take(HistoryItem&, Page*) — both should take
+// BackForwardFrameItemIdentifier directly. The HistoryItem overload
+// can call notifyChanged() on the caller side instead.
+std::unique_ptr<CachedPage> BackForwardCache::takeByFrameItemID(BackForwardFrameItemIdentifier frameItemID, Page& page)
+{
+    auto it = m_cachedPageMap.find(frameItemID);
+    if (it == m_cachedPageMap.end())
+        return nullptr;
+    if (auto* pruningReason = std::get_if<PruningReason>(&it->value)) {
+        ASSERT(!m_items.contains(it->key));
+        if (*pruningReason != PruningReason::None)
+            logBackForwardCacheFailureDiagnosticMessage(page, pruningReasonToDiagnosticLoggingKey(*pruningReason));
+        return nullptr;
+    }
+
+    m_items.remove(frameItemID);
+    auto cachedPage = std::get<UniqueRef<CachedPage>>(m_cachedPageMap.take(it));
+
+    RELEASE_LOG(BackForwardCache, "BackForwardCache::takeByFrameItemID frameItem: %s, size: %u / %u", frameItemID.toString().utf8().data(), pageCount(), maxSize());
+
+    if (cachedPage->hasExpired() || page.isResourceCachingDisabledByWebInspector()) {
+        LOG(BackForwardCache, "Not restoring page from back/forward cache because cache entry has expired");
         logBackForwardCacheFailureDiagnosticMessage(page, DiagnosticLoggingKeys::expiredKey());
         return nullptr;
     }

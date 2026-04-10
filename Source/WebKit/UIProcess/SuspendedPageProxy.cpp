@@ -239,13 +239,34 @@ void SuspendedPageProxy::waitUntilReadyToUnsuspend(CompletionHandler<void(Suspen
     }
 }
 
-void SuspendedPageProxy::unsuspend()
+void SuspendedPageProxy::unsuspend(WebBackForwardListItem* targetItem)
 {
     ASSERT(m_suspensionState == SuspensionState::Suspended);
 
     m_suspensionState = SuspensionState::Resumed;
     sendWithAsyncReply(Messages::WebPage::SetIsSuspended(false), [](std::optional<bool> didSuspend) {
         ASSERT(!didSuspend.has_value());
+    });
+
+    if (!targetItem)
+        return;
+    RefPtr page = m_page.get();
+    if (!page)
+        return;
+
+    Ref rootFrameItem = targetItem->mainFrameItem();
+    m_browsingContextGroup->forEachFrameInRemotePage(*page, m_mainFrame, [&](auto& remotePage, auto& frame) {
+        RefPtr frameItem = rootFrameItem->childItemForFrameID(frame.frameID());
+        if (!frameItem) {
+            RELEASE_LOG_ERROR(ProcessSwapping, "%p - SuspendedPageProxy::unsuspend: No frame item for frame %" PRIu64, this, frame.frameID().toUInt64());
+            return;
+        }
+        RELEASE_LOG(ProcessSwapping, "%p - SuspendedPageProxy::unsuspend: Sending SetIsSuspendedWithFrameItem(false) to iframe process pid %i for frameItem %s", this, remotePage.siteIsolatedProcess().processID(), frameItem->identifier().toString().utf8().data());
+        protect(remotePage.siteIsolatedProcess())->sendWithAsyncReply(
+            Messages::WebPage::SetIsSuspendedWithFrameItem(false, frameItem->identifier()),
+            [](std::optional<bool>) { },
+            remotePage.identifierInSiteIsolatedProcess()
+        );
     });
 }
 

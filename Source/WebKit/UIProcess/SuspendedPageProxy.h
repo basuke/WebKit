@@ -84,7 +84,7 @@ public:
 
     bool startSuspension(WebBackForwardListItem* fromItem);
     void waitUntilReadyToUnsuspend(CompletionHandler<void(SuspendedPageProxy*)>&&);
-    void unsuspend();
+    void unsuspend(WebBackForwardListItem* targetItem = nullptr);
 
     bool hasIframeInProcess(WebCore::ProcessIdentifier) const;
 

@@ -231,6 +231,7 @@ private:
     bool m_needsDidStartProvisionalLoad { true };
     bool m_shouldClosePage { true };
     bool m_needsMainFrameObserver { false };
+    bool m_isRestoringFromBFCache { false };
     bool m_didFailProvisionalLoad { false };
     URL m_provisionalLoadURL;
     WebPageProxyMessageReceiverRegistration m_messageReceiverRegistration;
