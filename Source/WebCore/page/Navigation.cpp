@@ -388,8 +388,8 @@ RefPtr<NavigationAPIMethodTracker> Navigation::addUpcomingTraverseAPIMethodTrack
 Navigation::Result Navigation::apiMethodTrackerDerivedResult(const NavigationAPIMethodTracker& apiMethodTracker)
 {
     return {
-        createDOMPromise(protect(apiMethodTracker.committedPromise())),
-        createDOMPromise(protect(apiMethodTracker.finishedPromise())),
+        createDOMPromise(apiMethodTracker.committedPromise()),
+        createDOMPromise(apiMethodTracker.finishedPromise()),
     };
 }
 
@@ -460,7 +460,7 @@ Navigation::Result Navigation::navigate(JSC::JSGlobalObject& globalObject, const
         Locker locker { m_apiMethodTrackersLock };
         if (m_upcomingNonTraverseMethodTracker == apiMethodTracker) {
             m_upcomingNonTraverseMethodTracker = nullptr;
-            return createErrorResult(protect(apiMethodTracker->committedPromise()), protect(apiMethodTracker->finishedPromise()), ExceptionCode::AbortError, "Navigation aborted"_s);
+            return createErrorResult(apiMethodTracker->committedPromise(), apiMethodTracker->finishedPromise(), ExceptionCode::AbortError, "Navigation aborted"_s);
         }
     }
 
@@ -499,7 +499,7 @@ Navigation::Result Navigation::performTraversal(JSC::JSGlobalObject& globalObjec
     // FIXME: 11. Let sourceSnapshotParams be the result of snapshotting source snapshot params given document.
     protect(frame->navigationScheduler())->scheduleHistoryNavigationByKey(key, [apiMethodTracker] (ScheduleHistoryNavigationResult result) {
         if (result == ScheduleHistoryNavigationResult::Aborted)
-            createErrorResult(protect(apiMethodTracker->committedPromise()), protect(apiMethodTracker->finishedPromise()), ExceptionCode::AbortError, "Navigation aborted"_s);
+            createErrorResult(apiMethodTracker->committedPromise(), apiMethodTracker->finishedPromise(), ExceptionCode::AbortError, "Navigation aborted"_s);
     });
 
     return apiMethodTrackerDerivedResult(*apiMethodTracker);
