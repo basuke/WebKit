@@ -1079,5 +1079,12 @@ Ref<WebKit::WebBackForwardListItem> createItemFromState(const WebKit::BackForwar
     return WebKit::WebBackForwardListItem::create(WTF::move(stateCopy), pageIdentifier, itemState.navigatedFrameID);
 }
 
+void setBackForwardItemIdentifierForSwift(WebKit::FrameState& frameState, WebCore::BackForwardItemIdentifier itemID)
+{
+    frameState.itemID = itemID;
+    for (auto& child : frameState.children)
+        setBackForwardItemIdentifierForSwift(child, itemID);
+}
+
 
 #endif // ENABLE(BACK_FORWARD_LIST_SWIFT)

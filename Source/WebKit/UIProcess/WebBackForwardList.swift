@@ -904,13 +904,6 @@ final class WebBackForwardList {
         parentItem.setChild(consuming: frameState)
     }
 
-    func setBackForwardItemIdentifier(frameState: WebKit.FrameState, itemID: WebCore.BackForwardItemIdentifier) {
-        frameState.itemID = WebCore.MarkableBackForwardItemIdentifier(itemID)
-        for child in CxxVectorIterator(vec: frameState.children) {
-            setBackForwardItemIdentifier(frameState: child.ptr(), itemID: itemID)
-        }
-    }
-
     func completeFrameStateForNavigation(navigatedFrameState: WebKit.FrameState) -> WebKit.FrameState {
         guard let currentItem = currentItem() else {
             return navigatedFrameState
@@ -928,8 +921,9 @@ final class WebBackForwardList {
         if mainFrameItem.childItemForFrameID(navigatedFrameID) == nil {
             return navigatedFrameState
         }
-        let frameState = currentItem.copyMainFrameStateWithChildren().ptr()
-        setBackForwardItemIdentifier(frameState: frameState, itemID: navigatedFrameState.itemID.pointee)
+        let frameStateRef = currentItem.copyMainFrameStateWithChildren()
+        let frameState = frameStateRef.ptr()
+        setBackForwardItemIdentifierForSwift(frameState, navigatedFrameState.itemID.pointee)
         frameState.replaceChildFrameState(consuming: WebKit.RefFrameState(navigatedFrameState))
         return frameState
     }

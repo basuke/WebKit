@@ -77,4 +77,8 @@ inline WebKit::FrameState* getFrameState(WebKit::WebBackForwardListFrameItem& it
 void appendToBackForwardStateItems(Vector<WebKit::BackForwardListItemState>& items, const WebKit::WebBackForwardListItem& entry);
 Ref<WebKit::WebBackForwardListItem> createItemFromState(const WebKit::BackForwardListItemState&, WebKit::WebPageProxyIdentifier pageIdentifier);
 
+// Recursing through FrameState::children in Swift triggers a Ref<T> bridging issue
+// (see rdar://173815363 / bug 311253). Keep the recursion in C++.
+void setBackForwardItemIdentifierForSwift(WebKit::FrameState&, WebCore::BackForwardItemIdentifier);
+
 #endif // ENABLE(BACK_FORWARD_LIST_SWIFT)
