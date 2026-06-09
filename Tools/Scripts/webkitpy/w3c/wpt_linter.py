@@ -27,10 +27,16 @@
 import json
 import logging
 import os
+import re
 import subprocess
 import tempfile
 
 _log = logging.getLogger(__name__)
+
+# `./wpt` emits Python logging output to stderr (e.g. INFO messages when it
+# creates its virtualenv on first run). Those are not failures — only treat
+# stderr as fatal when it contains lines that aren't DEBUG/INFO log records.
+_BENIGN_STDERR_LINE_RE = re.compile(r'^(?:DEBUG|INFO):')
 
 
 class WPTLinter(object):
@@ -60,9 +66,15 @@ class WPTLinter(object):
         _log.debug('Running WPT linter: %s (cwd=%s)', ' '.join(cmd), self.wpt_path)
         result = subprocess.run(cmd, cwd=self.wpt_path, capture_output=True)
         if result.stderr:
-            raise RuntimeError(
-                'WPT linter wrote to stderr:\n' + result.stderr.decode('utf-8', 'replace')
-            )
+            stderr_text = result.stderr.decode('utf-8', 'replace')
+            problematic = [
+                line for line in stderr_text.splitlines()
+                if line.strip() and not _BENIGN_STDERR_LINE_RE.match(line)
+            ]
+            if problematic:
+                raise RuntimeError(
+                    'WPT linter wrote to stderr:\n' + '\n'.join(problematic)
+                )
         for line in result.stdout.splitlines():
             if not line.strip():
                 continue
