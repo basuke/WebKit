@@ -53,6 +53,9 @@ ScopeExit<CompletionHandler<void()>> WebHistoryItemClient::ignoreChangesForScope
 
 void WebHistoryItemClient::historyItemChanged(const WebCore::HistoryItem& item)
 {
+    WTFLogAlways("::DEBUG:: [WP] historyItemChanged itemID=%" PRIu64 " frameItemID=%" PRIu64 " url=%s ignore=%d",
+        item.itemID().object().toUInt64(), item.frameItemID().object().toUInt64(),
+        item.urlString().utf8().data(), m_shouldIgnoreChanges);
     if (m_shouldIgnoreChanges)
         return;
     if (RefPtr page = m_page.get())
@@ -61,6 +64,8 @@ void WebHistoryItemClient::historyItemChanged(const WebCore::HistoryItem& item)
 
 void WebHistoryItemClient::clearChildren(const WebCore::HistoryItem& item) const
 {
+    WTFLogAlways("::DEBUG:: [WP] clearChildren itemID=%" PRIu64 " frameItemID=%" PRIu64 " ignore=%d",
+        item.itemID().object().toUInt64(), item.frameItemID().object().toUInt64(), m_shouldIgnoreChanges);
     if (m_shouldIgnoreChanges)
         return;
     if (RefPtr page = m_page.get())

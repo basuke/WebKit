@@ -804,15 +804,25 @@ void WebBackForwardList::backForwardAddItemShared(IPC::Connection& connection, R
 
 void WebBackForwardList::backForwardSetChildItem(IPC::Connection& connection, BackForwardFrameItemIdentifier frameItemID, Ref<FrameState>&& frameState)
 {
+    WTFLogAlways("::DEBUG:: [UI] backForwardSetChildItem parentFrameItemID=%" PRIu64 " childUrl=%s childFrameID=%" PRIu64 " childItemID=%" PRIu64,
+        frameItemID.object().toUInt64(),
+        frameState->urlString.utf8().data(),
+        frameState->frameID ? frameState->frameID->toUInt64() : 0,
+        frameState->itemID ? frameState->itemID->object().toUInt64() : 0);
     Ref process = WebProcessProxy::fromConnection(connection);
     messageCheckItemURLs(frameState, process);
 
     RefPtr item = currentItem();
-    if (!item)
+    if (!item) {
+        WTFLogAlways("::DEBUG:: [UI] backForwardSetChildItem: no currentItem -> drop");
         return;
+    }
 
     if (RefPtr frameItem = WebBackForwardListFrameItem::itemForID(item->identifier(), frameItemID))
         frameItem->setChild(WTF::move(frameState));
+    else
+        WTFLogAlways("::DEBUG:: [UI] backForwardSetChildItem: parent frameItem lookup failed (currentItemID=%" PRIu64 ", frameItemID=%" PRIu64 ") -> drop",
+            item->identifier().object().toUInt64(), frameItemID.object().toUInt64());
 }
 
 void WebBackForwardList::backForwardClearChildren(BackForwardItemIdentifier itemID, BackForwardFrameItemIdentifier frameItemID)
@@ -823,6 +833,11 @@ void WebBackForwardList::backForwardClearChildren(BackForwardItemIdentifier item
 
 void WebBackForwardList::backForwardUpdateItem(IPC::Connection& connection, Ref<FrameState>&& frameState)
 {
+    WTFLogAlways("::DEBUG:: [UI] backForwardUpdateItem itemID=%" PRIu64 " frameItemID=%" PRIu64 " url=%s frameID=%" PRIu64,
+        frameState->itemID ? frameState->itemID->object().toUInt64() : 0,
+        frameState->frameItemID ? frameState->frameItemID->object().toUInt64() : 0,
+        frameState->urlString.utf8().data(),
+        frameState->frameID ? frameState->frameID->toUInt64() : 0);
     Ref process = WebProcessProxy::fromConnection(connection);
 
     // In the case of a process swap, the `backForwardUpdateItem` message can be received from the old process,
@@ -832,12 +847,18 @@ void WebBackForwardList::backForwardUpdateItem(IPC::Connection& connection, Ref<
         messageCheckItemURLs(frameState, process);
 
     RefPtr frameItem = frameState->itemID && frameState->frameItemID ? WebBackForwardListFrameItem::itemForID(*frameState->itemID, *frameState->frameItemID) : nullptr;
-    if (!frameItem)
+    if (!frameItem) {
+        WTFLogAlways("::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=%" PRIu64 " frameItemID=%" PRIu64 ")",
+            frameState->itemID ? frameState->itemID->object().toUInt64() : 0,
+            frameState->frameItemID ? frameState->frameItemID->object().toUInt64() : 0);
         return;
+    }
 
     RefPtr item = frameItem->backForwardListItem();
-    if (!item)
+    if (!item) {
+        WTFLogAlways("::DEBUG:: [UI] backForwardUpdateItem: backForwardListItem null -> drop");
         return;
+    }
 
     if (RefPtr webPageProxy = m_page.get()) {
         ASSERT(webPageProxy->identifier() == item->pageID() && frameState->itemID == item->identifier());
@@ -850,6 +871,7 @@ void WebBackForwardList::backForwardUpdateItem(IPC::Connection& connection, Ref<
             updateFrameIdentifier(*oldFrameID, *newFrameID);
 
         webPageProxy->updateCanGoBackAndForward();
+        WTFLogAlways("::DEBUG:: [UI] backForwardUpdateItem: APPLIED");
     }
 }
 
@@ -883,10 +905,17 @@ void WebBackForwardList::backForwardGoToItemShared(BackForwardItemIdentifier ite
         MESSAGE_CHECK_COMPLETION(Ref { webPageProxy->legacyMainFrameProcess() }, !WebKit::isInspectorPage(*webPageProxy), completionHandler(rawCounts()));
 
     RefPtr item = itemForID(itemID);
-    if (!item)
+    auto oldIndex = m_currentIndex.value_or(SIZE_MAX);
+    if (!item) {
+        WTFLogAlways("::DEBUG:: [UI] backForwardGoToItemShared: itemForID FAILED itemID=%" PRIu64 " currentIndex=%zu",
+            itemID.object().toUInt64(), oldIndex);
         return completionHandler(rawCounts());
+    }
 
     goToItem(*item);
+    auto newIndex = m_currentIndex.value_or(SIZE_MAX);
+    WTFLogAlways("::DEBUG:: [UI] backForwardGoToItemShared: APPLIED itemID=%" PRIu64 " url=%s oldIndex=%zu newIndex=%zu",
+        itemID.object().toUInt64(), item->url().utf8().data(), oldIndex, newIndex);
     completionHandler(rawCounts());
 }
 
@@ -1053,7 +1082,9 @@ WebCore::BackForwardFrameItemIdentifier generateBackForwardFrameItemIdentifier()
 // rdar://168139823 is the task of doing a productionized version of WebKit Swift logging
 void doLog(const WTF::String& msg)
 {
-    LOG(BackForward, "%s", msg.utf8().data());
+    // Local investigation — route Swift backForwardLog() to stderr so it
+    // shows up alongside our [WP]/[WC]/[UI] traces. Revert before landing.
+    WTFLogAlways("::DEBUG:: [UI] %s", msg.utf8().data());
 }
 
 void doLoadingReleaseLog(const WTF::String& msg)

@@ -106,6 +106,11 @@ WebBackForwardListItem* WebBackForwardListFrameItem::backForwardListItem() const
 void WebBackForwardListFrameItem::setChild(Ref<FrameState>&& frameState)
 {
     ASSERT(m_backForwardListItem);
+    WTFLogAlways("::DEBUG:: [UI] WebBackForwardListFrameItem::setChild parentFrameID=%" PRIu64 " parentItemID=%" PRIu64 " childUrl=%s childFrameID=%" PRIu64,
+        m_frameState->frameID ? m_frameState->frameID->toUInt64() : 0,
+        m_frameState->itemID ? m_frameState->itemID->object().toUInt64() : 0,
+        frameState->urlString.utf8().data(),
+        frameState->frameID ? frameState->frameID->toUInt64() : 0);
     Ref childItem = WebBackForwardListFrameItem::create(*protect(backForwardListItem()), this, WTF::move(frameState));
     for (size_t i = 0; i < m_children.size(); i++) {
         if (m_children[i]->frameID() == childItem->m_frameState->frameID) {

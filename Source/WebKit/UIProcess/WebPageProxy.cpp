@@ -2959,16 +2959,32 @@ void WebPageProxy::goToBackForwardItemAtIndex(int32_t steps, FrameLoadType frame
     WEBPAGEPROXY_RELEASE_LOG(Loading, "goToBackForwardItemAtIndex: steps=%d", steps);
 
     RefPtr item = backForwardListWrapper().itemAtDeltaFromCurrentIndex(steps, AllowSkippingBackForwardItems::No);
-    if (!item)
+    if (!item) {
+        WTFLogAlways("::DEBUG:: [UI] goToBackForwardItemAtIndex: NO TARGET steps=%d loadType=%d -> SILENT NOOP",
+            steps, static_cast<int>(frameLoadType));
         return;
+    }
+
+    WTFLogAlways("::DEBUG:: [UI] goToBackForwardItemAtIndex: steps=%d loadType=%d targetItemID=%" PRIu64 " targetUrl=%s",
+        steps, static_cast<int>(frameLoadType),
+        item->identifier().object().toUInt64(), item->url().utf8().data());
 
     Ref frameItem = item->mainFrameItem();
     if (RefPtr currentItem = backForwardList().currentItem()) {
-        if (RefPtr childItem = currentItem->navigatedFrameID() ? frameItem->childItemForFrameID(*currentItem->navigatedFrameID()) : nullptr) {
+        auto navigatedFrameID = currentItem->navigatedFrameID();
+        WTFLogAlways("::DEBUG:: [UI] goToBackForwardItemAtIndex: currentItemID=%" PRIu64 " currentNavigatedFrameID=%" PRIu64 " targetMainFrameURL=%s",
+            currentItem->identifier().object().toUInt64(),
+            navigatedFrameID ? navigatedFrameID->toUInt64() : 0,
+            frameItem->url().utf8().data());
+        if (RefPtr childItem = navigatedFrameID ? frameItem->childItemForFrameID(*navigatedFrameID) : nullptr) {
             if (childItem.get() != frameItem.ptr())
                 WEBPAGEPROXY_RELEASE_LOG(ProcessSwapping, "goToBackForwardItemAtIndex: redirecting from mainFrameItem to child frameItem for navigatedFrameID=%" PRIu64, currentItem->navigatedFrameID()->toUInt64());
+            WTFLogAlways("::DEBUG:: [UI] goToBackForwardItemAtIndex: redirected to childFrameItem url=%s frameID=%" PRIu64,
+                childItem->url().utf8().data(),
+                childItem->frameID() ? childItem->frameID()->toUInt64() : 0);
             frameItem = childItem.releaseNonNull();
-        }
+        } else
+            WTFLogAlways("::DEBUG:: [UI] goToBackForwardItemAtIndex: NO childItem (no redirect, will navigate mainFrame)");
     }
 
     goToBackForwardItem(frameItem, frameLoadType);

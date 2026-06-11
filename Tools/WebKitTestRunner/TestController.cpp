@@ -2104,7 +2104,24 @@ TestOptions TestController::testOptionsForTest(const TestCommand& command) const
     merge(features, featureDefaultsFromTestHeaderForTest(command, TestOptions::keyTypeMapping()));
     merge(features, featureFromAdditionalHeaderOption(command, TestOptions::keyTypeMapping()));
     merge(features, platformSpecificFeatureOverridesDefaultsForTest(command));
+
+    auto siteIsolation = features.boolWebPreferenceFeatures.find("SiteIsolationEnabled");
+    WTFLogAlways("::DEBUG:: [TR] testOptionsForTest: SiteIsolationEnabled present=%d value=%d",
+        siteIsolation != features.boolWebPreferenceFeatures.end(),
+        siteIsolation != features.boolWebPreferenceFeatures.end() ? siteIsolation->second : 0);
+    if (siteIsolation != features.boolWebPreferenceFeatures.end() && siteIsolation->second)
+        merge(features, featuresImpliedBySiteIsolation());
+
     return TestOptions { features };
+}
+
+// Local-only investigation scaffold — DO NOT LAND.
+TestFeatures TestController::featuresImpliedBySiteIsolation() const
+{
+    WTFLogAlways("::DEBUG:: [TR] featuresImpliedBySiteIsolation called -> setting UseUIProcessForBackForwardItemLoading=true");
+    TestFeatures implied;
+    implied.boolWebPreferenceFeatures.insert_or_assign("UseUIProcessForBackForwardItemLoading", true);
+    return implied;
 }
 
 void TestController::updateWebViewSizeForTest(const TestInvocation& test)

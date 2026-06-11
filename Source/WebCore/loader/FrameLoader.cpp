@@ -4770,11 +4770,15 @@ void FrameLoader::setRequestedHistoryItem(HistoryItem& item)
 
 void FrameLoader::setPendingAsyncBackForwardNavigation()
 {
+    WTFLogAlways("::DEBUG:: [WC] setPendingAsyncBackForwardNavigation frameID=%" PRIu64 " oldState=%d",
+        m_frame.get().frameID().toUInt64(), static_cast<int>(m_asyncBackForwardNavigationState));
     m_asyncBackForwardNavigationState = AsyncBackForwardNavigationState::Pending;
 }
 
 void FrameLoader::cancelPendingAsyncBackForwardNavigation()
 {
+    WTFLogAlways("::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=%" PRIu64 " oldState=%d",
+        m_frame.get().frameID().toUInt64(), static_cast<int>(m_asyncBackForwardNavigationState));
     if (m_asyncBackForwardNavigationState != AsyncBackForwardNavigationState::Pending)
         return;
 
