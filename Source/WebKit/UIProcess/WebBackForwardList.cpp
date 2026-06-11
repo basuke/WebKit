@@ -728,21 +728,43 @@ static inline void NODELETE setBackForwardItemIdentifier(FrameState& frameState,
 
 Ref<FrameState> WebBackForwardList::completeFrameStateForNavigation(Ref<FrameState>&& navigatedFrameState)
 {
+    WTFLogAlways("::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=%s frameID=%" PRIu64 " itemID=%" PRIu64 " frameItemID=%" PRIu64,
+        navigatedFrameState->urlString.utf8().data(),
+        navigatedFrameState->frameID ? navigatedFrameState->frameID->toUInt64() : 0,
+        navigatedFrameState->itemID ? navigatedFrameState->itemID->object().toUInt64() : 0,
+        navigatedFrameState->frameItemID ? navigatedFrameState->frameItemID->object().toUInt64() : 0);
+
     RefPtr currentItem = this->currentItem();
-    if (!currentItem)
+    if (!currentItem) {
+        WTFLogAlways("::DEBUG:: [UI] completeFrameStateForNavigation: no currentItem -> return navigatedFrameState as-is (no clone)");
         return navigatedFrameState;
+    }
 
     auto navigatedFrameID = navigatedFrameState->frameID;
-    if (!navigatedFrameID)
+    if (!navigatedFrameID) {
+        WTFLogAlways("::DEBUG:: [UI] completeFrameStateForNavigation: navigatedFrameID is nullopt -> return as-is");
         return navigatedFrameState;
+    }
 
     Ref mainFrameItem = currentItem->mainFrameItem();
-    if (mainFrameItem->frameID() == navigatedFrameID)
+    if (mainFrameItem->frameID() == navigatedFrameID) {
+        WTFLogAlways("::DEBUG:: [UI] completeFrameStateForNavigation: navigation is on main frame (frameID=%" PRIu64 ") -> return as-is",
+            navigatedFrameID->toUInt64());
         return navigatedFrameState;
+    }
 
-    if (!mainFrameItem->childItemForFrameID(*navigatedFrameID))
+    if (!mainFrameItem->childItemForFrameID(*navigatedFrameID)) {
+        WTFLogAlways("::DEBUG:: [UI] completeFrameStateForNavigation: childItemForFrameID(%" PRIu64 ") MISS in current entry (currentItemID=%" PRIu64 " mainFrameID=%" PRIu64 ") -> return as-is (no clone, parent not updated)",
+            navigatedFrameID->toUInt64(),
+            currentItem->identifier().object().toUInt64(),
+            mainFrameItem->frameID() ? mainFrameItem->frameID()->toUInt64() : 0);
         return navigatedFrameState;
+    }
 
+    WTFLogAlways("::DEBUG:: [UI] completeFrameStateForNavigation: cloning current entry tree, replacing child for frameID=%" PRIu64 " (currentItemID=%" PRIu64 ", new itemID=%" PRIu64 ")",
+        navigatedFrameID->toUInt64(),
+        currentItem->identifier().object().toUInt64(),
+        navigatedFrameState->itemID ? navigatedFrameState->itemID->object().toUInt64() : 0);
     Ref frameState = currentItem->copyMainFrameStateWithChildren();
     setBackForwardItemIdentifier(frameState, *navigatedFrameState->itemID);
     frameState->replaceChildFrameState(WTF::move(navigatedFrameState));
@@ -778,18 +800,39 @@ static void messageCheckItemURLs(Ref<FrameState>& frameState, Ref<WebProcessProx
 
 void WebBackForwardList::backForwardAddItemShared(IPC::Connection& connection, Ref<FrameState>&& navigatedFrameState, LoadedWebArchive loadedWebArchive)
 {
+    auto entryFrameID = navigatedFrameState->frameID;
+    auto entryItemID = navigatedFrameState->itemID;
+    auto entryFrameItemID = navigatedFrameState->frameItemID;
+    auto entryURL = navigatedFrameState->urlString;
+    WTFLogAlways("::DEBUG:: [UI] backForwardAddItemShared ENTRY url=%s frameID=%" PRIu64 " itemID=%" PRIu64 " frameItemID=%" PRIu64,
+        entryURL.utf8().data(),
+        entryFrameID ? entryFrameID->toUInt64() : 0,
+        entryItemID ? entryItemID->object().toUInt64() : 0,
+        entryFrameItemID ? entryFrameItemID->object().toUInt64() : 0);
+
     Ref process = WebProcessProxy::fromConnection(connection);
     messageCheckItemURLs(navigatedFrameState, process);
 
     if (RefPtr targetFrame = WebFrameProxy::webFrame(navigatedFrameState->frameID)) {
         if (targetFrame->isPendingInitialHistoryItem()) {
             targetFrame->setIsPendingInitialHistoryItem(false);
-            if (RefPtr parent = targetFrame->parentFrame())
+            if (RefPtr parent = targetFrame->parentFrame()) {
+                WTFLogAlways("::DEBUG:: [UI] backForwardAddItemShared: pendingInitial -> addChildItem(parentFrameID=%" PRIu64 ", childURL=%s, childFrameID=%" PRIu64 ")",
+                    parent->frameID().toUInt64(),
+                    entryURL.utf8().data(),
+                    entryFrameID ? entryFrameID->toUInt64() : 0);
                 addChildItem(parent->frameID(), WTF::move(navigatedFrameState));
+            } else {
+                WTFLogAlways("::DEBUG:: [UI] backForwardAddItemShared: pendingInitial but no parent (frameID=%" PRIu64 ") -> drop",
+                    entryFrameID ? entryFrameID->toUInt64() : 0);
+            }
             return;
         }
-    } else
+    } else {
+        WTFLogAlways("::DEBUG:: [UI] backForwardAddItemShared: targetFrame lookup MISS (frameID=%" PRIu64 ") -> drop",
+            entryFrameID ? entryFrameID->toUInt64() : 0);
         return;
+    }
 
     if (RefPtr webPageProxy = m_page.get()) {
         auto navigatedFrameID = navigatedFrameState->frameID;
@@ -798,7 +841,13 @@ void WebBackForwardList::backForwardAddItemShared(IPC::Connection& connection, R
         item->setEnhancedSecurity(process->enhancedSecurity());
         if (loadedWebArchive == LoadedWebArchive::Yes)
             item->setDataStoreForWebArchive(protect(process->websiteDataStore()));
+        WTFLogAlways("::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=%" PRIu64 " navigatedFrameID=%" PRIu64 " mainFrameURL=%s",
+            item->identifier().object().toUInt64(),
+            navigatedFrameID ? navigatedFrameID->toUInt64() : 0,
+            item->url().utf8().data());
         addItem(WTF::move(item));
+    } else {
+        WTFLogAlways("::DEBUG:: [UI] backForwardAddItemShared: m_page is null -> drop (no addItem)");
     }
 }
 
