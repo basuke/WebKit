@@ -1,0 +1,546 @@
+::DEBUG:: [TR] testOptionsForTest: SiteIsolationEnabled present=1 value=1
+::DEBUG:: [TR] featuresImpliedBySiteIsolation called -> setting UseUIProcessForBackForwardItemLoading=true
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=4294967297 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url=about:blank frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url=about:blank frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=about:blank frameID=4294967297 itemID=23 frameItemID=24
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=about:blank frameID=4294967297 itemID=23 frameItemID=24
+::DEBUG:: [UI] completeFrameStateForNavigation: no currentItem -> return navigatedFrameState as-is (no clone)
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=23 navigatedFrameID=4294967297 mainFrameURL=about:blank
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=4294967297 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297 itemID=44 frameItemID=45
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297 itemID=44 frameItemID=45
+::DEBUG:: [UI] completeFrameStateForNavigation: navigation is on main frame (frameID=4294967297) -> return as-is
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=44 navigatedFrameID=4294967297 mainFrameURL=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836481 oldState=0
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836482 oldState=0
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836483 oldState=0
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836484 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=80 frameItemID=81 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=80 frameItemID=81 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=80 frameItemID=81 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=80 frameItemID=81 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=80 frameItemID=81 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=80 frameItemID=81 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=82 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=80 frameItemID=81 url= frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=80 frameItemID=81)
+::DEBUG:: [UI] backForwardUpdateItem itemID=80 frameItemID=81 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=80 frameItemID=81)
+::DEBUG:: [UI] backForwardUpdateItem itemID=80 frameItemID=81 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=80 frameItemID=81)
+::DEBUG:: [UI] backForwardUpdateItem itemID=80 frameItemID=81 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=80 frameItemID=81)
+::DEBUG:: [UI] backForwardUpdateItem itemID=80 frameItemID=81 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=80 frameItemID=81)
+::DEBUG:: [UI] backForwardUpdateItem itemID=80 frameItemID=81 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=80 frameItemID=81)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=82 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=82)
+::DEBUG:: [UI] backForwardSetChildItem parentFrameItemID=45 childUrl=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html childFrameID=21474836481 childItemID=44
+::DEBUG:: [UI] WebBackForwardListFrameItem::setChild parentFrameID=4294967297 parentItemID=44 childUrl=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html childFrameID=21474836481
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=87 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url= frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=87 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=87)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=87)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=87)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=87)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=87)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=87)
+::DEBUG:: [UI] backForwardSetChildItem parentFrameItemID=45 childUrl=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html childFrameID=21474836484 childItemID=44
+::DEBUG:: [UI] WebBackForwardListFrameItem::setChild parentFrameID=4294967297 parentItemID=44 childUrl=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html childFrameID=21474836484
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=92 url= ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url= frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=92 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=92)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=92)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=92)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=92)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=92)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=92)
+::DEBUG:: [UI] backForwardSetChildItem parentFrameItemID=45 childUrl=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html childFrameID=21474836483 childItemID=44
+::DEBUG:: [UI] WebBackForwardListFrameItem::setChild parentFrameID=4294967297 parentItemID=44 childUrl=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html childFrameID=21474836483
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WP] historyItemChanged itemID=95 frameItemID=96 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=95 frameItemID=96 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=95 frameItemID=96 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=95 frameItemID=96 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=95 frameItemID=96 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=95 frameItemID=96 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=97 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=95 frameItemID=96 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=95 frameItemID=96)
+::DEBUG:: [UI] backForwardUpdateItem itemID=95 frameItemID=96 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=95 frameItemID=96)
+::DEBUG:: [UI] backForwardUpdateItem itemID=95 frameItemID=96 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=95 frameItemID=96)
+::DEBUG:: [UI] backForwardUpdateItem itemID=95 frameItemID=96 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=95 frameItemID=96)
+::DEBUG:: [UI] backForwardUpdateItem itemID=95 frameItemID=96 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=95 frameItemID=96)
+::DEBUG:: [UI] backForwardUpdateItem itemID=95 frameItemID=96 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=95 frameItemID=96)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=97 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=97)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=97)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=97)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=97)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=97)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=97)
+::DEBUG:: [UI] backForwardSetChildItem parentFrameItemID=45 childUrl=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html childFrameID=21474836482 childItemID=44
+::DEBUG:: [UI] WebBackForwardListFrameItem::setChild parentFrameID=4294967297 parentItemID=44 childUrl=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html childFrameID=21474836482
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836481 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=100 frameItemID=101 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=100 frameItemID=101 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=100 frameItemID=101 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=100 frameItemID=101 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=100 frameItemID=101 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=100 frameItemID=101 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=100 frameItemID=101 url= frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=100 frameItemID=101)
+::DEBUG:: [UI] backForwardUpdateItem itemID=100 frameItemID=101 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=100 frameItemID=101)
+::DEBUG:: [UI] backForwardUpdateItem itemID=100 frameItemID=101 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=100 frameItemID=101)
+::DEBUG:: [UI] backForwardUpdateItem itemID=100 frameItemID=101 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=100 frameItemID=101)
+::DEBUG:: [UI] backForwardUpdateItem itemID=100 frameItemID=101 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=100 frameItemID=101)
+::DEBUG:: [UI] backForwardUpdateItem itemID=100 frameItemID=101 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=100 frameItemID=101)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=82 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481 itemID=102 frameItemID=103
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481 itemID=102 frameItemID=103
+::DEBUG:: [UI] completeFrameStateForNavigation: cloning current entry tree, replacing child for frameID=21474836481 (currentItemID=44, new itemID=102)
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=102 navigatedFrameID=21474836481 mainFrameURL=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836481 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=108 frameItemID=109)
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=108 frameItemID=109)
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=108 frameItemID=109)
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=108 frameItemID=109)
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=108 frameItemID=109)
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=108 frameItemID=109)
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=108 frameItemID=109)
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481 itemID=108 frameItemID=109
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481 itemID=108 frameItemID=109
+::DEBUG:: [UI] completeFrameStateForNavigation: cloning current entry tree, replacing child for frameID=21474836481 (currentItemID=102, new itemID=108)
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=108 navigatedFrameID=21474836481 mainFrameURL=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=111 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=111)
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=111)
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url= ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=111)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=111)
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=111)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=111)
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=111)
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=112 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=112)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=112)
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=112)
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=112)
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=112)
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=112)
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=108 frameItemID=109 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=113 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=113)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=113)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=113)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=113)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=113)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=113)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=97 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=113)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=114 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=114)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=114)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=114)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=114)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=114)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=114)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=92 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html frameID=21474836483
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=114)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=115 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=87 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html frameID=21474836484
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=111)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=112)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=112)
+::DEBUG:: [UI] backForwardUpdateItem itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=110 frameItemID=112)
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297 itemID=110 frameItemID=111
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297 itemID=110 frameItemID=111
+::DEBUG:: [UI] completeFrameStateForNavigation: navigation is on main frame (frameID=4294967297) -> return as-is
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=110 navigatedFrameID=4294967297 mainFrameURL=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html
+::DEBUG:: [WC] setPendingAsyncBackForwardNavigation frameID=4294967297 oldState=0
+::DEBUG:: [UI] goToBackForwardItemAtIndex: steps=-1 loadType=3 targetItemID=108 targetUrl=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html
+::DEBUG:: [UI] goToBackForwardItemAtIndex: currentItemID=110 currentNavigatedFrameID=4294967297 targetMainFrameURL=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html
+::DEBUG:: [UI] goToBackForwardItemAtIndex: redirected to childFrameItem url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html frameID=4294967297
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=108 frameItemID=45 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=111 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=112 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html#test ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=113 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=114 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank2.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=110 frameItemID=115 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/blank3.html ignore=1
+::DEBUG:: [UI] backForwardGoToItemShared: APPLIED itemID=108 url=http://web-platform.test:8800/html/browsers/history/the-history-interface/001.html oldIndex=4 newIndex=3

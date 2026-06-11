@@ -1,0 +1,571 @@
+::DEBUG:: [TR] testOptionsForTest: SiteIsolationEnabled present=1 value=1
+::DEBUG:: [TR] featuresImpliedBySiteIsolation called -> setting UseUIProcessForBackForwardItemLoading=true
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=4294967297 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=21 frameItemID=22 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url=about:blank frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url=about:blank frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=21 frameItemID=22 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=21 frameItemID=22)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=23 frameItemID=24)
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=about:blank frameID=4294967297 itemID=23 frameItemID=24
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=about:blank frameID=4294967297 itemID=23 frameItemID=24
+::DEBUG:: [UI] completeFrameStateForNavigation: no currentItem -> return navigatedFrameState as-is (no clone)
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=23 navigatedFrameID=4294967297 mainFrameURL=about:blank
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=4294967297 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=23 frameItemID=24 url=about:blank ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=42 frameItemID=43 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=42 frameItemID=43)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=45)
+::DEBUG:: [UI] backForwardUpdateItem itemID=23 frameItemID=24 url=about:blank frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=4294967297 itemID=44 frameItemID=45
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=4294967297 itemID=44 frameItemID=45
+::DEBUG:: [UI] completeFrameStateForNavigation: navigation is on main frame (frameID=4294967297) -> return as-is
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=44 navigatedFrameID=4294967297 mainFrameURL=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=45 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html frameID=4294967297
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836481 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=71 frameItemID=72 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=71 frameItemID=72 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=71 frameItemID=72 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=71 frameItemID=72 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=71 frameItemID=72 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=71 frameItemID=72 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=71 frameItemID=72 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=71 frameItemID=72)
+::DEBUG:: [UI] backForwardUpdateItem itemID=71 frameItemID=72 url=http://web-platform.test:8800/common/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=71 frameItemID=72)
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url= ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=71 frameItemID=72 url=http://web-platform.test:8800/common/blank.html frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=71 frameItemID=72)
+::DEBUG:: [UI] backForwardUpdateItem itemID=71 frameItemID=72 url=http://web-platform.test:8800/common/blank.html frameID=21474836481
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=71 frameItemID=72)
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=71 frameItemID=72 url=http://web-platform.test:8800/common/blank.html frameID=21474836481
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=71 frameItemID=72)
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=71 frameItemID=72 url=http://web-platform.test:8800/common/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=71 frameItemID=72)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=73)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=73)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=73)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=73)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=73)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=73)
+::DEBUG:: [UI] backForwardSetChildItem parentFrameItemID=45 childUrl=http://web-platform.test:8800/common/blank.html childFrameID=21474836481 childItemID=44
+::DEBUG:: [UI] WebBackForwardListFrameItem::setChild parentFrameID=4294967297 parentItemID=44 childUrl=http://web-platform.test:8800/common/blank.html childFrameID=21474836481
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836481 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=76 frameItemID=77 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=76 frameItemID=77 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=76 frameItemID=77 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=76 frameItemID=77 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=76 frameItemID=77 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=76 frameItemID=77 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] clearChildren itemID=44 frameItemID=73 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=76 frameItemID=77 url= frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=76 frameItemID=77)
+::DEBUG:: [UI] backForwardUpdateItem itemID=76 frameItemID=77 url=http://web-platform.test:8800/common/blank.html?1 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=76 frameItemID=77)
+::DEBUG:: [UI] backForwardUpdateItem itemID=76 frameItemID=77 url=http://web-platform.test:8800/common/blank.html?1 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=76 frameItemID=77)
+::DEBUG:: [UI] backForwardUpdateItem itemID=76 frameItemID=77 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=76 frameItemID=77)
+::DEBUG:: [UI] backForwardUpdateItem itemID=76 frameItemID=77 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=76 frameItemID=77)
+::DEBUG:: [UI] backForwardUpdateItem itemID=76 frameItemID=77 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=76 frameItemID=77)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836481 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=81 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=81 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=81 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=81 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=81 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=81 frameItemID=82)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=73 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=81 frameItemID=82)
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481 itemID=81 frameItemID=82
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481 itemID=81 frameItemID=82
+::DEBUG:: [UI] completeFrameStateForNavigation: cloning current entry tree, replacing child for frameID=21474836481 (currentItemID=44, new itemID=81)
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=81 navigatedFrameID=21474836481 mainFrameURL=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836481 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=83 frameItemID=84 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=83 frameItemID=84 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=83 frameItemID=84 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=83 frameItemID=84 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=83 frameItemID=84 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=83 frameItemID=84 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url= ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=83 frameItemID=84 url= frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=83 frameItemID=84)
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=83 frameItemID=84 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=83 frameItemID=84)
+::DEBUG:: [UI] backForwardUpdateItem itemID=83 frameItemID=84 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=83 frameItemID=84)
+::DEBUG:: [UI] backForwardUpdateItem itemID=83 frameItemID=84 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=83 frameItemID=84)
+::DEBUG:: [UI] backForwardUpdateItem itemID=83 frameItemID=84 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=83 frameItemID=84)
+::DEBUG:: [UI] backForwardUpdateItem itemID=83 frameItemID=84 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=83 frameItemID=84)
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=85 frameItemID=86)
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=http://web-platform.test:8800/common/blank.html?3#2 frameID=21474836481 itemID=85 frameItemID=86
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=http://web-platform.test:8800/common/blank.html?3#2 frameID=21474836481 itemID=85 frameItemID=86
+::DEBUG:: [UI] completeFrameStateForNavigation: cloning current entry tree, replacing child for frameID=21474836481 (currentItemID=81, new itemID=85)
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=85 navigatedFrameID=21474836481 mainFrameURL=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [WC] setPendingAsyncBackForwardNavigation frameID=21474836481 oldState=0
+::DEBUG:: [UI] goToBackForwardItemAtIndex: steps=-1 loadType=3 targetItemID=81 targetUrl=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [UI] goToBackForwardItemAtIndex: currentItemID=85 currentNavigatedFrameID=21474836481 targetMainFrameURL=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [UI] goToBackForwardItemAtIndex: redirected to childFrameItem url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=1
+::DEBUG:: [UI] backForwardGoToItemShared: APPLIED itemID=81 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html oldIndex=3 newIndex=2
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836481 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=90 frameItemID=91 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url= frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [WP] historyItemChanged itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [UI] backForwardUpdateItem itemID=90 frameItemID=91 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=90 frameItemID=91)
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=85 frameItemID=86 url=http://web-platform.test:8800/common/blank.html?3#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836482 oldState=0
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 frameID=21474836481
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WP] historyItemChanged itemID=97 frameItemID=98 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=97 frameItemID=98 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=97 frameItemID=98 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=97 frameItemID=98 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=97 frameItemID=98 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=97 frameItemID=98 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=97 frameItemID=98 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=97 frameItemID=98)
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url= ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=97 frameItemID=98 url=http://web-platform.test:8800/common/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=97 frameItemID=98)
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=97 frameItemID=98 url=http://web-platform.test:8800/common/blank.html frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=97 frameItemID=98)
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=97 frameItemID=98 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=97 frameItemID=98)
+::DEBUG:: [UI] backForwardUpdateItem itemID=97 frameItemID=98 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=97 frameItemID=98)
+::DEBUG:: [UI] backForwardUpdateItem itemID=97 frameItemID=98 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=97 frameItemID=98)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardSetChildItem parentFrameItemID=45 childUrl=http://web-platform.test:8800/common/blank.html childFrameID=21474836482 childItemID=44
+::DEBUG:: [UI] WebBackForwardListFrameItem::setChild parentFrameID=4294967297 parentItemID=81 childUrl=http://web-platform.test:8800/common/blank.html childFrameID=21474836482
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836482 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=102 frameItemID=103 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] clearChildren itemID=44 frameItemID=99 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url= frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/common/blank.html?1 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/common/blank.html?1 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=102 frameItemID=103 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=102 frameItemID=103)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836482 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=107 frameItemID=108 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=107 frameItemID=108 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=107 frameItemID=108 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=107 frameItemID=108 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=107 frameItemID=108 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=107 frameItemID=108 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=107 frameItemID=108 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=107 frameItemID=108)
+::DEBUG:: [UI] backForwardUpdateItem itemID=107 frameItemID=108 url=http://web-platform.test:8800/common/blank.html?2 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=107 frameItemID=108)
+::DEBUG:: [UI] backForwardUpdateItem itemID=107 frameItemID=108 url=http://web-platform.test:8800/common/blank.html?2 frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url= ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=107 frameItemID=108)
+::DEBUG:: [UI] backForwardUpdateItem itemID=107 frameItemID=108 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=107 frameItemID=108)
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=107 frameItemID=108 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=107 frameItemID=108)
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=107 frameItemID=108 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=107 frameItemID=108)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url= frameID=0
+::DEBUG:: [WP] historyItemChanged itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=109 frameItemID=110)
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=109 frameItemID=110)
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=109 frameItemID=110)
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=109 frameItemID=110)
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=109 frameItemID=110)
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=109 frameItemID=110)
+::DEBUG:: [UI] backForwardUpdateItem itemID=44 frameItemID=99 url=http://web-platform.test:8800/common/blank.html?1 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=44 frameItemID=99)
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482 itemID=109 frameItemID=110
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482 itemID=109 frameItemID=110
+::DEBUG:: [UI] completeFrameStateForNavigation: cloning current entry tree, replacing child for frameID=21474836482 (currentItemID=81, new itemID=109)
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=109 navigatedFrameID=21474836482 mainFrameURL=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836482 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=114 frameItemID=115 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=114 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=114 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=114 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=114 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=114 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=114 frameItemID=115)
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=114 frameItemID=115)
+::DEBUG:: [UI] backForwardAddItemShared ENTRY url=http://web-platform.test:8800/common/blank.html?2#3 frameID=21474836482 itemID=114 frameItemID=115
+::DEBUG:: [UI] completeFrameStateForNavigation ENTRY url=http://web-platform.test:8800/common/blank.html?2#3 frameID=21474836482 itemID=114 frameItemID=115
+::DEBUG:: [UI] completeFrameStateForNavigation: cloning current entry tree, replacing child for frameID=21474836482 (currentItemID=109, new itemID=114)
+::DEBUG:: [UI] backForwardAddItemShared: addItem itemID=114 navigatedFrameID=21474836482 mainFrameURL=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [UI] backForwardUpdateItem itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WC] setPendingAsyncBackForwardNavigation frameID=21474836482 oldState=0
+::DEBUG:: [UI] goToBackForwardItemAtIndex: steps=-1 loadType=3 targetItemID=109 targetUrl=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [UI] goToBackForwardItemAtIndex: currentItemID=114 currentNavigatedFrameID=21474836482 targetMainFrameURL=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [UI] goToBackForwardItemAtIndex: redirected to childFrameItem url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=1
+::DEBUG:: [UI] backForwardGoToItemShared: APPLIED itemID=109 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html oldIndex=4 newIndex=3
+::DEBUG:: [WP] historyItemChanged itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=114 frameItemID=115 url=http://web-platform.test:8800/common/blank.html?2#3 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WC] setPendingAsyncBackForwardNavigation frameID=21474836482 oldState=0
+::DEBUG:: [UI] goToBackForwardItemAtIndex: steps=-1 loadType=3 targetItemID=81 targetUrl=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [UI] goToBackForwardItemAtIndex: currentItemID=109 currentNavigatedFrameID=21474836482 targetMainFrameURL=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html
+::DEBUG:: [UI] goToBackForwardItemAtIndex: redirected to childFrameItem url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=1
+::DEBUG:: [UI] backForwardGoToItemShared: APPLIED itemID=81 url=http://web-platform.test:8800/html/browsers/browsing-the-web/overlapping-navigations-and-traversals/cross-document-traversal-same-document-traversal.html oldIndex=3 newIndex=2
+::DEBUG:: [WC] cancelPendingAsyncBackForwardNavigation frameID=21474836482 oldState=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=82 url=http://web-platform.test:8800/common/blank.html?1#2 ignore=1
+::DEBUG:: [WP] historyItemChanged itemID=116 frameItemID=117 url= ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=116 frameItemID=117 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=116 frameItemID=117 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=116 frameItemID=117 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=116 frameItemID=117 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=116 frameItemID=117 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=116 frameItemID=117 url= frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=116 frameItemID=117)
+::DEBUG:: [UI] backForwardUpdateItem itemID=116 frameItemID=117 url=http://web-platform.test:8800/common/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=116 frameItemID=117)
+::DEBUG:: [WP] historyItemChanged itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=116 frameItemID=117 url=http://web-platform.test:8800/common/blank.html frameID=0
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=116 frameItemID=117)
+::DEBUG:: [UI] backForwardUpdateItem itemID=116 frameItemID=117 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=116 frameItemID=117)
+::DEBUG:: [UI] backForwardUpdateItem itemID=116 frameItemID=117 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=116 frameItemID=117)
+::DEBUG:: [UI] backForwardUpdateItem itemID=116 frameItemID=117 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: frameItem lookup FAILED -> drop (itemID=116 frameItemID=117)
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=109 frameItemID=110 url=http://web-platform.test:8800/common/blank.html?2 frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [WP] historyItemChanged itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html ignore=0
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
+::DEBUG:: [UI] backForwardUpdateItem itemID=81 frameItemID=99 url=http://web-platform.test:8800/common/blank.html frameID=21474836482
+::DEBUG:: [UI] backForwardUpdateItem: APPLIED
