@@ -1354,6 +1354,12 @@ Navigation::DispatchResult Navigation::innerDispatchNavigateEvent(NavigationNavi
             updatedSourceElement = form.ptr();
     }
 
+    if (updatedSourceElement) {
+        Ref sourceOrigin = updatedSourceElement->document().securityOrigin();
+        if (!document->securityOrigin().isSameOriginDomain(sourceOrigin))
+            updatedSourceElement = nullptr;
+    }
+
     RefPtr abortController = AbortController::create(*scriptExecutionContext);
 
     auto init = NavigateEvent::Init {
