@@ -7897,6 +7897,18 @@ void WebPageProxy::didDestroyNavigationShared(Ref<WebProcessProxy>&& process, We
 
     RefPtr protectedPageClient { pageClient() };
 
+    // [EXPERIMENT — too broad, introduces flakiness] If this navigation is the one we are swapping
+    // to in a new process, the source process abandoned it (e.g. navigate-event preventDefault).
+    // DidDestroyNavigation alone only removes it from m_navigationState; the in-flight provisional
+    // load in the new process would still commit. Tearing it down here makes preventDefault truly
+    // cancel — but DidDestroyNavigation fires for many cancellation scenarios, so doing it
+    // unconditionally flakes 5 cancel-related WPT tests. The real fix needs a navigate-event-specific
+    // signal, not this generic piggyback.
+    if (RefPtr provisionalPage = m_provisionalPage; provisionalPage && provisionalPage->navigationID() == navigationID) {
+        provisionalPage->cancel();
+        m_provisionalPage = nullptr;
+    }
+
     m_navigationState->didDestroyNavigation(process->coreProcessIdentifier(), navigationID);
 }
 
