@@ -735,6 +735,13 @@ final class WebBackForwardList {
         }
     }
 
+    @used
+    func clearFrameIdentifier(frameID: WebCore.FrameIdentifier) {
+        for entry in entries {
+            entry.clearFrameID(frameID)
+        }
+    }
+
     func didRemoveItem(item: WebKit.WebBackForwardListItem) {
         item.wasRemovedFromBackForwardList()
         // swift-format-ignore: NeverForceUnwrap

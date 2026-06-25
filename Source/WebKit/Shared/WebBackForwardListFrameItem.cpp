@@ -141,12 +141,20 @@ void WebBackForwardListFrameItem::setWasRestoredFromSession()
 
 void WebBackForwardListFrameItem::updateFrameStatePayload(Ref<FrameState>&& frameState)
 {
-    m_frameState->replacePayloadFrom(WTF::move(frameState));
+    protect(m_frameState)->replacePayloadFrom(WTF::move(frameState));
 }
 
 void WebBackForwardListFrameItem::updateFrameID(FrameIdentifier newFrameID)
 {
     m_frameState->frameID = newFrameID;
+}
+
+void WebBackForwardListFrameItem::clearFrameIDIfMatches(FrameIdentifier frameID)
+{
+    if (m_frameState->frameID == frameID)
+        m_frameState->frameID = std::nullopt;
+    for (auto& child : m_children)
+        child->clearFrameIDIfMatches(frameID);
 }
 
 Ref<FrameState> WebBackForwardListFrameItem::copyFrameState()

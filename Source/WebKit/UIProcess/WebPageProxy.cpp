@@ -7597,6 +7597,11 @@ void WebPageProxy::didDestroyFrame(IPC::Connection& connection, FrameIdentifier 
     });
 }
 
+void WebPageProxy::frameWasDestroyed(FrameIdentifier frameID)
+{
+    backForwardList().clearFrameIdentifier(frameID);
+}
+
 void WebPageProxy::disconnectFramesFromPage()
 {
     if (RefPtr mainFrame = std::exchange(m_mainFrame, nullptr))

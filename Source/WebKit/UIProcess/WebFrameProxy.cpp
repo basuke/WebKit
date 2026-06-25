@@ -153,8 +153,10 @@ WebFrameProxy::WebFrameProxy(WebPageProxy& page, FrameProcess& process, FrameIde
 
 WebFrameProxy::~WebFrameProxy()
 {
-    if (RefPtr page = m_page.get())
+    if (RefPtr page = m_page.get()) {
         page->inspectorController().willDestroyFrame(*this);
+        page->frameWasDestroyed(m_frameID);
+    }
 
     WebProcessPool::statistics().wkFrameCount--;
 #if PLATFORM(GTK)
