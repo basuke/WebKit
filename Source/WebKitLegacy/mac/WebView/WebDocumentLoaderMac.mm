@@ -86,9 +86,9 @@ void WebDocumentLoaderMac::attachToFrame()
     retainDataSource();
 }
 
-void WebDocumentLoaderMac::detachFromFrame(WebCore::LoadWillContinueInAnotherProcess loadWillContinueInAnotherProcess)
+void WebDocumentLoaderMac::detachFromFrame(WebCore::LoadWillContinueInAnotherProcess loadWillContinueInAnotherProcess, WebCore::NavigationDestroyReason navigationDestroyReason)
 {
-    DocumentLoader::detachFromFrame(loadWillContinueInAnotherProcess);
+    DocumentLoader::detachFromFrame(loadWillContinueInAnotherProcess, navigationDestroyReason);
 
     if (m_loadingResources.isEmpty())
         releaseDataSource();

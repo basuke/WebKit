@@ -1,0 +1,25 @@
+<!doctype html><!-- webkit-test-runner [ SiteIsolationEnabled=true ] -->
+<title>preventDefault() truly cancels a cross-origin (process-swapping) navigation under Site Isolation</title>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/common/get-host-info.sub.js"></script>
+<a id="a"></a>
+<script>
+// Unlike the upstream navigate-anchor-cross-origin.html (which calls done() synchronously and so
+// cannot detect a navigation that proceeds anyway), this keeps the page alive and asserts that the
+// location is still unchanged 3s after preventDefault(). Under Site Isolation a cross-origin top-level
+// navigation is a process swap whose provisional load has already started in the destination process;
+// without the scoped provisional-page teardown this commits and the location changes.
+async_test(t => {
+  const before = location.href;
+  navigation.onnavigate = t.step_func(e => {
+    e.preventDefault();
+    t.step_timeout(() => {
+      assert_equals(location.href, before, "location unchanged 3s after preventDefault");
+      t.done();
+    }, 3000);
+  });
+  a.href = get_host_info().HTTPS_REMOTE_ORIGIN + "/does-not-exist.html";
+  a.click();
+}, "preventDefault truly cancels cross-origin nav under Site Isolation");
+</script>

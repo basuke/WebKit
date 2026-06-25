@@ -227,10 +227,18 @@ void WebLocalFrameLoaderClient::detachedFromParent3()
     notImplemented();
 }
 
-void WebLocalFrameLoaderClient::documentLoaderDetached(WebCore::NavigationIdentifier navigationID, LoadWillContinueInAnotherProcess loadWillContinueInAnotherProcess)
+void WebLocalFrameLoaderClient::documentLoaderDetached(WebCore::NavigationIdentifier navigationID, LoadWillContinueInAnotherProcess loadWillContinueInAnotherProcess, WebCore::NavigationDestroyReason navigationDestroyReason)
 {
-    if (RefPtr page = m_frame->page(); page && loadWillContinueInAnotherProcess == LoadWillContinueInAnotherProcess::No)
-        page->send(Messages::WebPageProxy::DidDestroyNavigation(navigationID));
+    RefPtr page = m_frame->page();
+    if (!page || loadWillContinueInAnotherProcess != LoadWillContinueInAnotherProcess::No)
+        return;
+
+    // A cross-process navigation cancelled by the navigate event's preventDefault() has already started a
+    // provisional load in the destination process; ask the UI process to tear it down so it never commits.
+    if (navigationDestroyReason == WebCore::NavigationDestroyReason::CancelledByNavigateEvent)
+        page->send(Messages::WebPageProxy::CancelProvisionalLoadForNavigation(navigationID));
+
+    page->send(Messages::WebPageProxy::DidDestroyNavigation(navigationID));
 }
 
 void WebLocalFrameLoaderClient::assignIdentifierToInitialRequest(ResourceLoaderIdentifier identifier, DocumentLoader* loader, const ResourceRequest& request)

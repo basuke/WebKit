@@ -7900,6 +7900,19 @@ void WebPageProxy::didDestroyNavigationShared(Ref<WebProcessProxy>&& process, We
     m_navigationState->didDestroyNavigation(process->coreProcessIdentifier(), navigationID);
 }
 
+void WebPageProxy::cancelProvisionalLoadForNavigation(IPC::Connection& connection, WebCore::NavigationIdentifier navigationID)
+{
+    MESSAGE_CHECK(WebProcessProxy::fromConnection(connection), WebNavigationState::NavigationMap::isValidKey(navigationID));
+
+    // The navigate event's preventDefault() cancelled a cross-process navigation whose provisional load has already
+    // started in the destination process. Tear down that provisional page so it never commits. Scoped to this reason
+    // so the many other DidDestroyNavigation cases (deferred, invalid-url, same-document back, etc.) are unaffected.
+    if (RefPtr provisionalPage = m_provisionalPage; provisionalPage && provisionalPage->navigationID() == navigationID) {
+        provisionalPage->cancel();
+        m_provisionalPage = nullptr;
+    }
+}
+
 void WebPageProxy::didStartProvisionalLoadForFrame(IPC::Connection& connection, FrameIdentifier frameID, FrameInfoData&& frameInfo, ResourceRequest&& request, std::optional<WebCore::NavigationIdentifier> navigationID, URL&& url, URL&& unreachableURL, const UserData& userData, WallTime timestamp)
 {
     didStartProvisionalLoadForFrameShared(WebProcessProxy::fromConnection(connection), frameID, WTF::move(frameInfo), WTF::move(request), navigationID, WTF::move(url), WTF::move(unreachableURL), userData, timestamp);

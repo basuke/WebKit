@@ -1550,7 +1550,7 @@ void DocumentLoader::attachToFrame()
     DOCUMENTLOADER_RELEASE_LOG_FORWARDABLE(DocumentLoaderAttachToFrame);
 }
 
-void DocumentLoader::detachFromFrame(LoadWillContinueInAnotherProcess loadWillContinueInAnotherProcess)
+void DocumentLoader::detachFromFrame(LoadWillContinueInAnotherProcess loadWillContinueInAnotherProcess, NavigationDestroyReason navigationDestroyReason)
 {
     DOCUMENTLOADER_RELEASE_LOG_FORWARDABLE(DocumentLoaderDetachFromFrame);
 
@@ -1584,7 +1584,7 @@ void DocumentLoader::detachFromFrame(LoadWillContinueInAnotherProcess loadWillCo
         return;
 
     if (auto navigationID = std::exchange(m_navigationID, { }))
-        frame->loader().client().documentLoaderDetached(*navigationID, loadWillContinueInAnotherProcess);
+        frame->loader().client().documentLoaderDetached(*navigationID, loadWillContinueInAnotherProcess, navigationDestroyReason);
 
     InspectorInstrumentation::loaderDetachedFromFrame(*frame, *this);
 

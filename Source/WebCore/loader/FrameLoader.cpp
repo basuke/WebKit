@@ -2325,7 +2325,7 @@ void FrameLoader::setDocumentLoader(RefPtr<DocumentLoader>&& loader)
     m_documentLoader = WTF::move(loader);
 }
 
-void FrameLoader::setPolicyDocumentLoader(RefPtr<DocumentLoader>&& loader, LoadWillContinueInAnotherProcess loadWillContinueInAnotherProcess)
+void FrameLoader::setPolicyDocumentLoader(RefPtr<DocumentLoader>&& loader, LoadWillContinueInAnotherProcess loadWillContinueInAnotherProcess, NavigationDestroyReason navigationDestroyReason)
 {
     if (m_policyDocumentLoader == loader)
         return;
@@ -2340,7 +2340,7 @@ void FrameLoader::setPolicyDocumentLoader(RefPtr<DocumentLoader>&& loader, LoadW
     if (RefPtr policyDocumentLoader = m_policyDocumentLoader; policyDocumentLoader
         && policyDocumentLoader != m_provisionalDocumentLoader
         && policyDocumentLoader != m_documentLoader) {
-        policyDocumentLoader->detachFromFrame(loadWillContinueInAnotherProcess);
+        policyDocumentLoader->detachFromFrame(loadWillContinueInAnotherProcess, navigationDestroyReason);
     }
 
     m_policyDocumentLoader = WTF::move(loader);
@@ -4205,7 +4205,7 @@ void FrameLoader::continueLoadAfterNavigationPolicy(const ResourceRequest& reque
         if (navigationPolicyDecision == NavigationPolicyDecision::LoadWillContinueInAnotherProcess) {
             if (auto pendingDispatchNavigateEvent = m_policyDocumentLoader ? m_policyDocumentLoader->triggeringAction().takePendingDispatchNavigateEvent() : std::function<bool()> { }) {
                 if (!pendingDispatchNavigateEvent()) {
-                    setPolicyDocumentLoader(nullptr);
+                    setPolicyDocumentLoader(nullptr, LoadWillContinueInAnotherProcess::No, NavigationDestroyReason::CancelledByNavigateEvent);
                     checkCompleted();
                     return;
                 }
