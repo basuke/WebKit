@@ -1,0 +1,3 @@
+
+PASS preventDefault truly cancels cross-origin nav under Site Isolation
+

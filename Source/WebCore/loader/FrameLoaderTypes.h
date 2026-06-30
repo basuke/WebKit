@@ -177,6 +177,10 @@ enum class AllowNavigationToInvalidURL : bool { No, Yes };
 enum class HasInsecureContent : bool { No, Yes };
 enum class LoadWillContinueInAnotherProcess : bool { No, Yes };
 
+// Why a DocumentLoader is detaching from its frame, so the UI process can scope a
+// cross-process provisional-load teardown to navigate-event preventDefault() only.
+enum class NavigationDestroyReason : bool { Normal, CancelledByNavigateEvent };
+
 enum class LoadCompletionType : bool {
     Finish,
     Cancel

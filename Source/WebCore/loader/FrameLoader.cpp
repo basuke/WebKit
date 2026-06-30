@@ -2343,7 +2343,7 @@ void FrameLoader::setDocumentLoader(RefPtr<DocumentLoader>&& loader)
     m_documentLoader = WTF::move(loader);
 }
 
-void FrameLoader::setPolicyDocumentLoader(RefPtr<DocumentLoader>&& loader, LoadWillContinueInAnotherProcess loadWillContinueInAnotherProcess)
+void FrameLoader::setPolicyDocumentLoader(RefPtr<DocumentLoader>&& loader, LoadWillContinueInAnotherProcess loadWillContinueInAnotherProcess, NavigationDestroyReason navigationDestroyReason)
 {
     if (m_policyDocumentLoader == loader)
         return;
@@ -2358,7 +2358,7 @@ void FrameLoader::setPolicyDocumentLoader(RefPtr<DocumentLoader>&& loader, LoadW
     if (RefPtr policyDocumentLoader = m_policyDocumentLoader; policyDocumentLoader
         && policyDocumentLoader != m_provisionalDocumentLoader
         && policyDocumentLoader != m_documentLoader) {
-        policyDocumentLoader->detachFromFrame(loadWillContinueInAnotherProcess);
+        policyDocumentLoader->detachFromFrame(loadWillContinueInAnotherProcess, navigationDestroyReason);
     }
 
     m_policyDocumentLoader = WTF::move(loader);
@@ -4216,7 +4216,22 @@ void FrameLoader::continueLoadAfterNavigationPolicy(const ResourceRequest& reque
     if (!canContinue) {
         FRAMELOADER_RELEASE_LOG_FORWARDABLE(FrameLoaderContinueLoadAfterNavigationPolicyCannotContinue, static_cast<int>(allowNavigationToInvalidURL), request.url().isValid(), static_cast<int>(navigationPolicyDecision));
 
-        // If we were waiting for a quick redirect, but the policy delegate decided to ignore it, then we 
+        // LoadWillContinueInAnotherProcess is an approval that requires a process swap, not a denial. The push/replace
+        // navigate event is otherwise only dispatched on the canContinue path below, so under Site Isolation a
+        // cross-origin top-level navigation skips it entirely and preventDefault() is never honored. Dispatch it here so
+        // the event fires before the cross-process handoff; if the page cancels, abort the navigation in this process.
+        // FIXME: unify this abort with the IgnoreLoad cleanup below, and confirm beforeunload (shouldClose) ordering.
+        if (navigationPolicyDecision == NavigationPolicyDecision::LoadWillContinueInAnotherProcess) {
+            if (auto pendingDispatchNavigateEvent = m_policyDocumentLoader ? m_policyDocumentLoader->triggeringAction().takePendingDispatchNavigateEvent() : std::function<bool()> { }) {
+                if (!pendingDispatchNavigateEvent()) {
+                    setPolicyDocumentLoader(nullptr, LoadWillContinueInAnotherProcess::No, NavigationDestroyReason::CancelledByNavigateEvent);
+                    checkCompleted();
+                    return;
+                }
+            }
+        }
+
+        // If we were waiting for a quick redirect, but the policy delegate decided to ignore it, then we
         // need to report that the client redirect was cancelled.
         // FIXME: The client should be told about ignored non-quick redirects, too.
         if (m_quickRedirectComing)

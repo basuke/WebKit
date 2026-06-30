@@ -434,7 +434,7 @@ private:
     void handleLoadFailureRecovery(DocumentLoader&, const ResourceError&, bool);
 
     void setDocumentLoader(RefPtr<DocumentLoader>&&);
-    void setPolicyDocumentLoader(RefPtr<DocumentLoader>&&, LoadWillContinueInAnotherProcess = LoadWillContinueInAnotherProcess::No);
+    void setPolicyDocumentLoader(RefPtr<DocumentLoader>&&, LoadWillContinueInAnotherProcess = LoadWillContinueInAnotherProcess::No, NavigationDestroyReason = NavigationDestroyReason::Normal);
     void setProvisionalDocumentLoader(RefPtr<DocumentLoader>&&);
 
     void setState(FrameState);

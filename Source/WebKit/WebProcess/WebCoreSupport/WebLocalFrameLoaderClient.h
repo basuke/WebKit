@@ -285,7 +285,7 @@ private:
 
     inline bool NODELETE hasPlugInView() const;
 
-    void documentLoaderDetached(WebCore::NavigationIdentifier, WebCore::LoadWillContinueInAnotherProcess) final;
+    void documentLoaderDetached(WebCore::NavigationIdentifier, WebCore::LoadWillContinueInAnotherProcess, WebCore::NavigationDestroyReason) final;
 
     bool NODELETE siteIsolationEnabled() const;
 

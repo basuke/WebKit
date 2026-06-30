@@ -103,6 +103,7 @@ class Widget;
 
 enum class LoadWillContinueInAnotherProcess : bool;
 enum class LockBackForwardList : bool;
+enum class NavigationDestroyReason : bool;
 enum class UsedLegacyTLS : bool;
 enum class WasPrivateRelayed : bool;
 enum class FromDownloadAttribute : bool { No , Yes };
@@ -380,7 +381,7 @@ public:
 
     virtual void dispatchLoadEventToOwnerElementInAnotherProcess() = 0;
 
-    virtual void documentLoaderDetached(NavigationIdentifier, LoadWillContinueInAnotherProcess) { }
+    virtual void documentLoaderDetached(NavigationIdentifier, LoadWillContinueInAnotherProcess, NavigationDestroyReason) { }
 
     virtual void frameNameChanged(const String&) { }
 

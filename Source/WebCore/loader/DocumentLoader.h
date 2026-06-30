@@ -208,7 +208,7 @@ public:
 
     void attachToFrame(LocalFrame&);
 
-    WEBCORE_EXPORT virtual void detachFromFrame(LoadWillContinueInAnotherProcess);
+    WEBCORE_EXPORT virtual void detachFromFrame(LoadWillContinueInAnotherProcess, NavigationDestroyReason = NavigationDestroyReason::Normal);
 
     WEBCORE_EXPORT FrameLoader* NODELETE frameLoader() const;
     WEBCORE_EXPORT SubresourceLoader* NODELETE mainResourceLoader() const;
