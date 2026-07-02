@@ -49,6 +49,25 @@ list(APPEND TestWebKitLegacy_LIBRARIES
 # TestWebKit
 set(TestWebKit_DERIVED_SOURCES_DIR "${CMAKE_BINARY_DIR}/DerivedSources/TestWebKit")
 
+# When Swift is available, TestWebKitAPI uses the Swift @main runner
+# (Runner/TestWebKitAPI.swift) -- the same entry point as the Xcode build --
+# which drives both the C++ GoogleTest suite and Swift Testing (@Test) tests in
+# a single executable. Otherwise it falls back to the C++-only generic/main.mm.
+if (SWIFT_REQUIRED)
+    set(_testwebkit_main_SOURCES
+        Runner/TestWebKitAPISupport.mm
+        Runner/TestWebKitAPI.swift
+        Runner/TestRunner.swift
+        Runner/GoogleTestsController.swift
+        Runner/SwiftTestsController.swift
+        Runner/SwiftTestingABI.swift
+
+        Tests/WebKit/WKWebView/WKWebViewSwiftOverlayTests.swift
+    )
+else ()
+    set(_testwebkit_main_SOURCES ${_test_main_SOURCES})
+endif ()
+
 list(APPEND TestWebKit_UNIFIED_SOURCE_LIST_FILES
     "SourcesCocoa.txt"
     "SourcesMac.txt"
@@ -67,7 +86,7 @@ set(TestWebKit_UNIFIED_SOURCE_EXCLUDES
 
 # Files compiled outside unified sources (Xcode membershipExceptions).
 list(APPEND TestWebKit_SOURCES
-    ${_test_main_SOURCES}
+    ${_testwebkit_main_SOURCES}
     Helpers/Counters.cpp
     Helpers/DeprecatedGlobalValues.cpp
     Helpers/GraphicsTestUtilities.cpp
@@ -158,6 +177,75 @@ WEBKIT_ADD_TARGET_CXX_FLAGS(TestWebKit -Wno-deprecated-declarations)
 
 # run-api-tests expects the binary to be named TestWebKitAPI.
 set_target_properties(TestWebKit PROPERTIES OUTPUT_NAME TestWebKitAPI)
+
+# Swift Testing support for the TestWebKitAPI runner. The Runner/*.swift files
+# (added to TestWebKit_SOURCES above when SWIFT_REQUIRED) provide the @main
+# entry point and the Swift Testing harness.
+if (SWIFT_REQUIRED)
+    # Match the Xcode build's Swift module name so Swift Testing test IDs are
+    # emitted as "TestWebKitAPI.<Suite>/<func>()" -- the prefix webkitpy's
+    # api_tests collector (manager.py _test_list_from_output) recognizes.
+    set_target_properties(TestWebKit PROPERTIES Swift_MODULE_NAME TestWebKitAPI)
+
+    # Testing.framework ships in the platform's Developer/Library/Frameworks,
+    # two directory levels above the SDK sysroot.
+    get_filename_component(_platform_developer_dir "${CMAKE_OSX_SYSROOT}/../.." ABSOLUTE)
+    set(_testing_framework_dir "${_platform_developer_dir}/Library/Frameworks")
+
+    # Swift Testing's @Test/#expect macros are expanded by the TestingMacros
+    # compiler plugin, which lives in a `testing` subdirectory that swiftc does
+    # not search by default. Point at it explicitly (matches Xcode's
+    # -external-plugin-path <dir>#<swift-plugin-server>).
+    get_filename_component(_swift_bin_dir "${ORIGINAL_Swift_COMPILER}" DIRECTORY)
+    get_filename_component(_swift_toolchain_usr "${_swift_bin_dir}" DIRECTORY)
+    set(_testing_plugin_dir "${_swift_toolchain_usr}/lib/swift/host/plugins/testing")
+    set(_swift_plugin_server "${_swift_bin_dir}/swift-plugin-server")
+
+    target_compile_options(TestWebKit PRIVATE
+        # Expose the extern "C" entry points (TestWebKitAPIRunTests,
+        # swt_abiv0_getEntryPoint, TestWebKitAPIEnableAllSDKAlignedBehaviors)
+        # declared in TestWebKitAPISupport.h to the Swift runner.
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-import-objc-header ${TESTWEBKITAPI_DIR}/Runner/TestWebKitAPI-Bridging-Header.h>"
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-swift-version 6>"
+        # The runner uses the `unsafe` expression keyword, which requires strict
+        # memory safety (mirrors Xcode's -strict-memory-safety).
+        "$<$<COMPILE_LANGUAGE:Swift>:-strict-memory-safety>"
+        # Locate the Swift Testing module and its macro plugin.
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-F ${_testing_framework_dir}>"
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-external-plugin-path ${_testing_plugin_dir}#${_swift_plugin_server}>"
+        # `import WebKit`: the WebKit framework built by this tree (found via the
+        # build dir's -F, which precedes the SDK's) now carries the ObjC Clang
+        # module + co-located Swift overlay, so WKWebView et al. resolve. The
+        # overlay references WebKit_Internal and is compiled with C++ interop,
+        # so consumers must enable both.
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-F ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}>"
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-I ${WEBKIT_DIR}/Modules/Internal>"
+        "$<$<COMPILE_LANGUAGE:Swift>:-cxx-interoperability-mode=default>"
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -std=c++2b>"
+        # Platform.h feature flags the runner checks via #if. Hardcoded for now;
+        # the full generate-platform-args --cmake wiring can replace these later.
+        "$<$<COMPILE_LANGUAGE:Swift>:-DWTF_PLATFORM_MAC>"
+        "$<$<COMPILE_LANGUAGE:Swift>:-DWTF_PLATFORM_COCOA>"
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-module-cache-path ${CMAKE_BINARY_DIR}/SwiftModuleCache>"
+        # Skip the inner sandbox for macro expansion (matches the WebKit Swift setup).
+        "$<$<COMPILE_LANGUAGE:Swift>:-disable-sandbox>"
+    )
+
+    # Link Testing.framework and add an rpath so the loader finds it at runtime.
+    target_link_libraries(TestWebKit PRIVATE "-F${_testing_framework_dir}" "-framework Testing")
+    target_link_options(TestWebKit PRIVATE "SHELL:-Xlinker -rpath -Xlinker ${_testing_framework_dir}")
+
+    # Building the underlying WebKit / WebKit_Internal Clang module PCMs needs
+    # WebKit's own internal header search paths and the same export-macro /
+    # feature defines the WebKit C++ TUs use, so the PCMs parse and hash
+    # consistently with the prebuilt overlay.
+    target_compile_options(TestWebKit PRIVATE
+        "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -I$<JOIN:$<TARGET_PROPERTY:WebKit,INCLUDE_DIRECTORIES>, -Xcc -I>>")
+    _WEBKIT_COMPUTE_SWIFT_SHARED_CLANG_FLAGS(_twk_shared_cc_flags)
+    foreach (_f IN LISTS _twk_shared_cc_flags)
+        target_compile_options(TestWebKit PRIVATE "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc ${_f}>")
+    endforeach ()
+endif ()
 
 # TestIPC
 file(GLOB _ipc_core_sources
