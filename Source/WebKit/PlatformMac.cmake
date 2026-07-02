@@ -114,6 +114,85 @@ foreach (_dir IN LISTS WebKit_SWIFT_INCLUDE_DIRECTORIES)
     target_compile_options(WebKit PRIVATE "$<$<COMPILE_LANGUAGE:Swift>:-I${_dir}>")
 endforeach ()
 
+# --- Mixed-language WebKit module (mirrors PlatformIOS.cmake) ---------------
+# Build WebKit's Swift as a true overlay of the ObjC WebKit framework so that a
+# consumer's `import WebKit` sees the ObjC public API (WKWebView etc.) re-
+# exported through the Swift module, exactly like the Xcode build. This needs
+# three things staged before/after WebKit's own Swift compile:
+#   1. a `framework module WebKit` Clang module map + public Headers/ inside
+#      WebKit.framework, so -import-underlying-module can load the underlying
+#      ObjC module;
+#   2. -import-underlying-module on WebKit's Swift compile;
+#   3. the produced WebKit.swiftmodule staged into WebKit.framework/Modules/ so
+#      the overlay is found next to the Clang module by consumers.
+set(_wk_fw "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/WebKit.framework")
+set(_wk_modules_staging "${CMAKE_BINARY_DIR}/WebKit/Modules")
+make_directory("${_wk_modules_staging}")
+# A minimal public framework module map (OSX.modulemap's DOMProgressEvent
+# submodule references a header not staged in the CMake build, so write a clean
+# umbrella-only map here).
+file(WRITE "${_wk_modules_staging}/module.modulemap"
+"framework module WebKit [system] {
+  umbrella header \"WebKit.h\"
+  export *
+  module * { export * }
+}
+")
+
+# Stage WebKit.framework/Headers (symlinks) + Modules/module.modulemap before
+# WebKit's Swift compile. WebKit_CopyHeaders is defined later in CMakeLists.txt;
+# defer the dependency wiring until it exists.
+add_custom_target(WebKit_StageFrameworkHeaders
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/Source/cmake/SymlinkHeaders.cmake
+        ${WebKit_FRAMEWORK_HEADERS_DIR}/WebKit
+        ${_wk_fw}/Headers
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${_wk_modules_staging}/module.modulemap
+        ${_wk_fw}/Modules/module.modulemap
+    COMMENT "Staging WebKit.framework Headers/ and Modules/module.modulemap"
+    VERBATIM
+)
+cmake_language(DEFER CALL add_dependencies WebKit_StageFrameworkHeaders WebKit_CopyHeaders)
+add_dependencies(WebKit WebKit_StageFrameworkHeaders)
+
+# Compile WebKit's Swift as an overlay of the underlying ObjC WebKit module.
+set(_wk_swift_arch "${CMAKE_OSX_ARCHITECTURES}")
+if (NOT _wk_swift_arch)
+    set(_wk_swift_arch "arm64")
+endif ()
+target_compile_options(WebKit PRIVATE
+    "$<$<COMPILE_LANGUAGE:Swift>:-import-underlying-module>"
+    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -fmodule-map-file=${_wk_fw}/Modules/module.modulemap>"
+)
+
+# After WebKit builds, stage the overlay swiftmodule into the framework so
+# consumers find it beside the Clang module. Tracked via a custom command so
+# ninja replays it if the staged files go missing on incremental builds.
+set(_wk_swift_output "${CMAKE_BINARY_DIR}/Source/WebKit")
+set(_wk_fw_swiftmodule_dir "${_wk_fw}/Modules/WebKit.swiftmodule")
+set(_wk_swiftmodule_exts swiftmodule swiftdoc abi.json)
+set(_wk_staged_swiftmodule_artifacts "")
+set(_wk_stage_swiftmodule_commands "")
+foreach (_ext IN LISTS _wk_swiftmodule_exts)
+    list(APPEND _wk_staged_swiftmodule_artifacts
+        "${_wk_fw_swiftmodule_dir}/${_wk_swift_arch}-apple-macos.${_ext}")
+    list(APPEND _wk_stage_swiftmodule_commands
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${_wk_swift_output}/WebKit.${_ext}"
+            "${_wk_fw_swiftmodule_dir}/${_wk_swift_arch}-apple-macos.${_ext}")
+endforeach ()
+add_custom_command(
+    OUTPUT ${_wk_staged_swiftmodule_artifacts}
+    DEPENDS WebKit
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${_wk_fw_swiftmodule_dir}"
+    ${_wk_stage_swiftmodule_commands}
+    COMMENT "Staging WebKit.swiftmodule into WebKit.framework/Modules/"
+    VERBATIM
+)
+add_custom_target(WebKit_StageSwiftModule ALL DEPENDS ${_wk_staged_swiftmodule_artifacts})
+# ---------------------------------------------------------------------------
+
+
 add_custom_command(
     OUTPUT ${_log_messages_generated}
     DEPENDS

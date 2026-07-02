@@ -11,6 +11,10 @@ function(WEBKIT_ADD_SWIFT_PREWARM _consumer _swift_source)
 
     get_target_property(_opts ${_consumer} COMPILE_OPTIONS)
     list(FILTER _opts EXCLUDE REGEX "-emit-clang-header-path")
+    # The prewarm helper is its own Swift module (e.g. SwiftPrewarmMac), not the
+    # consumer, so it must not inherit -import-underlying-module (which would try
+    # to load a Clang module named after the prewarm target and fail).
+    list(FILTER _opts EXCLUDE REGEX "-import-underlying-module")
     target_compile_options(${_prewarm} PRIVATE ${_opts})
 
     get_target_property(_consumer_bindir ${_consumer} BINARY_DIR)
