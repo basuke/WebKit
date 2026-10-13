@@ -1,0 +1,11 @@
+Test that the frames held for a paused cross-site frame run again when the paused frame is removed while it has focus, since the UI process then keeps the removed frame alive as its focused frame.
+
+
+== Running test suite: SiteIsolation.Debugger.PauseHoldsCrossProcessFramesUntilFocusedPausedFrameIsRemoved
+-- Running test case: SiteIsolation.Debugger.PauseHoldsCrossProcessFramesUntilFocusedPausedFrameIsRemoved.PausedFocusedFrameRemoved
+PASS: Should find the frame target of the cross-site frame.
+PASS: The cross-site frame's interval should be running.
+PASS: The cross-site frame should have focus after a click.
+PASS: The main frame's interval should not advance while the cross-site frame is paused.
+PASS: The main frame's interval should advance after the focused paused frame is removed.
+

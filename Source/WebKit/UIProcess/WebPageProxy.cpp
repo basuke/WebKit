@@ -3367,6 +3367,18 @@ void WebPageProxy::frameDidContinueForDebugger(IPC::Connection& connection, WebC
         m_debuggerPauseCoordinator->frameDidContinue(WebProcessProxy::fromConnection(connection), frameID);
 }
 
+void WebPageProxy::frameDidChangeProcessForDebugger(WebCore::FrameIdentifier frameID, WebProcessProxy& newProcess)
+{
+    if (m_debuggerPauseCoordinator)
+        m_debuggerPauseCoordinator->frameDidChangeProcess(frameID, newProcess);
+}
+
+void WebPageProxy::frameWasRemovedForDebugger(WebCore::FrameIdentifier frameID)
+{
+    if (m_debuggerPauseCoordinator)
+        m_debuggerPauseCoordinator->frameWasRemoved(frameID);
+}
+
 void WebPageProxy::lastInspectorFrontendDidDisconnect()
 {
     if (m_debuggerPauseCoordinator)
@@ -8675,6 +8687,9 @@ void WebPageProxy::didDestroyFrame(IPC::Connection& connection, FrameIdentifier 
     if (RefPtr frame = WebFrameProxy::webFrame(frameID))
         frame->disconnect();
 
+    // A removed frame can outlive its removal, for example as m_focusedFrame, so ~WebFrameProxy() is too late.
+    frameWasRemovedForDebugger(frameID);
+
     bool didRemove = m_framesWithSubresourceLoadingForPageLoadTiming.remove(frameID);
 #if PLATFORM(COCOA)
     if (didRemove)
@@ -8687,6 +8702,10 @@ void WebPageProxy::didDestroyFrame(IPC::Connection& connection, FrameIdentifier 
 
 void WebPageProxy::disconnectFramesFromPage()
 {
+    // Frames that lose their page here no longer report being removed or changing process, even those in other processes.
+    if (m_debuggerPauseCoordinator)
+        m_debuggerPauseCoordinator->closeSession();
+
     if (RefPtr mainFrame = std::exchange(m_mainFrame, nullptr))
         mainFrame->webProcessWillShutDown();
 }
@@ -14975,6 +14994,9 @@ void WebPageProxy::dispatchProcessDidTerminate(WebProcessProxy& process, Process
     WEBPAGEPROXY_RELEASE_LOG_ERROR(Loading, "dispatchProcessDidTerminate: reason=%" PUBLIC_LOG_STRING, processTerminationReasonToString(reason).characters());
 
     revokeOutstandingForcedUserActivationsForProcess(process);
+
+    if (m_debuggerPauseCoordinator)
+        m_debuggerPauseCoordinator->processDidTerminate(process);
 
     if (protect(preferences())->siteIsolationEnabled()) {
         processDidBecomeResponsive(process); // Check if all other processes are responsive.

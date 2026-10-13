@@ -905,6 +905,8 @@ public:
     void sendMessageToInspectorFrontend(const String& targetId, const String& message);
     void frameDidPauseForDebugger(IPC::Connection&, WebCore::FrameIdentifier);
     void frameDidContinueForDebugger(IPC::Connection&, WebCore::FrameIdentifier);
+    void frameDidChangeProcessForDebugger(WebCore::FrameIdentifier, WebProcessProxy& newProcess);
+    void frameWasRemovedForDebugger(WebCore::FrameIdentifier);
     void lastInspectorFrontendDidDisconnect();
 
     void getAllFrames(CompletionHandler<void(std::optional<FrameTreeNodeData>&&)>&&);

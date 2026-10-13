@@ -195,8 +195,10 @@ WebFrameProxy::WebFrameProxy(WebPageProxy& page, FrameProcess& process, FrameIde
 
 WebFrameProxy::~WebFrameProxy()
 {
-    if (RefPtr page = m_page.get())
+    if (RefPtr page = m_page.get()) {
         page->inspectorController().willDestroyFrame(*this);
+        page->frameWasRemovedForDebugger(m_frameID);
+    }
 
     WebProcessPool::statistics().wkFrameCount--;
 #if PLATFORM(GTK)
@@ -836,6 +838,9 @@ void WebFrameProxy::setProcess(FrameProcess& process)
     if (RefPtr provisionalPage = m_page ? m_page->provisionalPageProxy() : nullptr)
         provisionalPage->updateFrameProcess();
     m_frameProcess->incrementFrameCount();
+
+    if (RefPtr page = m_page.get())
+        page->frameDidChangeProcessForDebugger(m_frameID, protect(process.process()));
 }
 
 void WebFrameProxy::removeChildFrames()
