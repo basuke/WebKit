@@ -47,6 +47,7 @@ WTF_MAKE_TZONE_ALLOCATED_IMPL(DebuggerSuspensionController);
 
 static bool s_isFrameDebuggerPaused;
 static unsigned s_pageCountWithSessionHold;
+static bool s_isInContinuation;
 
 // The paused frame may be detached by the time the pause ends, so remember its page and identifier for the end-of-pause notification.
 static WeakPtr<Page>& pausedPage()
@@ -99,6 +100,15 @@ void DebuggerSuspensionController::frameDebuggerDidContinue()
 {
     ASSERT(s_isFrameDebuggerPaused);
     s_isFrameDebuggerPaused = false;
+
+    // The code that continues runs synchronously, and must be able to dispatch events into every page of the process, so a session hold does not apply until the VM is idle again.
+    if (s_pageCountWithSessionHold && !s_isInContinuation) {
+        s_isInContinuation = true;
+        commonVM().whenIdle([] {
+            s_isInContinuation = false;
+            updateHeldDocumentsInAllPages();
+        });
+    }
     updateHeldDocumentsInAllPages();
 
     if (!s_pausedFrameID || s_isWaitingForIdleToReportContinue)
@@ -158,7 +168,7 @@ void DebuggerSuspensionController::documentDidBecomeCurrent(Document& document)
 
 bool DebuggerSuspensionController::shouldHoldDocuments()
 {
-    return s_isFrameDebuggerPaused || s_pageCountWithSessionHold;
+    return s_isFrameDebuggerPaused || (s_pageCountWithSessionHold && !s_isInContinuation);
 }
 
 void DebuggerSuspensionController::updateHeldDocuments()

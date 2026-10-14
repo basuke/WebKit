@@ -113,8 +113,7 @@ void DebuggerPauseCoordinator::openSession()
 
 void DebuggerPauseCoordinator::pageWasAdded(WebProcessProxy& process, WebCore::PageIdentifier pageID)
 {
-    // A process with a paused frame already holds every page in it.
-    if (!m_sessionID || isStoppingProcess(process))
+    if (!m_sessionID)
         return;
     suspendPage(process, pageID);
 }
@@ -129,13 +128,6 @@ void DebuggerPauseCoordinator::suspendPage(WebProcessProxy& process, WebCore::Pa
     });
     if (!isTracked)
         m_suspendedPages.append({ process, pageID });
-}
-
-bool DebuggerPauseCoordinator::isStoppingProcess(const WebProcessProxy& process) const
-{
-    return std::ranges::any_of(m_stoppingFrames, [&](auto& entry) {
-        return entry.first == process.coreProcessIdentifier();
-    });
 }
 
 void DebuggerPauseCoordinator::closeSession()
