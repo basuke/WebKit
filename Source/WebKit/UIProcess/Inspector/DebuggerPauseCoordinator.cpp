@@ -26,6 +26,7 @@
 #include "config.h"
 #include "DebuggerPauseCoordinator.h"
 
+#include "FrameInspectorTarget.h"
 #include "MessageSenderInlines.h"
 #include "ProvisionalPageProxy.h"
 #include "WebInspectorBackendMessages.h"
@@ -44,20 +45,27 @@ DebuggerPauseCoordinator::DebuggerPauseCoordinator(WebPageProxy& page)
 
 DebuggerPauseCoordinator::~DebuggerPauseCoordinator()
 {
+    m_isDestroying = true;
     closeSession();
 }
 
 void DebuggerPauseCoordinator::frameDidPause(WebProcessProxy& process, WebCore::FrameIdentifier frameID)
 {
-    m_stoppingFrames.add({ process.coreProcessIdentifier(), frameID });
+    bool isNewStoppingFrame = m_stoppingFrames.add({ process.coreProcessIdentifier(), frameID }).isNewEntry;
     if (!m_sessionID)
         openSession();
+    else if (isNewStoppingFrame)
+        notifySessionChanged(true);
 }
 
 void DebuggerPauseCoordinator::frameDidContinue(WebProcessProxy& process, WebCore::FrameIdentifier frameID)
 {
-    if (m_stoppingFrames.remove({ process.coreProcessIdentifier(), frameID }) && m_stoppingFrames.isEmpty())
+    if (!m_stoppingFrames.remove({ process.coreProcessIdentifier(), frameID }))
+        return;
+    if (m_stoppingFrames.isEmpty())
         closeSession();
+    else
+        notifySessionChanged(true);
 }
 
 // A frame that leaves its process, or is removed, may never report that it continued: the process can lose the
@@ -92,8 +100,12 @@ void DebuggerPauseCoordinator::processDidTerminate(WebProcessProxy& process)
 template<typename Predicate>
 void DebuggerPauseCoordinator::removeStoppingFramesIf(const Predicate& predicate)
 {
-    if (m_stoppingFrames.removeIf(predicate) && m_stoppingFrames.isEmpty())
+    if (!m_stoppingFrames.removeIf(predicate))
+        return;
+    if (m_stoppingFrames.isEmpty())
         closeSession();
+    else
+        notifySessionChanged(true);
 }
 
 void DebuggerPauseCoordinator::openSession()
@@ -109,6 +121,21 @@ void DebuggerPauseCoordinator::openSession()
     // forEachWebContentProcess() does not list a provisional page, which can commit while the session is open.
     if (RefPtr provisionalPage = page->provisionalPageProxy())
         pageWasAdded(provisionalPage->process(), provisionalPage->webPageID());
+
+    notifySessionChanged(true);
+}
+
+void DebuggerPauseCoordinator::notifySessionChanged(bool isPaused)
+{
+    ASSERT(m_sessionID);
+    if (m_isDestroying)
+        return;
+
+    Vector<String> stoppingTargetIDs;
+    for (auto& [processID, frameID] : m_stoppingFrames)
+        stoppingTargetIDs.append(FrameInspectorTarget::toTargetID(frameID, processID));
+    std::ranges::sort(stoppingTargetIDs, WTF::codePointCompareLessThan);
+    protect(m_page)->debuggerPauseSessionDidChange(*m_sessionID, isPaused, stoppingTargetIDs);
 }
 
 void DebuggerPauseCoordinator::pageWasAdded(WebProcessProxy& process, WebCore::PageIdentifier pageID)
@@ -132,10 +159,13 @@ void DebuggerPauseCoordinator::suspendPage(WebProcessProxy& process, WebCore::Pa
 
 void DebuggerPauseCoordinator::closeSession()
 {
-    auto sessionID = std::exchange(m_sessionID, std::nullopt);
-    m_stoppingFrames.clear();
-    if (!sessionID)
+    if (!m_sessionID) {
+        m_stoppingFrames.clear();
         return;
+    }
+    m_stoppingFrames.clear();
+    notifySessionChanged(false);
+    auto sessionID = std::exchange(m_sessionID, std::nullopt);
 
     for (auto& [weakProcess, pageID] : std::exchange(m_suspendedPages, { })) {
         if (RefPtr process = weakProcess.get())

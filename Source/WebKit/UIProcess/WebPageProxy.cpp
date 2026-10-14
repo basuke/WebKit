@@ -3343,7 +3343,7 @@ void WebPageProxy::sendMessageToInspectorFrontend(const String& targetId, const 
 
 void WebPageProxy::frameDidPauseForDebugger(IPC::Connection& connection, WebCore::FrameIdentifier frameID)
 {
-    if (m_isClosed || !protect(preferences())->siteIsolationGlobalDebuggerPauseEnabled() || !m_inspectorController->hasFrontends())
+    if (m_isClosed || !m_isGlobalDebuggerPauseEnabled || !protect(preferences())->siteIsolationGlobalDebuggerPauseEnabled() || !m_inspectorController->hasFrontends())
         return;
 
     // A report can arrive after the frame is removed or leaves the sender's process, or before the commit that
@@ -3389,6 +3389,19 @@ void WebPageProxy::lastInspectorFrontendDidDisconnect()
 {
     if (m_debuggerPauseCoordinator)
         m_debuggerPauseCoordinator->closeSession();
+    m_isGlobalDebuggerPauseEnabled = true;
+}
+
+void WebPageProxy::setGlobalDebuggerPauseEnabled(bool enabled)
+{
+    m_isGlobalDebuggerPauseEnabled = enabled;
+    if (!enabled && m_debuggerPauseCoordinator)
+        m_debuggerPauseCoordinator->closeSession();
+}
+
+void WebPageProxy::debuggerPauseSessionDidChange(WebCore::DebuggerPauseSessionIdentifier sessionID, bool isPaused, const Vector<String>& stoppingTargetIDs)
+{
+    m_inspectorController->debuggerPauseSessionDidChange(sessionID, isPaused, stoppingTargetIDs);
 }
 
 #if ENABLE(REMOTE_INSPECTOR)

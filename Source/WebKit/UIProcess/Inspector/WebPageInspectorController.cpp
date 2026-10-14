@@ -86,6 +86,7 @@ WebPageInspectorController::WebPageInspectorController(WebPageProxy& inspectedPa
 {
     auto targetAgent = makeUniqueRef<InspectorTargetAgent>(m_frontendRouter, m_backendDispatcher);
     m_targetAgent = targetAgent.ptr();
+    targetAgent->setDebuggerPauseSessionClient(this);
     m_agents.append(WTF::move(targetAgent));
 }
 
@@ -208,6 +209,28 @@ void WebPageInspectorController::setIndicating(bool indicating)
 #endif
 }
 #endif
+
+Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::setGlobalDebuggerPauseEnabled(bool enabled)
+{
+    protect(m_inspectedPage)->setGlobalDebuggerPauseEnabled(enabled);
+    return { };
+}
+
+Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::interruptForDebugger()
+{
+    return makeUnexpected("Not implemented"_s);
+}
+
+Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::resumeDebuggerPauseSession()
+{
+    return makeUnexpected("Not implemented"_s);
+}
+
+void WebPageInspectorController::debuggerPauseSessionDidChange(WebCore::DebuggerPauseSessionIdentifier sessionID, bool isPaused, const Vector<String>& stoppingTargetIDs)
+{
+    if (CheckedPtr targetAgent = m_targetAgent)
+        targetAgent->debuggerPauseSessionChanged(static_cast<int>(sessionID.toUInt64()), isPaused, stoppingTargetIDs, MonotonicTime::now().secondsSinceEpoch().seconds());
+}
 
 void WebPageInspectorController::sendMessageToInspectorFrontend(const String& targetId, const String& message)
 {

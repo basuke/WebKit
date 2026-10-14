@@ -33,6 +33,7 @@
 #include "RunJavaScriptResult.h"
 #include "TextExtractionAssertionScope.h"
 #include "Untrusted.h"
+#include <WebCore/DebuggerPauseSessionIdentifier.h>
 #include <WebCore/ProcessIdentifier.h>
 #include <WebCore/UserGestureTokenIdentifier.h>
 #include <WebCore/SpeechRecognitionConnectionClientIdentifier.h>
@@ -909,6 +910,8 @@ public:
     void frameDidChangeProcessForDebugger(WebCore::FrameIdentifier, WebProcessProxy& newProcess);
     void frameWasRemovedForDebugger(WebCore::FrameIdentifier);
     void lastInspectorFrontendDidDisconnect();
+    void setGlobalDebuggerPauseEnabled(bool);
+    void debuggerPauseSessionDidChange(WebCore::DebuggerPauseSessionIdentifier, bool isPaused, const Vector<String>& stoppingTargetIDs);
 
     void getAllFrames(CompletionHandler<void(std::optional<FrameTreeNodeData>&&)>&&);
     void getAllFrameTreesForSiteIsolationTesting(CompletionHandler<void(Vector<FrameTreeNodeData>&&)>&&);
@@ -4358,6 +4361,7 @@ private:
 
     const UniqueRef<WebPageInspectorController> m_inspectorController;
     std::unique_ptr<DebuggerPauseCoordinator> m_debuggerPauseCoordinator;
+    bool m_isGlobalDebuggerPauseEnabled { true };
 #if ENABLE(REMOTE_INSPECTOR)
     RefPtr<WebPageDebuggable> m_inspectorDebuggable;
 #endif
