@@ -1767,7 +1767,12 @@ WI.SourcesNavigationSidebarPanel = class SourcesNavigationSidebarPanel extends W
 
         this._updatePauseReasonGotoArrow();
 
-        let target = WI.debuggerManager.activeCallFrame.target;
+        // A page can be paused with no stopping frame, when it is interrupted while idle.
+        let activeCallFrame = WI.debuggerManager.activeCallFrame;
+        if (!activeCallFrame)
+            return false;
+
+        let target = activeCallFrame.target;
         let targetData = WI.debuggerManager.dataForTarget(target);
         return this._updatePauseReasonSection(target, targetData.pauseReason, targetData.pauseData);
     }

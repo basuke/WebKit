@@ -1,0 +1,60 @@
+<!-- webkit-test-runner [ SiteIsolationEnabled=true SiteIsolationGlobalDebuggerPauseEnabled=true ] -->
+<script src="../../../inspector/resources/inspector-test.js"></script>
+<script src="resources/site-isolation-debugger-test-utilities.js"></script>
+<script src="resources/global-pause-test-utilities.js"></script>
+<script>
+window.mainTicks = 0;
+setInterval(() => { window.mainTicks++; }, 50);
+
+function pauseHere()
+{
+    debugger;
+    return "resumed";
+}
+
+function test() {
+    let suite = InspectorTest.createAsyncSuite("SiteIsolation.Debugger.PauseSessionNewTargetDoesNotJoin");
+
+    let frameATarget;
+
+    suite.addTestCase({
+        name: "SiteIsolation.Debugger.PauseSessionNewTargetDoesNotJoin.Setup",
+        description: "Find the frame target of the cross-site iframe that will pause.",
+        async test() {
+            frameATarget = await frameTargetForURLContaining("same-process-frame.html?A");
+            InspectorTest.expectNotNull(frameATarget, "Should find the frame target for frame A.");
+        }
+    });
+
+    suite.addTestCase({
+        name: "SiteIsolation.Debugger.PauseSessionNewTargetDoesNotJoin.InsertedFrame",
+        description: "A frame target that appears during a session should be held by it without being asked to pause, so evaluating in it does not stop it and it does not pause after the session closes.",
+        async test() {
+            await GlobalPause.pause(frameATarget);
+            await GlobalPause.evaluate(InspectorTest.mainFrameTarget, `(() => {
+                let iframe = document.createElement("iframe");
+                iframe.src = "https://127.0.0.1:8443/site-isolation/inspector/debugger/resources/same-process-frame.html?late";
+                document.body.appendChild(iframe);
+            })()`);
+
+            let lateTarget = await GlobalPause.waitForFrameTarget("same-process-frame.html?late");
+            InspectorTest.expectNotNull(lateTarget, "Should find the frame target for the inserted frame.");
+            let before = await GlobalPause.expectHeld(lateTarget, "(window.ticks || 0)", "The inserted frame's interval", "while frame A is paused");
+
+            await GlobalPause.resumeAll();
+            await GlobalPause.expectRunning(lateTarget, "(window.ticks || 0)", before, "The inserted frame's interval after resuming");
+            InspectorTest.expectFalse(WI.debuggerManager.dataForTarget(lateTarget).paused, "The inserted frame should not have paused.");
+
+            let mainBefore = await GlobalPause.evaluate(InspectorTest.mainFrameTarget, "window.mainTicks");
+            await GlobalPause.expectRunning(InspectorTest.mainFrameTarget, "window.mainTicks", mainBefore, "The main frame's interval after resuming");
+        }
+    });
+
+    suite.runTestCasesAndFinish();
+}
+</script>
+
+<body onload="runTest()">
+<p>Test that a frame target that appears while a pause session is open is not asked to pause, so it neither stops when evaluated in nor pauses after the session closes.</p>
+<iframe src="http://localhost:8000/site-isolation/inspector/debugger/resources/same-process-frame.html?A"></iframe>
+</body>

@@ -99,6 +99,11 @@ WI.DebuggerData = class DebuggerData
         return this._target.DebuggerAgent.pause();
     }
 
+    cancelPausing()
+    {
+        this._pausing = false;
+    }
+
     resumeIfNeeded()
     {
         if (!this._paused && !this._pausing)

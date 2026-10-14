@@ -270,7 +270,8 @@ WI.DebuggerManager = class DebuggerManager extends WI.Object
         if (WI.engineeringSettingsAllowed())
             target.DebuggerAgent.setPauseForInternalScripts(WI.settings.engineeringPauseForInternalScripts.value);
 
-        if (this.paused)
+        // A frame target that appears while a session is open is held by it, and asking it to pause too would leave a pause armed after the session closes. Other targets are not held.
+        if (this.paused && !(this._pauseSession && target instanceof WI.FrameTarget))
             targetData.pauseIfNeeded();
 
         // Initialize breakpoints.
@@ -346,6 +347,11 @@ WI.DebuggerManager = class DebuggerManager extends WI.Object
     // Public
 
     get paused()
+    {
+        return this._pauseSession !== null || this.#anyTargetPaused;
+    }
+
+    get #anyTargetPaused()
     {
         for (let targetData of this._targetDebuggerDataMap.values()) {
             if (targetData.paused)
@@ -718,8 +724,24 @@ WI.DebuggerManager = class DebuggerManager extends WI.Object
         this.dispatchEventToListeners(WI.DebuggerManager.Event.WaitingToPause);
 
         let promises = [this.awaitEvent(WI.DebuggerManager.Event.Paused, this)];
-        for (let targetData of this._targetDebuggerDataMap.values())
+
+        // The backend holds every frame of the page in one session, including idle ones, which a pause at the next statement cannot reach.
+        // It declines if global pause is not enabled for the page, and then each frame target is asked to pause as usual.
+        let sessionSupported = WI.backendTarget?.hasCommand("Target.interruptForDebugger");
+        for (let [target, targetData] of this._targetDebuggerDataMap) {
+            if (sessionSupported && target instanceof WI.FrameTarget)
+                continue;
             promises.push(targetData.pauseIfNeeded());
+        }
+
+        if (sessionSupported) {
+            promises.push(WI.backendTarget.TargetAgent.interruptForDebugger().catch(() => {
+                for (let [target, targetData] of this._targetDebuggerDataMap) {
+                    if (target instanceof WI.FrameTarget)
+                        targetData.pauseIfNeeded();
+                }
+            }));
+        }
         return Promise.all(promises);
     }
 
@@ -729,9 +751,19 @@ WI.DebuggerManager = class DebuggerManager extends WI.Object
             return Promise.resolve();
 
         let promises = [this.awaitEvent(WI.DebuggerManager.Event.Resumed, this)];
-        for (let targetData of this._targetDebuggerDataMap.values()) {
+
+        // The backend resumes the frames that are stopped in the session and releases the others.
+        let sessionTargetIds = new Set;
+        if (this._pauseSession) {
+            promises.push(WI.backendTarget.TargetAgent.resumeDebuggerPauseSession());
+            sessionTargetIds = new Set(this._pauseSession.stoppingTargetIds);
+        }
+
+        for (let [target, targetData] of this._targetDebuggerDataMap) {
             // Only resume targets that are actually paused. Frame targets in separate
             // processes should not receive spurious resume commands.
+            if (sessionTargetIds.has(target.identifier))
+                continue;
             if (targetData.paused || targetData.pausing)
                 promises.push(targetData.resumeIfNeeded());
         }
@@ -1052,7 +1084,8 @@ WI.DebuggerManager = class DebuggerManager extends WI.Object
             this._delayedResumeTimeout = undefined;
         }
 
-        let wasPaused = this.paused;
+        let wasPaused = this.#anyTargetPaused;
+        let wasPausedOrHeld = this.paused;
         let targetData = this._targetDebuggerDataMap.get(target);
 
         let callFrames = [];
@@ -1118,7 +1151,7 @@ WI.DebuggerManager = class DebuggerManager extends WI.Object
             activeCallFrameDidChange = true;
         }
 
-        if (!wasPaused)
+        if (!wasPausedOrHeld)
             this.dispatchEventToListeners(WI.DebuggerManager.Event.Paused);
 
         this.dispatchEventToListeners(WI.DebuggerManager.Event.CallFramesDidChange, {target});
@@ -1134,9 +1167,24 @@ WI.DebuggerManager = class DebuggerManager extends WI.Object
 
     debuggerPauseSessionChanged(sessionId, state, stoppingTargetIds, timestamp)
     {
+        let wasPaused = this.paused;
         let isPaused = state === InspectorBackend.Enum.Target.DebuggerPauseSessionState.Paused;
         this._pauseSession = isPaused ? {sessionId, stoppingTargetIds, timestamp} : null;
+
+        // The backend cancels the pauses armed in the frames it holds when a session opens, and does not touch other targets.
+        if (isPaused) {
+            for (let [target, targetData] of this._targetDebuggerDataMap) {
+                if (target instanceof WI.FrameTarget && !targetData.paused)
+                    targetData.cancelPausing();
+            }
+        }
+
         this.dispatchEventToListeners(WI.DebuggerManager.Event.PauseSessionChanged, {sessionId, state, stoppingTargetIds, timestamp});
+
+        if (!wasPaused && this.paused)
+            this.dispatchEventToListeners(WI.DebuggerManager.Event.Paused);
+        else if (wasPaused && !this.paused)
+            this.dispatchEventToListeners(WI.DebuggerManager.Event.Resumed);
     }
 
     playBreakpointActionSound(breakpointActionIdentifier)
