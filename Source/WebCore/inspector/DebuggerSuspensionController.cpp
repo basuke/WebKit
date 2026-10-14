@@ -166,6 +166,17 @@ void DebuggerSuspensionController::documentDidBecomeCurrent(Document& document)
         holdDocument(document);
 }
 
+void DebuggerSuspensionController::documentWillSuspendScheduledTasks(Document& document)
+{
+    releaseDocument(document);
+}
+
+void DebuggerSuspensionController::documentDidResumeScheduledTasks(Document& document)
+{
+    if (shouldHoldDocuments())
+        holdDocument(document);
+}
+
 bool DebuggerSuspensionController::shouldHoldDocuments()
 {
     return s_isFrameDebuggerPaused || (s_pageCountWithSessionHold && !s_isInContinuation);

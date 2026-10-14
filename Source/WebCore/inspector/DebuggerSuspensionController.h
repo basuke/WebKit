@@ -60,6 +60,10 @@ public:
 
     void documentDidBecomeCurrent(Document&);
 
+    // Another suspension, such as the back/forward cache, replaces the hold: the active DOM objects record one reason, and the cache would resume nothing if ours were recorded.
+    void documentWillSuspendScheduledTasks(Document&);
+    void documentDidResumeScheduledTasks(Document&);
+
 private:
     static void updateHeldDocumentsInAllPages();
 
