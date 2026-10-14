@@ -36,6 +36,7 @@
 #include "CommonVM.h"
 #include "DOMWrapperWorld.h"
 #include "DebuggerSuspensionController.h"
+#include "FrameDebuggerAgent.h"
 #include "FrameInspectorController.h"
 #include "GraphicsContext.h"
 #include "InspectorAnimationAgent.h"
@@ -116,6 +117,11 @@ PageInspectorController::PageInspectorController(Page& page, std::unique_ptr<Ins
 void PageInspectorController::suspendForDebuggerSession(DebuggerPauseSessionIdentifier sessionID)
 {
     CheckedRef { m_debuggerSuspensionController.get() }->addSessionHold(sessionID);
+
+    protect(m_page.get())->forEachLocalFrame([](LocalFrame& frame) {
+        if (CheckedPtr debuggerAgent = frame.inspectorController().instrumentingAgents().enabledFrameDebuggerAgent())
+            debuggerAgent->cancelPauseAtNextOpportunity();
+    });
 }
 
 void PageInspectorController::resumeFromDebuggerSession(DebuggerPauseSessionIdentifier sessionID)
