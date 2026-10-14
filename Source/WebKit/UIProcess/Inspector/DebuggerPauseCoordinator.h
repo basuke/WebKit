@@ -29,6 +29,7 @@
 #include <WebCore/FrameIdentifier.h>
 #include <WebCore/PageIdentifier.h>
 #include <WebCore/ProcessIdentifier.h>
+#include <wtf/Function.h>
 #include <wtf/HashSet.h>
 #include <wtf/Noncopyable.h>
 #include <wtf/TZoneMalloc.h>
@@ -56,8 +57,10 @@ public:
     void frameWasRemoved(WebCore::FrameIdentifier);
     void processDidTerminate(WebProcessProxy&);
     void closeSession();
+    void resumeSession();
 
 private:
+    void forEachPage(NOESCAPE const Function<void(WebProcessProxy&, WebCore::PageIdentifier)>&);
     void openSession();
     void notifySessionChanged(bool isPaused);
     void suspendPage(WebProcessProxy&, WebCore::PageIdentifier);

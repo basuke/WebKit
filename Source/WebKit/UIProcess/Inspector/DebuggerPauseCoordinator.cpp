@@ -108,19 +108,23 @@ void DebuggerPauseCoordinator::removeStoppingFramesIf(const Predicate& predicate
         notifySessionChanged(true);
 }
 
+// forEachWebContentProcess() does not list a provisional page, which can commit while the session is open.
+void DebuggerPauseCoordinator::forEachPage(NOESCAPE const Function<void(WebProcessProxy&, WebCore::PageIdentifier)>& function)
+{
+    Ref page = m_page.get();
+    page->forEachWebContentProcess(function);
+    if (RefPtr provisionalPage = page->provisionalPageProxy())
+        function(provisionalPage->process(), provisionalPage->webPageID());
+}
+
 void DebuggerPauseCoordinator::openSession()
 {
     ASSERT(!m_sessionID);
     m_sessionID = WebCore::DebuggerPauseSessionIdentifier::generate();
 
-    Ref page = m_page.get();
-    page->forEachWebContentProcess([&](WebProcessProxy& process, WebCore::PageIdentifier pageID) {
+    forEachPage([&](WebProcessProxy& process, WebCore::PageIdentifier pageID) {
         pageWasAdded(process, pageID);
     });
-
-    // forEachWebContentProcess() does not list a provisional page, which can commit while the session is open.
-    if (RefPtr provisionalPage = page->provisionalPageProxy())
-        pageWasAdded(provisionalPage->process(), provisionalPage->webPageID());
 
     notifySessionChanged(true);
 }
@@ -155,6 +159,20 @@ void DebuggerPauseCoordinator::suspendPage(WebProcessProxy& process, WebCore::Pa
     });
     if (!isTracked)
         m_suspendedPages.append({ process, pageID });
+}
+
+// The held frames are released first. Both messages go to a stopping frame's process in order, so its continuation runs unheld.
+void DebuggerPauseCoordinator::resumeSession()
+{
+    HashSet<WebCore::ProcessIdentifier> stoppingProcesses;
+    for (auto& [processID, frameID] : m_stoppingFrames)
+        stoppingProcesses.add(processID);
+
+    closeSession();
+    forEachPage([&](WebProcessProxy& process, WebCore::PageIdentifier pageID) {
+        if (stoppingProcesses.contains(process.coreProcessIdentifier()))
+            process.send(Messages::WebInspectorBackend::ResumeStoppedFramesForDebugger(), pageID);
+    });
 }
 
 void DebuggerPauseCoordinator::closeSession()

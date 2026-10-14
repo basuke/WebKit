@@ -3399,6 +3399,12 @@ void WebPageProxy::setGlobalDebuggerPauseEnabled(bool enabled)
         m_debuggerPauseCoordinator->closeSession();
 }
 
+void WebPageProxy::resumeDebuggerPauseSession()
+{
+    if (m_debuggerPauseCoordinator)
+        m_debuggerPauseCoordinator->resumeSession();
+}
+
 void WebPageProxy::debuggerPauseSessionDidChange(WebCore::DebuggerPauseSessionIdentifier sessionID, bool isPaused, const Vector<String>& stoppingTargetIDs)
 {
     m_inspectorController->debuggerPauseSessionDidChange(sessionID, isPaused, stoppingTargetIDs);

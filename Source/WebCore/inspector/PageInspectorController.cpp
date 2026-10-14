@@ -129,6 +129,15 @@ void PageInspectorController::resumeFromDebuggerSession(DebuggerPauseSessionIden
     CheckedRef { m_debuggerSuspensionController.get() }->removeSessionHold(sessionID);
 }
 
+void PageInspectorController::resumeStoppedFrames()
+{
+    protect(m_page.get())->forEachLocalFrame([](LocalFrame& frame) {
+        CheckedPtr debuggerAgent = frame.inspectorController().instrumentingAgents().enabledFrameDebuggerAgent();
+        if (debuggerAgent && debuggerAgent->isPaused())
+            std::ignore = debuggerAgent->resume();
+    });
+}
+
 PageInspectorController::~PageInspectorController()
 {
     m_instrumentingAgents->reset();

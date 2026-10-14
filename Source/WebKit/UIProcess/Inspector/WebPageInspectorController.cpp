@@ -223,7 +223,8 @@ Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::interruptFo
 
 Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::resumeDebuggerPauseSession()
 {
-    return makeUnexpected("Not implemented"_s);
+    protect(m_inspectedPage)->resumeDebuggerPauseSession();
+    return { };
 }
 
 void WebPageInspectorController::debuggerPauseSessionDidChange(WebCore::DebuggerPauseSessionIdentifier sessionID, bool isPaused, const Vector<String>& stoppingTargetIDs)
