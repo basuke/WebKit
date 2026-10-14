@@ -62,10 +62,7 @@ void DebuggerPauseCoordinator::frameDidContinue(WebProcessProxy& process, WebCor
 {
     if (!m_stoppingFrames.remove({ process.coreProcessIdentifier(), frameID }))
         return;
-    if (m_stoppingFrames.isEmpty())
-        closeSession();
-    else
-        notifySessionChanged(true);
+    stoppingFramesDidShrink();
 }
 
 // A frame that leaves its process, or is removed, may never report that it continued: the process can lose the
@@ -102,7 +99,13 @@ void DebuggerPauseCoordinator::removeStoppingFramesIf(const Predicate& predicate
 {
     if (!m_stoppingFrames.removeIf(predicate))
         return;
-    if (m_stoppingFrames.isEmpty())
+    stoppingFramesDidShrink();
+}
+
+// A session that was interrupted is the user's pause, not a frame's, so it stays open with no stopping frame until it is resumed.
+void DebuggerPauseCoordinator::stoppingFramesDidShrink()
+{
+    if (m_stoppingFrames.isEmpty() && !m_isInterrupted)
         closeSession();
     else
         notifySessionChanged(true);
@@ -161,6 +164,14 @@ void DebuggerPauseCoordinator::suspendPage(WebProcessProxy& process, WebCore::Pa
         m_suspendedPages.append({ process, pageID });
 }
 
+// A session with no stopping frame holds every process of an idle page.
+void DebuggerPauseCoordinator::interrupt()
+{
+    m_isInterrupted = true;
+    if (!m_sessionID)
+        openSession();
+}
+
 // The held frames are released first. Both messages go to a stopping frame's process in order, so its continuation runs unheld.
 void DebuggerPauseCoordinator::resumeSession()
 {
@@ -177,6 +188,7 @@ void DebuggerPauseCoordinator::resumeSession()
 
 void DebuggerPauseCoordinator::closeSession()
 {
+    m_isInterrupted = false;
     if (!m_sessionID) {
         m_stoppingFrames.clear();
         return;

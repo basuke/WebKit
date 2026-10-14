@@ -911,6 +911,7 @@ public:
     void frameWasRemovedForDebugger(WebCore::FrameIdentifier);
     void lastInspectorFrontendDidDisconnect();
     void setGlobalDebuggerPauseEnabled(bool);
+    bool interruptForDebugger();
     void resumeDebuggerPauseSession();
     void debuggerPauseSessionDidChange(WebCore::DebuggerPauseSessionIdentifier, bool isPaused, const Vector<String>& stoppingTargetIDs);
 

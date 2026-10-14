@@ -56,6 +56,7 @@ public:
     void frameDidChangeProcess(WebCore::FrameIdentifier, WebProcessProxy& newProcess);
     void frameWasRemoved(WebCore::FrameIdentifier);
     void processDidTerminate(WebProcessProxy&);
+    void interrupt();
     void closeSession();
     void resumeSession();
 
@@ -63,11 +64,13 @@ private:
     void forEachPage(NOESCAPE const Function<void(WebProcessProxy&, WebCore::PageIdentifier)>&);
     void openSession();
     void notifySessionChanged(bool isPaused);
+    void stoppingFramesDidShrink();
     void suspendPage(WebProcessProxy&, WebCore::PageIdentifier);
     template<typename Predicate> void removeStoppingFramesIf(const Predicate&);
 
     WeakRef<WebPageProxy> m_page;
     std::optional<WebCore::DebuggerPauseSessionIdentifier> m_sessionID;
+    bool m_isInterrupted { false };
     bool m_isDestroying { false };
     // A frame can be stopping in two processes at once: its old document has not reported continuing yet when its new document pauses.
     HashSet<std::pair<WebCore::ProcessIdentifier, WebCore::FrameIdentifier>> m_stoppingFrames;

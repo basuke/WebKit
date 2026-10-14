@@ -218,7 +218,9 @@ Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::setGlobalDe
 
 Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::interruptForDebugger()
 {
-    return makeUnexpected("Not implemented"_s);
+    if (!protect(m_inspectedPage)->interruptForDebugger())
+        return makeUnexpected("Global debugger pause is not enabled"_s);
+    return { };
 }
 
 Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::resumeDebuggerPauseSession()

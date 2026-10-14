@@ -3399,6 +3399,17 @@ void WebPageProxy::setGlobalDebuggerPauseEnabled(bool enabled)
         m_debuggerPauseCoordinator->closeSession();
 }
 
+bool WebPageProxy::interruptForDebugger()
+{
+    if (m_isClosed || !m_isGlobalDebuggerPauseEnabled || !protect(preferences())->siteIsolationGlobalDebuggerPauseEnabled() || !m_inspectorController->hasFrontends())
+        return false;
+
+    if (!m_debuggerPauseCoordinator)
+        m_debuggerPauseCoordinator = makeUnique<DebuggerPauseCoordinator>(*this);
+    m_debuggerPauseCoordinator->interrupt();
+    return true;
+}
+
 void WebPageProxy::resumeDebuggerPauseSession()
 {
     if (m_debuggerPauseCoordinator)
