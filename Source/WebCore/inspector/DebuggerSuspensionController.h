@@ -53,15 +53,17 @@ public:
     static void frameDebuggerDidPause(LocalFrame&);
     static void frameDebuggerDidContinue();
 
+    // A session hold on any page holds every page in the process, for the same reason.
     void addSessionHold(DebuggerPauseSessionIdentifier);
     void removeSessionHold(DebuggerPauseSessionIdentifier);
+    void inspectedPageDestroyed();
 
     void documentDidBecomeCurrent(Document&);
 
 private:
     static void updateHeldDocumentsInAllPages();
 
-    bool shouldHoldDocuments() const;
+    static bool shouldHoldDocuments();
     void updateHeldDocuments();
     void holdDocument(Document&);
     void releaseDocument(Document&);

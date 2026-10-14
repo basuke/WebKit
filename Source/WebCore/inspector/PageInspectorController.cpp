@@ -216,6 +216,8 @@ void PageInspectorController::siteIsolationFirstEnabled()
 
 void PageInspectorController::inspectedPageDestroyed()
 {
+    CheckedRef { m_debuggerSuspensionController.get() }->inspectedPageDestroyed();
+
     // Clean up resources and disconnect local and remote frontends.
     disconnectAllFrontends();
 

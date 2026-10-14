@@ -46,6 +46,7 @@ namespace WebCore {
 WTF_MAKE_TZONE_ALLOCATED_IMPL(DebuggerSuspensionController);
 
 static bool s_isFrameDebuggerPaused;
+static unsigned s_pageCountWithSessionHold;
 
 // The paused frame may be detached by the time the pause ends, so remember its page and identifier for the end-of-pause notification.
 static WeakPtr<Page>& pausedPage()
@@ -116,16 +117,30 @@ void DebuggerSuspensionController::frameDebuggerDidContinue()
 
 void DebuggerSuspensionController::addSessionHold(DebuggerPauseSessionIdentifier sessionID)
 {
+    bool hadSessionHold = !m_sessionHolds.isEmpty();
     if (!m_sessionHolds.add(sessionID).isNewEntry)
         return;
-    updateHeldDocuments();
+    if (!hadSessionHold)
+        ++s_pageCountWithSessionHold;
+    updateHeldDocumentsInAllPages();
 }
 
 void DebuggerSuspensionController::removeSessionHold(DebuggerPauseSessionIdentifier sessionID)
 {
     if (!m_sessionHolds.remove(sessionID))
         return;
-    updateHeldDocuments();
+    if (m_sessionHolds.isEmpty())
+        --s_pageCountWithSessionHold;
+    updateHeldDocumentsInAllPages();
+}
+
+void DebuggerSuspensionController::inspectedPageDestroyed()
+{
+    if (m_sessionHolds.isEmpty())
+        return;
+    m_sessionHolds.clear();
+    --s_pageCountWithSessionHold;
+    updateHeldDocumentsInAllPages();
 }
 
 void DebuggerSuspensionController::updateHeldDocumentsInAllPages()
@@ -141,9 +156,9 @@ void DebuggerSuspensionController::documentDidBecomeCurrent(Document& document)
         holdDocument(document);
 }
 
-bool DebuggerSuspensionController::shouldHoldDocuments() const
+bool DebuggerSuspensionController::shouldHoldDocuments()
 {
-    return s_isFrameDebuggerPaused || !m_sessionHolds.isEmpty();
+    return s_isFrameDebuggerPaused || s_pageCountWithSessionHold;
 }
 
 void DebuggerSuspensionController::updateHeldDocuments()
