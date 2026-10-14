@@ -3367,6 +3367,12 @@ void WebPageProxy::frameDidContinueForDebugger(IPC::Connection& connection, WebC
         m_debuggerPauseCoordinator->frameDidContinue(WebProcessProxy::fromConnection(connection), frameID);
 }
 
+void WebPageProxy::pageWasAddedToProcessForDebugger(WebProcessProxy& process, WebCore::PageIdentifier pageID)
+{
+    if (m_debuggerPauseCoordinator)
+        m_debuggerPauseCoordinator->pageWasAdded(process, pageID);
+}
+
 void WebPageProxy::frameDidChangeProcessForDebugger(WebCore::FrameIdentifier frameID, WebProcessProxy& newProcess)
 {
     if (m_debuggerPauseCoordinator)

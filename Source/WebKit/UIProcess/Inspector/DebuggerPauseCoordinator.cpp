@@ -27,6 +27,7 @@
 #include "DebuggerPauseCoordinator.h"
 
 #include "MessageSenderInlines.h"
+#include "ProvisionalPageProxy.h"
 #include "WebInspectorBackendMessages.h"
 #include "WebPageProxy.h"
 #include "WebProcessProxy.h"
@@ -50,7 +51,7 @@ void DebuggerPauseCoordinator::frameDidPause(WebProcessProxy& process, WebCore::
 {
     m_stoppingFrames.add({ process.coreProcessIdentifier(), frameID });
     if (!m_sessionID)
-        openSession(process);
+        openSession();
 }
 
 void DebuggerPauseCoordinator::frameDidContinue(WebProcessProxy& process, WebCore::FrameIdentifier frameID)
@@ -95,19 +96,45 @@ void DebuggerPauseCoordinator::removeStoppingFramesIf(const Predicate& predicate
         closeSession();
 }
 
-void DebuggerPauseCoordinator::openSession(WebProcessProxy& pausingProcess)
+void DebuggerPauseCoordinator::openSession()
 {
     ASSERT(!m_sessionID);
-    auto sessionID = WebCore::DebuggerPauseSessionIdentifier::generate();
-    m_sessionID = sessionID;
+    m_sessionID = WebCore::DebuggerPauseSessionIdentifier::generate();
 
     Ref page = m_page.get();
     page->forEachWebContentProcess([&](WebProcessProxy& process, WebCore::PageIdentifier pageID) {
-        // The pausing process already holds every page in it while its frame is paused.
-        if (&process == &pausingProcess)
-            return;
-        process.send(Messages::WebInspectorBackend::SuspendForDebugger(sessionID), pageID);
+        pageWasAdded(process, pageID);
+    });
+
+    // forEachWebContentProcess() does not list a provisional page, which can commit while the session is open.
+    if (RefPtr provisionalPage = page->provisionalPageProxy())
+        pageWasAdded(provisionalPage->process(), provisionalPage->webPageID());
+}
+
+void DebuggerPauseCoordinator::pageWasAdded(WebProcessProxy& process, WebCore::PageIdentifier pageID)
+{
+    // A process with a paused frame already holds every page in it.
+    if (!m_sessionID || isStoppingProcess(process))
+        return;
+    suspendPage(process, pageID);
+}
+
+void DebuggerPauseCoordinator::suspendPage(WebProcessProxy& process, WebCore::PageIdentifier pageID)
+{
+    // A provisional page can take over the identifier of a remote page the process already had, which may start from scratch,
+    // so send the message every time and only track the page once.
+    process.send(Messages::WebInspectorBackend::SuspendForDebugger(*m_sessionID), pageID);
+    bool isTracked = m_suspendedPages.containsIf([&](auto& entry) {
+        return entry.first.get() == &process && entry.second == pageID;
+    });
+    if (!isTracked)
         m_suspendedPages.append({ process, pageID });
+}
+
+bool DebuggerPauseCoordinator::isStoppingProcess(const WebProcessProxy& process) const
+{
+    return std::ranges::any_of(m_stoppingFrames, [&](auto& entry) {
+        return entry.first == process.coreProcessIdentifier();
     });
 }
 

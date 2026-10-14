@@ -325,6 +325,7 @@ void ProvisionalPageProxy::initializeWebPage(RefPtr<API::WebsitePolicies>&& webs
     }
     process->send(Messages::WebProcess::CreateWebPage(m_webPageID, WTF::move(creationParameters)), 0);
     process->addVisitedLinkStoreUser(page->visitedLinkStore(), page->identifier());
+    page->pageWasAddedToProcessForDebugger(process, m_webPageID);
 
     if (page->isLayerTreeFrozenDueToSwipeAnimation())
         send(Messages::WebPage::SwipeAnimationDidStart());

@@ -223,6 +223,8 @@ void RemotePageProxy::injectPageIntoNewProcess()
             })
         ), 0
     );
+
+    page->pageWasAddedToProcessForDebugger(m_process, m_webPageID);
 }
 
 void RemotePageProxy::processDidTerminate(WebProcessProxy& process, ProcessTerminationReason reason)
@@ -386,6 +388,8 @@ void RemotePageProxy::setDrawingArea(DrawingAreaProxy* drawingArea)
             })
         ), 0
     );
+
+    page->pageWasAddedToProcessForDebugger(m_process, m_webPageID);
 }
 
 void RemotePageProxy::setCurrentOrientation(WebCore::ScreenOrientationType orientation)

@@ -51,13 +51,16 @@ public:
     void frameDidPause(WebProcessProxy&, WebCore::FrameIdentifier);
     void frameDidContinue(WebProcessProxy&, WebCore::FrameIdentifier);
 
+    void pageWasAdded(WebProcessProxy&, WebCore::PageIdentifier);
     void frameDidChangeProcess(WebCore::FrameIdentifier, WebProcessProxy& newProcess);
     void frameWasRemoved(WebCore::FrameIdentifier);
     void processDidTerminate(WebProcessProxy&);
     void closeSession();
 
 private:
-    void openSession(WebProcessProxy& pausingProcess);
+    void openSession();
+    void suspendPage(WebProcessProxy&, WebCore::PageIdentifier);
+    bool isStoppingProcess(const WebProcessProxy&) const;
     template<typename Predicate> void removeStoppingFramesIf(const Predicate&);
 
     WeakRef<WebPageProxy> m_page;
