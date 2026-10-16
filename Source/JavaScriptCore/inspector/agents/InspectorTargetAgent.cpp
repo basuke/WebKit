@@ -79,6 +79,27 @@ Protocol::ErrorStringOr<void> InspectorTargetAgent::resume(const String& targetI
     return { };
 }
 
+Protocol::ErrorStringOr<void> InspectorTargetAgent::setGlobalDebuggerPauseEnabled(bool enabled)
+{
+    if (!m_debuggerPauseSessionClient)
+        return makeUnexpected("Debugger pause sessions are not supported"_s);
+    return m_debuggerPauseSessionClient->setGlobalDebuggerPauseEnabled(enabled);
+}
+
+Protocol::ErrorStringOr<void> InspectorTargetAgent::interruptForDebugger()
+{
+    if (!m_debuggerPauseSessionClient)
+        return makeUnexpected("Debugger pause sessions are not supported"_s);
+    return m_debuggerPauseSessionClient->interruptForDebugger();
+}
+
+Protocol::ErrorStringOr<void> InspectorTargetAgent::resumeDebuggerPauseSession()
+{
+    if (!m_debuggerPauseSessionClient)
+        return makeUnexpected("Debugger pause sessions are not supported"_s);
+    return m_debuggerPauseSessionClient->resumeDebuggerPauseSession();
+}
+
 Protocol::ErrorStringOr<void> InspectorTargetAgent::sendMessageToTarget(const String& targetId, const String& message)
 {
     CheckedPtr target = m_targets.get(targetId);
@@ -159,6 +180,17 @@ void InspectorTargetAgent::didCommitProvisionalTarget(const String& oldTargetID,
         return;
 
     m_frontendDispatcher->didCommitProvisionalTarget(oldTargetID, committedTargetID);
+}
+
+void InspectorTargetAgent::debuggerPauseSessionChanged(const String& sessionID, bool isPaused, const Vector<String>& stoppingTargetIDs, double timestamp)
+{
+    if (!m_isConnected)
+        return;
+
+    auto targetIDs = JSON::ArrayOf<String>::create();
+    for (auto& targetID : stoppingTargetIDs)
+        targetIDs->addItem(targetID);
+    m_frontendDispatcher->debuggerPauseSessionChanged(sessionID, isPaused ? Protocol::Target::DebuggerPauseSessionState::Paused : Protocol::Target::DebuggerPauseSessionState::Closed, WTF::move(targetIDs), timestamp);
 }
 
 FrontendChannel::ConnectionType InspectorTargetAgent::connectionType() const
