@@ -1,0 +1,31 @@
+Test that DebuggerManager pauses a page through the pause session, which holds even idle frames, and falls back to pausing each frame when global pause is off.
+
+
+
+== Running test suite: SiteIsolation.Debugger.PauseSessionFrontendPauseButton
+-- Running test case: SiteIsolation.Debugger.PauseSessionFrontendPauseButton.Setup
+PASS: Should find the frame target for frame A.
+PASS: Frame A's interval should be running.
+
+-- Running test case: SiteIsolation.Debugger.PauseSessionFrontendPauseButton.PauseIdlePage
+PASS: DebuggerManager should be paused.
+PASS: The Paused event should be dispatched once.
+PASS: No frame should be stopped.
+PASS: The main frame's interval should not advance while paused.
+PASS: Frame A's interval should not advance while paused.
+PASS: DebuggerManager should not be paused after resuming.
+PASS: The Resumed event should be dispatched once.
+PASS: The main frame's interval after resuming should advance.
+PASS: Frame A's interval after resuming should advance.
+
+-- Running test case: SiteIsolation.Debugger.PauseSessionFrontendPauseButton.NoStrayPause
+PASS: DebuggerManager should still not be paused.
+PASS: The main frame should not be paused.
+PASS: Frame A should not be paused.
+
+-- Running test case: SiteIsolation.Debugger.PauseSessionFrontendPauseButton.FallbackWhenDisabled
+PASS: DebuggerManager should be paused.
+PASS: There should be no session.
+PASS: A frame should be stopped.
+PASS: DebuggerManager should not be paused after resuming.
+
