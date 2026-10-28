@@ -37,6 +37,13 @@
             ]
         },
         {
+            "name": "setGlobalDebuggerPauseEnabled",
+            "description": "Sets whether a pause in one frame holds the frames of the page in other processes. Enabled by default.",
+            "parameters": [
+                { "name": "enabled", "type": "boolean" }
+            ]
+        },
+        {
             "name": "resumeDebuggerPauseSession",
             "description": "Resumes every stopped frame of the page's debugger pause session and releases every frame it holds."
         },

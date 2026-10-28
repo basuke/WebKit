@@ -48,6 +48,7 @@ public:
     class DebuggerPauseSessionClient : public AbstractCanMakeCheckedPtr {
     public:
         virtual ~DebuggerPauseSessionClient() = default;
+        virtual Protocol::ErrorStringOr<void> setGlobalDebuggerPauseEnabled(bool) = 0;
         virtual Protocol::ErrorStringOr<void> resumeDebuggerPauseSession() = 0;
     };
 
@@ -61,6 +62,7 @@ public:
     // TargetBackendDispatcherHandler
     Protocol::ErrorStringOr<void> setPauseOnStart(bool) final;
     Protocol::ErrorStringOr<void> resume(const String& targetId) final;
+    Protocol::ErrorStringOr<void> setGlobalDebuggerPauseEnabled(bool) final;
     Protocol::ErrorStringOr<void> resumeDebuggerPauseSession() final;
     Protocol::ErrorStringOr<void> sendMessageToTarget(const String& targetId, const String& message) final;
 

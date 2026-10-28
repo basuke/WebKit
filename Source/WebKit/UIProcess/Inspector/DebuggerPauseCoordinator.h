@@ -60,6 +60,8 @@ public:
     void processDidTerminate(WebProcessProxy&);
     void mainFrameDidStartProvisionalLoad();
     void openSessionIfFramesAreStopping();
+    bool isEnabled() const { return m_isEnabled; }
+    void setEnabled(bool);
     void closeSession();
     void resumeSession();
 
@@ -73,6 +75,7 @@ private:
 
     WeakRef<WebPageProxy> m_page;
     std::optional<WebCore::DebuggerPauseSessionIdentifier> m_sessionID;
+    bool m_isEnabled { true };
     bool m_isDestroying { false };
     // A frame can be stopping in two processes at once: its old document has not reported continuing yet when its new document pauses.
     HashSet<std::pair<WebCore::ProcessIdentifier, WebCore::FrameIdentifier>> m_stoppingFrames;

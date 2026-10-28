@@ -54,6 +54,8 @@ DebuggerPauseCoordinator::~DebuggerPauseCoordinator()
 void DebuggerPauseCoordinator::frameDidPause(WebProcessProxy& process, WebCore::FrameIdentifier frameID)
 {
     bool isNewStoppingFrame = m_stoppingFrames.add({ process.coreProcessIdentifier(), frameID }).isNewEntry;
+    if (!m_isEnabled)
+        return;
     if (!m_sessionID) {
         if (!protect(m_page.get())->inspectorController().isMainFrameNavigating())
             openSession();
@@ -181,8 +183,20 @@ void DebuggerPauseCoordinator::mainFrameDidStartProvisionalLoad()
 
 void DebuggerPauseCoordinator::openSessionIfFramesAreStopping()
 {
-    if (!m_sessionID && !m_stoppingFrames.isEmpty() && !protect(m_page.get())->inspectorController().isMainFrameNavigating())
+    if (!m_sessionID && m_isEnabled && !m_stoppingFrames.isEmpty() && !protect(m_page.get())->inspectorController().isMainFrameNavigating())
         openSession();
+}
+
+// While global pause is off the stopping frames are still tracked, so that turning it on again holds the other frames while one is still stopped.
+void DebuggerPauseCoordinator::setEnabled(bool enabled)
+{
+    if (m_isEnabled == enabled)
+        return;
+    m_isEnabled = enabled;
+    if (!enabled)
+        endSession();
+    else
+        openSessionIfFramesAreStopping();
 }
 
 // The session closes as the stopping frames report that they continued, so the other frames stay held until the resumed code goes idle, as when a frame is resumed from its own target.
