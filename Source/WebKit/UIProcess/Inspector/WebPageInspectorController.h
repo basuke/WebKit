@@ -57,10 +57,13 @@ class ProvisionalPageProxy;
 enum class ProvisionalLoadIsReplaced : bool;
 struct WebPageAgentContext;
 
-class WebPageInspectorController {
+class WebPageInspectorController : public Inspector::InspectorTargetAgent::DebuggerPauseSessionClient, public CanMakeCheckedPtr<WebPageInspectorController> {
     WTF_MAKE_TZONE_ALLOCATED(WebPageInspectorController);
     WTF_MAKE_NONCOPYABLE(WebPageInspectorController);
+    WTF_OVERRIDE_DELETE_FOR_CHECKED_PTR(WebPageInspectorController);
 public:
+    OVERRIDE_ABSTRACT_CAN_MAKE_CHECKEDPTR(CanMakeCheckedPtr);
+
     WebPageInspectorController(WebPageProxy&);
     ~WebPageInspectorController();
 
@@ -123,6 +126,9 @@ public:
 
 private:
     void browsingContextGroupPageWasAddedToProcess(WebProcessProxy&, WebCore::PageIdentifier);
+
+    // InspectorTargetAgent::DebuggerPauseSessionClient
+    Inspector::Protocol::ErrorStringOr<void> resumeDebuggerPauseSession() final;
 
     WebPageAgentContext LEGACY_NODELETE webPageAgentContext();
     void createLazyAgents();

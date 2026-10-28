@@ -114,6 +114,14 @@ void DebuggerPauseCoordinator::stoppingFramesDidShrink()
         notifySessionChanged(true);
 }
 
+// forEachWebContentProcess() skips the provisional page, which can commit during the session.
+static void forEachProcessOfPage(WebPageProxy& page, NOESCAPE const Function<void(WebProcessProxy&, WebCore::PageIdentifier)>& function)
+{
+    page.forEachWebContentProcess(function);
+    if (RefPtr provisionalPage = page.provisionalPageProxy())
+        function(protect(provisionalPage->process()), provisionalPage->webPageID());
+}
+
 void DebuggerPauseCoordinator::openSession()
 {
     ASSERT(!m_sessionID);
@@ -175,6 +183,22 @@ void DebuggerPauseCoordinator::openSessionIfFramesAreStopping()
 {
     if (!m_sessionID && !m_stoppingFrames.isEmpty() && !protect(m_page.get())->inspectorController().isMainFrameNavigating())
         openSession();
+}
+
+// The session closes as the stopping frames report that they continued, so the other frames stay held until the resumed code goes idle, as when a frame is resumed from its own target.
+void DebuggerPauseCoordinator::resumeSession()
+{
+    if (!m_sessionID)
+        return;
+
+    HashSet<WebCore::ProcessIdentifier> stoppingProcesses;
+    for (auto& [processID, frameID] : m_stoppingFrames)
+        stoppingProcesses.add(processID);
+
+    forEachProcessOfPage(protect(m_page.get()), [&](WebProcessProxy& process, WebCore::PageIdentifier pageID) {
+        if (stoppingProcesses.contains(process.coreProcessIdentifier()))
+            process.send(Messages::WebInspectorBackend::ResumeStoppedFramesForDebugger(), pageID);
+    });
 }
 
 void DebuggerPauseCoordinator::closeSession()

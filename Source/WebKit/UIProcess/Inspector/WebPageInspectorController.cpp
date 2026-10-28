@@ -86,7 +86,7 @@ WebPageInspectorController::WebPageInspectorController(WebPageProxy& inspectedPa
     , m_backendDispatcher(BackendDispatcher::create(m_frontendRouter.copyRef()))
     , m_inspectedPage(inspectedPage)
 {
-    auto targetAgent = makeUniqueRef<InspectorTargetAgent>(m_frontendRouter, m_backendDispatcher);
+    auto targetAgent = makeUniqueRef<InspectorTargetAgent>(m_frontendRouter, m_backendDispatcher, this);
     m_targetAgent = targetAgent.ptr();
     m_agents.append(WTF::move(targetAgent));
 }
@@ -212,6 +212,13 @@ void WebPageInspectorController::setIndicating(bool indicating)
 #endif
 }
 #endif
+
+Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::resumeDebuggerPauseSession()
+{
+    if (m_debuggerPauseCoordinator)
+        CheckedPtr { m_debuggerPauseCoordinator }->resumeSession();
+    return { };
+}
 
 void WebPageInspectorController::debuggerPauseSessionDidChange(WebCore::DebuggerPauseSessionIdentifier sessionID, bool isPaused, const Vector<String>& stoppingTargetIDs)
 {

@@ -163,6 +163,14 @@ void PageInspectorController::endPauseSuppressionForNavigation()
     });
 }
 
+void PageInspectorController::resumeStoppedFrames()
+{
+    forEachEnabledFrameDebuggerAgent([](FrameDebuggerAgent& debuggerAgent) {
+        if (debuggerAgent.isPaused())
+            std::ignore = debuggerAgent.resume();
+    });
+}
+
 void PageInspectorController::forEachEnabledFrameDebuggerAgent(NOESCAPE const Function<void(FrameDebuggerAgent&)>& function)
 {
     protect(m_page.get())->forEachLocalFrame([&](LocalFrame& frame) {
