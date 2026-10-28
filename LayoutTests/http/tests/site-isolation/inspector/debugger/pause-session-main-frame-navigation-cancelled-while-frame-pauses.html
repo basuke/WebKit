@@ -1,0 +1,58 @@
+<!-- webkit-test-runner [ SiteIsolationEnabled=true SiteIsolationGlobalDebuggerPauseEnabled=true ] -->
+<script src="/inspector/resources/inspector-test.js"></script>
+<script src="/site-isolation/inspector/debugger/resources/site-isolation-debugger-test-utilities.js"></script>
+<script src="/site-isolation/inspector/debugger/resources/global-pause-test-utilities.js"></script>
+<script>
+window.mainTicks = 0;
+setInterval(() => { window.mainTicks++; }, 50);
+
+function test() {
+    let suite = InspectorTest.createAsyncSuite("SiteIsolation.Debugger.MainFrameNavigationWhileStopped");
+
+    suite.addTestCase({
+        name: "SiteIsolation.Debugger.MainFrameNavigationWhileStopped.FramePausesDuringCancelledNavigation",
+        description: "A frame that stops while the main frame navigates should hold the page again if the navigation does not commit, unlike the frame that was resumed when the navigation started.",
+        async test() {
+            let firstTarget = await waitForFrameTargetForURLContaining("same-process-frame.html?first");
+            let secondTarget = await waitForFrameTargetForURLContaining("same-process-frame.html?second");
+            InspectorTest.expectNotNull(firstTarget, "Should find the frame target of the first cross-site frame.");
+            InspectorTest.expectNotNull(secondTarget, "Should find the frame target of the second cross-site frame.");
+            if (!firstTarget || !secondTarget)
+                return;
+
+            await GlobalPause.pause(firstTarget);
+
+            // The second frame is held now. It pauses once it runs again, which is when the navigation starts.
+            await GlobalPause.evaluate(secondTarget, "window.stopOnce = true; setInterval(() => { if (window.stopOnce) { window.stopOnce = false; debugger; } }, 20); 0");
+            let secondPaused = new Promise((resolve) => {
+                let listener = WI.debuggerManager.addEventListener(WI.DebuggerManager.Event.CallFramesDidChange, (event) => {
+                    if (event.data.target !== secondTarget || !WI.debuggerManager.dataForTarget(secondTarget).paused)
+                        return;
+                    WI.debuggerManager.removeEventListener(WI.DebuggerManager.Event.CallFramesDidChange, listener);
+                    resolve();
+                });
+            });
+
+            GlobalPause.evaluate(InspectorTest.mainFrameTarget, `location.href = "/resources/load-and-stall.py?name=../site-isolation/inspector/debugger/resources/same-process-frame.html&mimeType=text/html&stallAt=0&stallFor=10&rand=" + Math.random()`);
+            await secondPaused;
+            InspectorTest.expectFalse(WI.debuggerManager.dataForTarget(firstTarget).paused, "The first frame should have been resumed when the navigation started.");
+
+            let opened = GlobalPause.awaitSessionEvent((data) => data.state === "paused");
+            await GlobalPause.evaluate(InspectorTest.mainFrameTarget, "window.stop()");
+            let session = await opened;
+            InspectorTest.expectEqual(session.stoppingTargetIds.length, 1, "The session should open again with only the second frame stopped.");
+            await GlobalPause.expectHeld(InspectorTest.mainFrameTarget, "window.mainTicks", "The main frame's interval", "after the navigation was cancelled");
+
+            await GlobalPause.resumeAll();
+            await GlobalPause.expectRunning(InspectorTest.mainFrameTarget, "window.mainTicks", await GlobalPause.evaluate(InspectorTest.mainFrameTarget, "window.mainTicks"), "The main frame's interval after resuming");
+        }
+    });
+
+    suite.runTestCasesAndFinish();
+}
+</script>
+<body onload="runTest()">
+<p>Tests that a frame that stops while the main frame navigates holds the page again when the navigation does not commit.</p>
+<iframe src="http://localhost:8000/site-isolation/inspector/debugger/resources/same-process-frame.html?first"></iframe>
+<iframe src="https://localhost:8443/site-isolation/inspector/debugger/resources/same-process-frame.html?second"></iframe>
+</body>

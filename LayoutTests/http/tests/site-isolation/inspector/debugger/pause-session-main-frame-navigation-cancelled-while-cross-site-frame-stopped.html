@@ -11,7 +11,7 @@ function test() {
 
     suite.addTestCase({
         name: "SiteIsolation.Debugger.MainFrameNavigationWhileStopped.NavigationCancelled",
-        description: "A navigation of the main frame should release the page while a cross-site frame is stopped, and the page should be held again if the navigation does not commit.",
+        description: "A navigation of the main frame should resume a cross-site frame that is stopped, and the page should keep running if the navigation does not commit.",
         async test() {
             let frameTarget = await waitForFrameTargetForURLContaining("same-process-frame.html");
             InspectorTest.expectNotNull(frameTarget, "Should find the frame target of the cross-site frame.");
@@ -26,10 +26,9 @@ function test() {
 
             await GlobalPause.evaluate(InspectorTest.mainFrameTarget, "window.stop()");
             await GlobalPause.sleep(200);
-            let before = await GlobalPause.expectHeld(InspectorTest.mainFrameTarget, "window.mainTicks", "The main frame's interval", "after the navigation was cancelled");
-
-            await GlobalPause.resumeAll();
-            await GlobalPause.expectRunning(InspectorTest.mainFrameTarget, "window.mainTicks", before, "The main frame's interval after resuming");
+            InspectorTest.expectFalse(WI.debuggerManager.paused, "The debugger should not be paused after the navigation was cancelled.");
+            let before = await GlobalPause.evaluate(InspectorTest.mainFrameTarget, "window.mainTicks");
+            await GlobalPause.expectRunning(InspectorTest.mainFrameTarget, "window.mainTicks", before, "The main frame's interval after the navigation was cancelled");
         }
     });
 
@@ -37,6 +36,6 @@ function test() {
 }
 </script>
 <body onload="runTest()">
-<p>Tests that a navigation of the main frame that does not commit leaves the page held while a cross-site frame is stopped in the debugger.</p>
+<p>Tests that a navigation of the main frame that does not commit leaves the page running after it resumed a cross-site frame that was stopped in the debugger.</p>
 <iframe src="http://localhost:8000/site-isolation/inspector/debugger/resources/same-process-frame.html"></iframe>
 </body>

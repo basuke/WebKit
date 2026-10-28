@@ -1,0 +1,69 @@
+<!-- webkit-test-runner [ SiteIsolationEnabled=true SiteIsolationGlobalDebuggerPauseEnabled=true ] -->
+<script src="/inspector/resources/inspector-test.js"></script>
+<script src="/site-isolation/inspector/debugger/resources/site-isolation-debugger-test-utilities.js"></script>
+<script src="/site-isolation/inspector/debugger/resources/global-pause-test-utilities.js"></script>
+<script>
+function pauseHere()
+{
+    debugger;
+}
+
+function test() {
+    let suite = InspectorTest.createAsyncSuite("SiteIsolation.Debugger.MainFrameNavigationWhileStopped");
+
+    async function navigateAndMeasureResume(origin)
+    {
+        let resumed = WI.debuggerManager.awaitEvent(WI.DebuggerManager.Event.Resumed);
+        let loaded = InspectorTest.awaitEvent(FrontendTestHarness.Event.TestPageDidLoad);
+        InspectorTest.deferOutputUntilTestPageIsReloaded();
+
+        let navigationStartTime = Date.now();
+        InspectorTest.evaluateInPage(`location.href = "${origin}/resources/load-and-stall.py?name=../site-isolation/inspector/debugger/pause-session-main-frame-navigation-resumes-frames-of-other-processes.html&mimeType=text/html&stallAt=0&stallFor=6&rand=${Math.random()}"`);
+        await resumed;
+        let resumeTime = Date.now() - navigationStartTime;
+        await loaded;
+        return resumeTime;
+    }
+
+    suite.addTestCase({
+        name: "SiteIsolation.Debugger.MainFrameNavigationWhileStopped.CrossSiteFrameStopped",
+        description: "A navigation of the main frame should resume a frame that is stopped in another process when it starts, not when the old document goes away.",
+        async test() {
+            let frameTarget = await waitForFrameTargetForURLContaining("same-process-frame.html");
+            InspectorTest.expectNotNull(frameTarget, "Should find the frame target of the cross-site frame.");
+            if (!frameTarget)
+                return;
+
+            await GlobalPause.pause(frameTarget);
+
+            let resumeTime = await navigateAndMeasureResume("");
+            InspectorTest.expectLessThan(resumeTime, 3000, "The cross-site frame should resume before the response of the navigation arrives.");
+        }
+    });
+
+    suite.addTestCase({
+        name: "SiteIsolation.Debugger.MainFrameNavigationWhileStopped.MainFrameStoppedCrossSiteNavigation",
+        description: "A navigation of the main frame to another site should resume the stopped main frame when it starts, although the navigation continues in another process.",
+        async test() {
+            let paused = WI.debuggerManager.awaitEvent(WI.DebuggerManager.Event.Paused);
+            InspectorTest.evaluateInPage("setTimeout(pauseHere)");
+            await paused;
+
+            let resumeTime = await navigateAndMeasureResume("https://localhost:8443");
+            InspectorTest.expectLessThan(resumeTime, 3000, "The main frame should resume before the response of the navigation arrives.");
+        }
+    });
+
+    suite.runTestCasesAndFinish();
+}
+</script>
+<body onload="runTest()">
+<p>Tests that a navigation of the main frame resumes the frames that are stopped in the debugger, in any process, when the navigation starts.</p>
+<script>
+if (!location.pathname.includes("load-and-stall")) {
+    let iframe = document.createElement("iframe");
+    iframe.src = "http://localhost:8000/site-isolation/inspector/debugger/resources/same-process-frame.html";
+    document.body.appendChild(iframe);
+}
+</script>
+</body>
