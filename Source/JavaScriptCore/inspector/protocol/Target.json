@@ -44,6 +44,10 @@
             ]
         },
         {
+            "name": "interruptForDebugger",
+            "description": "Opens a debugger pause session at once, holding every frame of the page in every process, whether or not any frame is stopped."
+        },
+        {
             "name": "resumeDebuggerPauseSession",
             "description": "Resumes every stopped frame of the page's debugger pause session and releases every frame it holds."
         },

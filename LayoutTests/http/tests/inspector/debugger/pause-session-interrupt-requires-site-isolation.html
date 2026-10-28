@@ -1,0 +1,39 @@
+<!-- webkit-test-runner [ SiteIsolationEnabled=false SiteIsolationGlobalDebuggerPauseEnabled=true ] -->
+<!DOCTYPE html>
+<html>
+<head>
+<script src="../resources/inspector-test.js"></script>
+<script>
+function test()
+{
+    let suite = InspectorTest.createAsyncSuite("Debugger.InterruptWithoutSiteIsolation");
+
+    suite.addTestCase({
+        name: "Debugger.InterruptWithoutSiteIsolation.Refused",
+        description: "The page should not be interrupted for the debugger without site isolation, although global pause is enabled for the page.",
+        async test() {
+            let sessionEvents = 0;
+            let listener = WI.debuggerManager.addEventListener(WI.DebuggerManager.Event.PauseSessionChanged, () => { ++sessionEvents; });
+
+            let error = null;
+            try {
+                await WI.backendTarget.TargetAgent.interruptForDebugger();
+            } catch (e) {
+                error = e;
+            }
+            InspectorTest.expectNotNull(error, "interruptForDebugger should fail.");
+            InspectorTest.expectEqual(sessionEvents, 0, "No session event should be reported.");
+            InspectorTest.expectFalse(WI.debuggerManager.paused, "The debugger should not be paused.");
+
+            WI.debuggerManager.removeEventListener(WI.DebuggerManager.Event.PauseSessionChanged, listener);
+        }
+    });
+
+    suite.runTestCasesAndFinish();
+}
+</script>
+</head>
+<body onload="runTest()">
+<p>Tests that interruptForDebugger is refused without site isolation.</p>
+</body>
+</html>

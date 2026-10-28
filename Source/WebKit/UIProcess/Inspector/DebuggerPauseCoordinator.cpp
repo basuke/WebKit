@@ -106,11 +106,12 @@ void DebuggerPauseCoordinator::removeStoppingFramesIf(NOESCAPE const Predicate& 
     stoppingFramesDidShrink();
 }
 
+// A session that was interrupted is the user's pause, not a frame's, so it stays open with no stopping frame until it is resumed.
 void DebuggerPauseCoordinator::stoppingFramesDidShrink()
 {
     if (!m_sessionID)
         return;
-    if (m_stoppingFrames.isEmpty())
+    if (m_stoppingFrames.isEmpty() && !m_isInterrupted)
         closeSession();
     else
         notifySessionChanged(true);
@@ -178,7 +179,21 @@ void DebuggerPauseCoordinator::suspendPage(WebProcessProxy& process, WebCore::Pa
 
 void DebuggerPauseCoordinator::mainFrameDidStartProvisionalLoad()
 {
+    if (m_isInterrupted)
+        return;
     endSession();
+}
+
+// The frames that were stopping belonged to the old document.
+void DebuggerPauseCoordinator::mainFrameDidCommitLoad()
+{
+    if (!m_isInterrupted) {
+        closeSession();
+        return;
+    }
+    m_stoppingFrames.clear();
+    if (m_sessionID)
+        notifySessionChanged(true);
 }
 
 void DebuggerPauseCoordinator::openSessionIfFramesAreStopping()
@@ -199,11 +214,27 @@ void DebuggerPauseCoordinator::setEnabled(bool enabled)
         openSessionIfFramesAreStopping();
 }
 
+// A session that is already open is reported again, for a frontend that connected after it opened.
+void DebuggerPauseCoordinator::interrupt()
+{
+    m_isInterrupted = true;
+    if (!m_sessionID)
+        openSession();
+    else
+        notifySessionChanged(true);
+}
+
 // The session closes as the stopping frames report that they continued, so the other frames stay held until the resumed code goes idle, as when a frame is resumed from its own target.
 void DebuggerPauseCoordinator::resumeSession()
 {
     if (!m_sessionID)
         return;
+
+    m_isInterrupted = false;
+    if (m_stoppingFrames.isEmpty()) {
+        closeSession();
+        return;
+    }
 
     HashSet<WebCore::ProcessIdentifier> stoppingProcesses;
     for (auto& [processID, frameID] : m_stoppingFrames)
@@ -223,6 +254,7 @@ void DebuggerPauseCoordinator::closeSession()
 
 void DebuggerPauseCoordinator::endSession()
 {
+    m_isInterrupted = false;
     if (!m_sessionID)
         return;
 

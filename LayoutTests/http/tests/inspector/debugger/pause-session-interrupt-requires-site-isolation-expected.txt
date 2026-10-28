@@ -1,0 +1,9 @@
+Tests that interruptForDebugger is refused without site isolation.
+
+
+== Running test suite: Debugger.InterruptWithoutSiteIsolation
+-- Running test case: Debugger.InterruptWithoutSiteIsolation.Refused
+PASS: interruptForDebugger should fail.
+PASS: No session event should be reported.
+PASS: The debugger should not be paused.
+

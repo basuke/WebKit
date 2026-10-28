@@ -218,6 +218,20 @@ Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::setGlobalDe
     return { };
 }
 
+Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::interruptForDebugger()
+{
+    Ref inspectedPage = m_inspectedPage;
+    Ref preferences = inspectedPage->preferences();
+    if (inspectedPage->isClosed() || !preferences->siteIsolationEnabled() || !preferences->siteIsolationGlobalDebuggerPauseEnabled())
+        return makeUnexpected("Global debugger pause is not enabled"_s);
+
+    CheckedRef coordinator = ensureDebuggerPauseCoordinator();
+    if (!coordinator->isEnabled())
+        return makeUnexpected("Global debugger pause is not enabled"_s);
+    coordinator->interrupt();
+    return { };
+}
+
 Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::resumeDebuggerPauseSession()
 {
     if (m_debuggerPauseCoordinator)
@@ -447,7 +461,7 @@ void WebPageInspectorController::mainFrameDidCommitLoad()
 {
     m_isMainFrameNavigating = false;
     if (m_debuggerPauseCoordinator)
-        CheckedPtr { m_debuggerPauseCoordinator }->closeSession();
+        CheckedPtr { m_debuggerPauseCoordinator }->mainFrameDidCommitLoad();
 }
 
 void WebPageInspectorController::mainFrameProvisionalLoadDidEnd(ProvisionalLoadIsReplaced isReplaced)

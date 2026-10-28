@@ -129,6 +129,7 @@ private:
 
     // InspectorTargetAgent::DebuggerPauseSessionClient
     Inspector::Protocol::ErrorStringOr<void> setGlobalDebuggerPauseEnabled(bool) final;
+    Inspector::Protocol::ErrorStringOr<void> interruptForDebugger() final;
     Inspector::Protocol::ErrorStringOr<void> resumeDebuggerPauseSession() final;
 
     WebPageAgentContext LEGACY_NODELETE webPageAgentContext();
