@@ -1694,19 +1694,20 @@ WI._debuggerDidResume = function(event)
 
 WI._updateDebuggerKeyboardShortcuts = function()
 {
-    let paused = WI.debuggerManager.paused;
+    // An interrupted page is paused with no call frame to step from.
+    let canStep = WI.debuggerManager.paused && !!WI.debuggerManager.activeCallFrame;
 
-    WI.stepOverKeyboardShortcut.disabled = !paused;
-    WI.stepIntoKeyboardShortcut.disabled = !paused;
-    WI.stepOutKeyboardShortcut.disabled = !paused;
-    WI.stepOverAlternateKeyboardShortcut.disabled = !paused;
-    WI.stepIntoAlternateKeyboardShortcut.disabled = !paused;
-    WI.stepOutAlternateKeyboardShortcut.disabled = !paused;
+    WI.stepOverKeyboardShortcut.disabled = !canStep;
+    WI.stepIntoKeyboardShortcut.disabled = !canStep;
+    WI.stepOutKeyboardShortcut.disabled = !canStep;
+    WI.stepOverAlternateKeyboardShortcut.disabled = !canStep;
+    WI.stepIntoAlternateKeyboardShortcut.disabled = !canStep;
+    WI.stepOutAlternateKeyboardShortcut.disabled = !canStep;
 
     // COMPATIBILITY (iOS 13.4): Debugger.stepNext did not exist.
     if (InspectorBackend.hasCommand("Debugger.stepNext")) {
-        WI.stepNextKeyboardShortcut.disabled = !paused;
-        WI.stepNextAlternateKeyboardShortcut.disabled = !paused;
+        WI.stepNextKeyboardShortcut.disabled = !canStep;
+        WI.stepNextAlternateKeyboardShortcut.disabled = !canStep;
     }
 };
 

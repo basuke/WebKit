@@ -1768,7 +1768,12 @@ WI.SourcesNavigationSidebarPanel = class SourcesNavigationSidebarPanel extends W
 
         this._updatePauseReasonGotoArrow();
 
-        let target = WI.debuggerManager.activeCallFrame.target;
+        // A page can be paused with no stopping frame, when it is interrupted while idle.
+        let activeCallFrame = WI.debuggerManager.activeCallFrame;
+        if (!activeCallFrame)
+            return false;
+
+        let target = activeCallFrame.target;
         let targetData = WI.debuggerManager.dataForTarget(target);
         return this._updatePauseReasonSection(target, targetData.pauseReason, targetData.pauseData);
     }
@@ -2628,13 +2633,15 @@ WI.SourcesNavigationSidebarPanel = class SourcesNavigationSidebarPanel extends W
         if (this._updatePauseReason())
             this._pauseReasonContainer.hidden = false;
 
+        // An interrupted page is paused with no call frame to step from.
+        let canStep = !!WI.debuggerManager.activeCallFrame;
         this._debuggerPauseResumeButtonItem.enabled = true;
         this._debuggerPauseResumeButtonItem.toggled = true;
-        this._debuggerStepOverButtonItem.enabled = true;
-        this._debuggerStepIntoButtonItem.enabled = true;
-        this._debuggerStepOutButtonItem.enabled = true;
+        this._debuggerStepOverButtonItem.enabled = canStep;
+        this._debuggerStepIntoButtonItem.enabled = canStep;
+        this._debuggerStepOutButtonItem.enabled = canStep;
         if (this._debuggerStepNextButtonItem)
-            this._debuggerStepNextButtonItem.enabled = true;
+            this._debuggerStepNextButtonItem.enabled = canStep;
 
         this.element.classList.add("paused");
     }
