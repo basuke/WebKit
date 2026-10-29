@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<script>
+window.events = [];
+window.untrustedLoadEvents = 0;
+document.addEventListener("readystatechange", () => events.push("readystatechange:" + document.readyState));
+document.addEventListener("DOMContentLoaded", () => events.push("DOMContentLoaded"));
+window.addEventListener("load", (event) => events.push(event.target === document ? "load" : "unexpected load"));
+window.addEventListener("pageshow", () => events.push("pageshow"));
+
+function imageLoaded(event)
+{
+    if (event.isTrusted)
+        events.push("img:load");
+    else
+        untrustedLoadEvents++;
+}
+
+let stallFor = new URLSearchParams(location.search).get("stallFor");
+document.write(`<img id="image" onload="imageLoaded(event)" src="/resources/load-and-stall.py?name=square100.png&mimeType=image/png&stallAt=0&stallFor=${stallFor}&rand=${Math.random()}">`);
+</script>
+<p>A frame that records its lifecycle events while an image stalls its load.</p>

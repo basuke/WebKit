@@ -1486,6 +1486,8 @@ public:
     bool isJSExecutionForbidden() const final { return false; }
 
     void queueTaskToDispatchEventOnWindow(LocalDOMWindow&, TaskSource, Ref<Event>&&);
+    bool shouldDeferLifecycleEventForDebugger(const Event&) const;
+    void queueTaskToDispatchDeferredLifecycleEvent(Function<void()>&&);
     void dispatchPageshowEvent(PageshowEventPersistence);
     void dispatchPagehideEvent(PageshowEventPersistence);
     // With proceedWithNavigation, a view transition is captured in a later rendering update, and the
@@ -2765,6 +2767,7 @@ private:
 
     unsigned m_disabledFieldsetElementsCount { 0 };
     unsigned m_dataListElementCount { 0 };
+    unsigned m_deferredLifecycleEventCount { 0 };
 
     OptionSet<ListenerType> m_listenerTypes;
     MemoryCompactRobinHoodHashMap<AtomString, EventListenerCounts> m_eventListenerCounts;
