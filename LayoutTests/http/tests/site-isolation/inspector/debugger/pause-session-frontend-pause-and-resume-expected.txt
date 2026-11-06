@@ -1,0 +1,24 @@
+Test that the Pause button stops a frame at its next statement and that resuming releases every frame of the page.
+
+
+
+== Running test suite: SiteIsolation.Debugger.PauseSessionFrontendPauseAndResume
+-- Running test case: SiteIsolation.Debugger.PauseSessionFrontendPauseAndResume.Setup
+PASS: Should find the frame target for frame A.
+PASS: Frame A's interval should be running.
+
+-- Running test case: SiteIsolation.Debugger.PauseSessionFrontendPauseAndResume.PauseThenResume
+PASS: DebuggerManager should be paused.
+PASS: The Paused event should be dispatched once.
+PASS: A frame should be stopped at its next statement.
+PASS: There should be an active call frame.
+PASS: DebuggerManager should not be paused after resuming.
+PASS: The Resumed event should be dispatched once.
+PASS: The main frame's interval after resuming should advance.
+PASS: Frame A's interval after resuming should advance.
+
+-- Running test case: SiteIsolation.Debugger.PauseSessionFrontendPauseAndResume.NoStrayPause
+PASS: DebuggerManager should still not be paused.
+PASS: The main frame should not be paused.
+PASS: Frame A should not be paused.
+
