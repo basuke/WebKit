@@ -87,6 +87,13 @@ Protocol::ErrorStringOr<void> InspectorTargetAgent::setGlobalDebuggerPauseEnable
     return makeUnexpected("Debugger pause sessions are not supported"_s);
 }
 
+Protocol::ErrorStringOr<void> InspectorTargetAgent::resumeDebuggerPauseSession()
+{
+    if (CheckedPtr client = m_debuggerPauseSessionClient)
+        return client->resumeDebuggerPauseSession();
+    return makeUnexpected("Debugger pause sessions are not supported"_s);
+}
+
 Protocol::ErrorStringOr<void> InspectorTargetAgent::sendMessageToTarget(const String& targetId, const String& message)
 {
     CheckedPtr target = m_targets.get(targetId);

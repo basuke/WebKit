@@ -144,6 +144,7 @@ public:
     DebuggerSuspensionController& debuggerSuspensionController() const { return m_debuggerSuspensionController.get(); }
     WEBCORE_EXPORT void suspendForDebuggerSession(DebuggerPauseSessionIdentifier);
     WEBCORE_EXPORT void resumeFromDebuggerSession(DebuggerPauseSessionIdentifier);
+    WEBCORE_EXPORT void resumeStoppedFrames();
 
     void mainFrameStartedLoading();
     void endPauseSuppressionForNavigation();

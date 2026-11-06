@@ -29,6 +29,7 @@
 #include <JavaScriptCore/InspectorBackendDispatchers.h>
 #include <JavaScriptCore/InspectorFrontendChannel.h>
 #include <JavaScriptCore/InspectorFrontendDispatchers.h>
+#include <wtf/AbstractCanMakeCheckedPtr.h>
 #include <wtf/CheckedPtr.h>
 #include <wtf/Forward.h>
 #include <wtf/TZoneMalloc.h>
@@ -48,6 +49,7 @@ public:
     public:
         virtual ~DebuggerPauseSessionClient() = default;
         virtual Protocol::ErrorStringOr<void> setGlobalDebuggerPauseEnabled(bool) = 0;
+        virtual Protocol::ErrorStringOr<void> resumeDebuggerPauseSession() = 0;
     };
 
     InspectorTargetAgent(FrontendRouter&, BackendDispatcher&, DebuggerPauseSessionClient* = nullptr);
@@ -61,6 +63,7 @@ public:
     Protocol::ErrorStringOr<void> setPauseOnStart(bool) final;
     Protocol::ErrorStringOr<void> resume(const String& targetId) final;
     Protocol::ErrorStringOr<void> setGlobalDebuggerPauseEnabled(bool) final;
+    Protocol::ErrorStringOr<void> resumeDebuggerPauseSession() final;
     Protocol::ErrorStringOr<void> sendMessageToTarget(const String& targetId, const String& message) final;
 
     // Target lifecycle.

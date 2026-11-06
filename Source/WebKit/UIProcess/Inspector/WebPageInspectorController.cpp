@@ -219,6 +219,13 @@ Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::setGlobalDe
     return { };
 }
 
+Inspector::Protocol::ErrorStringOr<void> WebPageInspectorController::resumeDebuggerPauseSession()
+{
+    if (m_debuggerPauseCoordinator)
+        CheckedPtr { m_debuggerPauseCoordinator }->resumeSession();
+    return { };
+}
+
 void WebPageInspectorController::debuggerPauseSessionDidChange(WebCore::DebuggerPauseSessionIdentifier sessionID, bool isPaused, const Vector<String>& stoppingTargetIDs)
 {
     if (CheckedPtr targetAgent = m_targetAgent)
