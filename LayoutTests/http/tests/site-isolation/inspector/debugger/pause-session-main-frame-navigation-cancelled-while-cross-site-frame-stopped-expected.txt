@@ -1,4 +1,4 @@
-Tests that a navigation of the main frame that does not commit leaves the page held while a cross-site frame is stopped in the debugger.
+Tests that a navigation of the main frame that does not commit leaves the page running after it resumed a cross-site frame that was stopped in the debugger.
 
 
 
@@ -9,9 +9,6 @@ PASS: The session should name the stopped frame.
 PASS: The main frame's interval should not advance while a frame is paused.
 PASS: The navigation should close the session.
 PASS: The main frame's interval while the navigation is pending should advance.
-PASS: Cancelling the navigation should open a new session.
-PASS: The new session should name the frame that is still stopped.
-PASS: The main frame's interval should not advance after the navigation was cancelled.
-PASS: Resuming should close the new session.
-PASS: The main frame's interval after resuming should advance.
+PASS: The debugger should not be paused after the navigation was cancelled.
+PASS: The main frame's interval after the navigation was cancelled should advance.
 

@@ -179,6 +179,7 @@ void DebuggerPauseCoordinator::suspendPage(WebProcessProxy& process, WebCore::Pa
 
 void DebuggerPauseCoordinator::mainFrameDidStartProvisionalLoad()
 {
+    resumeStoppedFrames();
     endSession();
 }
 
@@ -206,6 +207,11 @@ void DebuggerPauseCoordinator::resumeSession()
     if (!m_sessionID)
         return;
 
+    resumeStoppedFrames();
+}
+
+void DebuggerPauseCoordinator::resumeStoppedFrames()
+{
     HashSet<WebCore::ProcessIdentifier> stoppingProcesses;
     for (auto& [processID, frameID] : m_stoppingFrames)
         stoppingProcesses.add(processID);
