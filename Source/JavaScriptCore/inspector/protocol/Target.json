@@ -37,6 +37,10 @@
             ]
         },
         {
+            "name": "resumeDebuggerPauseSession",
+            "description": "Resumes every stopped frame of the page's debugger pause session and releases every frame it holds."
+        },
+        {
             "name": "sendMessageToTarget",
             "description": "Send an Inspector Protocol message to be dispatched to a Target's agents.",
             "parameters": [

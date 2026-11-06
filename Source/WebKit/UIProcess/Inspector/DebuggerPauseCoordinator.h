@@ -30,6 +30,7 @@
 #include <WebCore/PageIdentifier.h>
 #include <WebCore/ProcessIdentifier.h>
 #include <wtf/CheckedPtr.h>
+#include <wtf/Function.h>
 #include <wtf/HashSet.h>
 #include <wtf/Noncopyable.h>
 #include <wtf/TZoneMalloc.h>
@@ -60,6 +61,7 @@ public:
     void mainFrameDidStartProvisionalLoad();
     void openSessionIfFramesAreStopping();
     void closeSession();
+    void resumeSession();
 
 private:
     void openSession();
