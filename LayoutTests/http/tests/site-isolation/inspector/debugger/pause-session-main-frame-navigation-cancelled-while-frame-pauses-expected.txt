@@ -1,0 +1,13 @@
+Tests that a frame that stops while the main frame navigates holds the page again when the navigation does not commit.
+
+
+
+== Running test suite: SiteIsolation.Debugger.MainFrameNavigationWhileStopped
+-- Running test case: SiteIsolation.Debugger.MainFrameNavigationWhileStopped.FramePausesDuringCancelledNavigation
+PASS: Should find the frame target of the first cross-site frame.
+PASS: Should find the frame target of the second cross-site frame.
+PASS: The first frame should have been resumed when the navigation started.
+PASS: The session should open again with only the second frame stopped.
+PASS: The main frame's interval should not advance after the navigation was cancelled.
+PASS: The main frame's interval after resuming should advance.
+

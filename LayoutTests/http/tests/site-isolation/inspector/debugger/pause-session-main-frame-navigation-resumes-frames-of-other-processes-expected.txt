@@ -1,0 +1,11 @@
+Tests that a navigation of the main frame resumes the frames that are stopped in the debugger, in any process, when the navigation starts.
+
+
+== Running test suite: SiteIsolation.Debugger.MainFrameNavigationWhileStopped
+-- Running test case: SiteIsolation.Debugger.MainFrameNavigationWhileStopped.CrossSiteFrameStopped
+PASS: Should find the frame target of the cross-site frame.
+PASS: The cross-site frame should resume before the response of the navigation arrives.
+
+-- Running test case: SiteIsolation.Debugger.MainFrameNavigationWhileStopped.MainFrameStoppedCrossSiteNavigation
+PASS: The main frame should resume before the response of the navigation arrives.
+

@@ -69,6 +69,7 @@ private:
     void openSession();
     void endSession();
     void notifySessionChanged(bool isPaused);
+    void resumeStoppedFrames();
     void stoppingFramesDidShrink();
     void suspendPage(WebProcessProxy&, WebCore::PageIdentifier);
     template<typename Predicate> void removeStoppingFramesIf(NOESCAPE const Predicate&);
