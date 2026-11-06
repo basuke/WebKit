@@ -128,10 +128,12 @@ private:
     void browsingContextGroupPageWasAddedToProcess(WebProcessProxy&, WebCore::PageIdentifier);
 
     // InspectorTargetAgent::DebuggerPauseSessionClient
+    Inspector::Protocol::ErrorStringOr<void> setGlobalDebuggerPauseEnabled(bool) final;
     Inspector::Protocol::ErrorStringOr<void> resumeDebuggerPauseSession() final;
 
     NODELETE WebPageAgentContext webPageAgentContext();
     void createLazyAgents();
+    DebuggerPauseCoordinator& ensureDebuggerPauseCoordinator();
 
     void addTarget(std::unique_ptr<InspectorTargetProxy>&&);
     void removeTarget(const String& targetId);
