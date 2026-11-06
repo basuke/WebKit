@@ -1,0 +1,80 @@
+<!-- webkit-test-runner [ SiteIsolationEnabled=true ] -->
+<script src="../../../inspector/resources/inspector-test.js"></script>
+<script src="resources/site-isolation-debugger-test-utilities.js"></script>
+<script src="resources/global-pause-test-utilities.js"></script>
+<script>
+window.mainTicks = 0;
+setInterval(() => { window.mainTicks++; }, 50);
+
+function test() {
+    let suite = InspectorTest.createAsyncSuite("SiteIsolation.Debugger.PauseSessionFrontendPauseAndResume");
+
+    let mainTarget;
+    let frameATarget;
+
+    function countEvents(eventName) {
+        let counter = {count: 0};
+        WI.debuggerManager.addEventListener(eventName, () => { ++counter.count; });
+        return counter;
+    }
+
+    suite.addTestCase({
+        name: "SiteIsolation.Debugger.PauseSessionFrontendPauseAndResume.Setup",
+        description: "Find the frame target of the cross-site iframe.",
+        async test() {
+            mainTarget = InspectorTest.mainFrameTarget;
+            frameATarget = await frameTargetForURLContaining("same-process-frame.html?A");
+            InspectorTest.expectNotNull(frameATarget, "Should find the frame target for frame A.");
+            InspectorTest.expectThat(await waitForExpressionInTarget(frameATarget, "window.ticks > 2"), "Frame A's interval should be running.");
+        }
+    });
+
+    suite.addTestCase({
+        name: "SiteIsolation.Debugger.PauseSessionFrontendPauseAndResume.PauseThenResume",
+        description: "The Pause button should stop a frame at its next statement, as without site isolation, and resuming should release every frame without an error.",
+        async test() {
+            let paused = countEvents(WI.DebuggerManager.Event.Paused);
+            let resumed = countEvents(WI.DebuggerManager.Event.Resumed);
+
+            await WI.debuggerManager.pause();
+
+            // Results are logged by running script in the page, which a stopped frame would delay, so look at the state first and log after resuming.
+            let wasPaused = WI.debuggerManager.paused;
+            let pausedCount = paused.count;
+            let hadCallFrame = !!WI.debuggerManager.activeCallFrame;
+            let hadStoppedFrame = WI.debuggerManager.dataForTarget(mainTarget).paused || WI.debuggerManager.dataForTarget(frameATarget).paused;
+
+            await WI.debuggerManager.resume();
+            InspectorTest.expectTrue(wasPaused, "DebuggerManager should be paused.");
+            InspectorTest.expectEqual(pausedCount, 1, "The Paused event should be dispatched once.");
+            InspectorTest.expectTrue(hadStoppedFrame, "A frame should be stopped at its next statement.");
+            InspectorTest.expectTrue(hadCallFrame, "There should be an active call frame.");
+            InspectorTest.expectFalse(WI.debuggerManager.paused, "DebuggerManager should not be paused after resuming.");
+            InspectorTest.expectEqual(resumed.count, 1, "The Resumed event should be dispatched once.");
+
+            let mainBefore = await GlobalPause.evaluate(mainTarget, "window.mainTicks");
+            let frameABefore = await GlobalPause.evaluate(frameATarget, "window.ticks");
+            await GlobalPause.expectRunning(mainTarget, "window.mainTicks", mainBefore, "The main frame's interval after resuming");
+            await GlobalPause.expectRunning(frameATarget, "window.ticks", frameABefore, "Frame A's interval after resuming");
+        }
+    });
+
+    suite.addTestCase({
+        name: "SiteIsolation.Debugger.PauseSessionFrontendPauseAndResume.NoStrayPause",
+        description: "No frame should pause by itself after the resume.",
+        async test() {
+            await GlobalPause.sleep(500);
+            InspectorTest.expectFalse(WI.debuggerManager.paused, "DebuggerManager should still not be paused.");
+            InspectorTest.expectFalse(WI.debuggerManager.dataForTarget(mainTarget).paused, "The main frame should not be paused.");
+            InspectorTest.expectFalse(WI.debuggerManager.dataForTarget(frameATarget).paused, "Frame A should not be paused.");
+        }
+    });
+
+    suite.runTestCasesAndFinish();
+}
+</script>
+
+<body onload="runTest()">
+<p>Test that the Pause button stops a frame at its next statement and that resuming releases every frame of the page.</p>
+<iframe src="http://localhost:8000/site-isolation/inspector/debugger/resources/same-process-frame.html?A"></iframe>
+</body>

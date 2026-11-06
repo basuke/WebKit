@@ -730,11 +730,21 @@ WI.DebuggerManager = class DebuggerManager extends WI.Object
             return Promise.resolve();
 
         let promises = [this.awaitEvent(WI.DebuggerManager.Event.Resumed, this)];
+
+        // The backend also resumes the frames stopped in the session, so a frame resumed both ways refuses the second request.
+        let hasSession = !!this._pauseSession;
+        if (hasSession)
+            promises.push(WI.backendTarget.TargetAgent.resumeDebuggerPauseSession());
+
         for (let targetData of this._targetDebuggerDataMap.values()) {
             // Only resume targets that are actually paused. Frame targets in separate
             // processes should not receive spurious resume commands.
-            if (targetData.paused || targetData.pausing)
-                promises.push(targetData.resumeIfNeeded());
+            if (targetData.paused || targetData.pausing) {
+                // The backend cancels the pauses armed in the frames it holds when a session opens, which may not have been reported yet.
+                let mayBeRefused = hasSession || !targetData.paused;
+                let promise = targetData.resumeIfNeeded();
+                promises.push(mayBeRefused ? promise.catch(() => { }) : promise);
+            }
         }
         return Promise.all(promises);
     }
